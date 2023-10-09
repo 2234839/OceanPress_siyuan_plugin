@@ -1,0 +1,9 @@
+.oceanpress_widget_button {
+  filter: grayscale(90%);
+  position: absolute;
+  top: 0;
+  left: 15px;
+}
+[custom-oceanpress-widget-update] .oceanpress_widget_button {
+  filter: grayscale(0%);
+}
