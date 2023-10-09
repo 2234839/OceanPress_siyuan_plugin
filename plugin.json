@@ -1,18 +1,18 @@
 {
-  "name": "plugin-sample-vite-svelte",
-  "author": "frostime",
-  "url": "https://github.com/siyuan-note/plugin-sample-vite-svelte",
-  "version": "0.2.3",
+  "name": "oceanpress-siyuan-plugin",
+  "author": "崮生_子虚",
+  "url": "https://github.com/2234839/OceanPress_siyuan_plugin",
+  "version": "0.0.1",
   "minAppVersion": "2.10.3",
   "backends": ["all"],
   "frontends": ["all"],
   "displayName": {
-    "en_US": "Plugin sample with vite and svelte",
-    "zh_CN": "插件样例 vite + svelte 版"
+    "en_US": "OceanPress siyuan plugin",
+    "zh_CN": "OceanPress 思源插件"
   },
   "description": {
-    "en_US": "SiYuan plugin sample with vite and svelte",
-    "zh_CN": "使用 vite 和 svelte 开发的思源插件样例"
+    "en_US": "To bestow OceanPress with enhanced capabilities.",
+    "zh_CN": "为OceanPress 提供更多能力"
   },
   "readme": {
     "en_US": "README.md",
@@ -20,7 +20,7 @@
   },
   "funding": {
     "custom": [
-      "https://afdian.net/a/frostime"
+      "https://afdian.net/@llej0"
     ]
   }
 }

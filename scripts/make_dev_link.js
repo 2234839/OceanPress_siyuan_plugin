@@ -7,7 +7,7 @@ import readline  from 'node:readline';
 
 //Please write the "workspace/data/plugins" directory here
 //请在这里填写你的 "workspace/data/plugins" 目录
-let targetDir = '';
+let targetDir = 'C:/Users/llej/Documents/SiYuan2/SiYuan/data/plugins';
 //Like this
 // let targetDir = `H:\\SiYuanDevSpace\\data\\plugins`;
 //********************************************************************************************
@@ -94,7 +94,7 @@ log('>>> Try to visit constant "targetDir" in make_dev_link.js...')
 if (targetDir === '') {
     log('>>> Constant "targetDir" is empty, try to get SiYuan directory automatically....')
     let res = await getSiYuanDir();
-    
+
     if (res === null || res === undefined || res.length === 0) {
         log('>>> Can not get SiYuan directory automatically, try to visit environment variable "SIYUAN_PLUGIN_DIR"....');
 
@@ -168,7 +168,7 @@ if (fs.existsSync(targetPath)) {
 
     if (isSymbol) {
         let srcPath = fs.readlinkSync(targetPath);
-        
+
         if (cmpPath(srcPath, devDir)) {
             log(`Good! ${targetPath} is already linked to ${devDir}`);
         } else {
