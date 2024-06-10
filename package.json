@@ -28,6 +28,6 @@
   "dependencies": {
     "@llej/js_util": "^1.0.9",
     "OceanPress": "workspace:^",
-    "html2canvas": "^1.4.1"
+    "modern-screenshot": "^4.4.39"
   }
 }

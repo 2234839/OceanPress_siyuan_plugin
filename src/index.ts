@@ -2,6 +2,8 @@ import html2canvas from "html2canvas";
 import { Menu, Plugin, showMessage } from "siyuan";
 import "./index.css";
 import { iconSVG } from "./icon";
+import { putFile, setBlockAttrs } from "./api";
+import { domToBlob } from "modern-screenshot";
 
 export default class OceanPress extends Plugin {
   private btn_selector = "oceanpress_widget_button";
@@ -11,8 +13,13 @@ export default class OceanPress extends Plugin {
       for (const { target: el, addedNodes } of mutations) {
         if (el instanceof HTMLElement && el.dataset.docType === "NodeDocument") {
           addedNodes.forEach((el) => {
+            console.log(el);
+
             if (el instanceof HTMLElement && el.dataset.type === "NodeWidget") {
               this.addButton(el);
+            }
+            if (el.parentElement?.dataset.type === "NodeWidget") {
+              console.log(el);
             }
           });
           return;
@@ -57,8 +64,6 @@ export default class OceanPress extends Plugin {
   }
 
   async addButton(widget: Element) {
-    console.log(widget);
-
     const btn = widget.querySelector("." + this.btn_selector);
     if (!btn) {
       const btn = document.createElement("div");
@@ -81,42 +86,15 @@ export default class OceanPress extends Plugin {
 
 async function saveWidgetImg(widgetDom: HTMLElement) {
   const id = widgetDom.dataset.nodeId;
-  const updated = widgetDom.getAttribute("updated");
+  if (!id) {
+    throw new Error("没有获取到挂件块的id");
+  }
+
   const iframeBody: HTMLElement = (widgetDom.querySelector("iframe") as HTMLIFrameElement)
     .contentDocument!.body;
-
-  const canvas = await html2canvas(iframeBody);
-  const formData = new FormData();
-  formData.append("path", `/data/storage/oceanpress/widget_img/${id}.jpg`);
-  formData.append("modTime", updated ?? Date.now().toString());
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (!blob) throw "转 blob 失败";
-      formData.append("file", blob, `${id}.jpg`);
-      fetch("/api/file/putFile", {
-        method: "POST",
-        body: formData,
-      })
-        .then(async (r) => {
-          showMessage(`保存成功 `);
-          await fetch("/api/attr/setBlockAttrs", {
-            method: "POST",
-            mode: "cors",
-            credentials: "include",
-            body: JSON.stringify({
-              id: id,
-              attrs: {
-                "custom-oceanpress-widget-update": String(Date.now()),
-              },
-            }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-          resolve(r);
-        })
-        .catch(reject);
-    });
-  });
+  iframeBody.querySelectorAll("noscript").forEach((el) => (el.style.display = "none"));
+  const blob = await domToBlob(iframeBody);
+  await putFile(`/data/storage/oceanpress/widget_img/${id}.jpg`, false, blob);
+  showMessage(`保存成功 `);
+  await setBlockAttrs(id, { "custom-oceanpress-widget-update": String(Date.now()) });
 }
