@@ -9,16 +9,16 @@
             "DOM.Iterable"
         ],
         "skipLibCheck": true,
-        /* Bundler mode */
-        "moduleResolution": "Node",
         // "allowImportingTsExtensions": true,
         "allowSyntheticDefaultImports": true,
+        "moduleResolution":"Bundler",
         "resolveJsonModule": true,
         "isolatedModules": true,
+        "esModuleInterop": true,
         "noEmit": true,
         "jsx": "preserve",
         /* Linting */
-        "strict": false,
+        "strict": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
@@ -32,14 +32,12 @@
         "allowJs": true,
         "checkJs": true,
         "types": [
-            "node",
             "vite/client",
-            "svelte"
         ],
         // "baseUrl": "./src",
         "paths": {
-            "@/*": ["./src/*"],
-            "@/libs/*": ["./src/libs/*"],
+            "~/*": ["./src/*"],
+            "~/libs/*": ["./src/libs/*"],
         }
     },
     "include": [
@@ -48,11 +46,6 @@
         "src/**/*.d.ts",
         "src/**/*.tsx",
         "src/**/*.vue"
-    ],
-    "references": [
-        {
-            "path": "./tsconfig.node.json"
-        }
     ],
     "root": "."
 }
