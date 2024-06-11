@@ -1,9 +1,9 @@
-import { Menu, Plugin, showMessage } from "siyuan";
+import { Dialog, Menu, Plugin, showMessage } from "siyuan";
 import "./index.css";
 import { iconSVG } from "./icon";
 import { putFile, setBlockAttrs } from "./api";
 import { domToBlob } from "modern-screenshot";
-import { fetchStatus, hashCalc, ocr } from "./libs/ocr/baimiao";
+import { ocr } from "./libs/ocr/ocr";
 
 const ICON = "🌊";
 
@@ -40,30 +40,55 @@ export default class OceanPress extends Plugin {
           const name = imgSrc.split("/").pop()!;
           const base64 = await imageToBase64(imgSrc);
 
-          const hash = imgSrc.replace("/", "_");
-          const storageName = `ocr_${hash}.json`;
-          const storageValue = await this.loadData(storageName);
-          if (storageValue) {
-            console.log(storageValue);
+          const path = imgSrc.replace("/", "_");
+          const storageName = `ocr_${path}.json`;
+          const storeValue = await this.loadData(storageName);
+          // TODO dev
+          if (storeValue) {
+            console.log(storeValue);
             return;
           }
+
+          const apiSK = await this.apiSK();
+          if (!apiSK) return;
 
           const jobStatus = await ocr({
             name: name || "test.png",
             imgBase64: base64,
+            apiSK,
           });
-          await sleep(1000);
-          const ocrRes = await fetchStatus(jobStatus.data.jobStatusId);
-          console.log(jobStatus.data.jobStatusId, ocrRes);
-          if (ocrRes.code !== 1) {
-            showMessage(`ocr失败:${ocrRes.msg}`);
-          } else {
-            showMessage(`ocr成功`);
-            this.saveData(storageName, ocrRes.data);
-          }
+          this.saveData(storageName, jobStatus);
         },
       });
     });
+  }
+  async apiSK(rest = false) {
+    const sk: string = await this.loadData("apiSK");
+
+    if (!sk || rest) {
+      return new Promise<string | undefined>((r) => {
+        const dialog = new Dialog({
+          title: "输入 sk",
+          content: `<div class="b3-dialog__content">
+           你对<a href="https://afdian.net/@llej0">崮生的爱发电</a>订单号可以作为 sk 填入下方
+            <input class="b3-text-field fn__block" value="" placeholder="请在这里输入 sk">
+            <div class="b3-dialog__action">
+              <button class="b3-button b3-button--text">confirm</button>
+            </div>
+          </div>
+  `,
+          width: "75%",
+          destroyCallback: () => {
+            const sk = dialog.element.querySelector("input")?.value;
+            r(sk);
+            this.saveData("apiSK", sk);
+          },
+        });
+        dialog.element.querySelector("button")?.addEventListener("click", () => dialog.destroy());
+      });
+    } else {
+      return sk;
+    }
   }
   async onLayoutReady() {
     this.addIcons(`<symbol id="oceanpress_preview">
@@ -79,6 +104,13 @@ export default class OceanPress extends Plugin {
           icon: `oceanpress_preview`,
           click: () => {
             menu.close();
+          },
+        });
+        menu.addItem({
+          label: "修改 sk",
+          icon: `oceanpress_preview`,
+          click: () => {
+            this.apiSK(true);
           },
         });
         menu.open(event);
