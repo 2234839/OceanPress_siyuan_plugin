@@ -1,3 +1,4 @@
+export const oceanpress_ui_flag = "oceanpress_ui_falg";
 export const oceanpress_widget_ui = "oceanpress_widget_ui";
 export const ICON = "🌊";
 export const iconSVG = `<svg><text x="50%" y="50%" text-anchor="middle" alignment-baseline="middle" font-size="13px">🌊</text></svg>`

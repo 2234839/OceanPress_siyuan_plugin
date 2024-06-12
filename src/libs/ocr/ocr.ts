@@ -14,7 +14,29 @@ export async function ocr(opt: { name: string; imgBase64: string; apiSK: string 
     if (!r.ok) {
       showMessage("ocr 失败<br/>" + (await r.text()), 5_000, "error");
     } else {
-      return r.json();
+      return (await r.json()) as { words_result: words_result };
     }
   });
 }
+
+export type words_result = {
+  min_finegrained_vertexes_location: {
+    x: number;
+    y: number;
+  }[];
+  finegrained_vertexes_location: {
+    x: number;
+    y: number;
+  }[];
+  vertexes_location: {
+    x: number;
+    y: number;
+  }[];
+  words: string;
+  location: {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  };
+}[];

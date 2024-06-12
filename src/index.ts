@@ -1,18 +1,36 @@
 import { h, render } from "preact";
-import { Dialog, Menu, Plugin } from "siyuan";
+import { Dialog, Menu, Plugin, showMessage } from "siyuan";
 import { ICON, iconSVG, oceanpress_widget_ui } from "./const";
 import "./index.css";
 import { ocr } from "./libs/ocr/ocr";
-import { widget_bth } from "./ui/widget_btn";
+import { widget_btn } from "./ui/widget_btn";
+import { img_ocr_text } from "./ui/img_ocr_text";
 
 export default class OceanPress extends Plugin {
   async onload() {
+    // 定时遍历新元素
     this.unloadFn.push(
       (() => {
         const id = setInterval(() => {
-          document.body.querySelectorAll(`[data-type="NodeWidget"]`).forEach((widget) => {
+          // 为挂件添加 oceanpress 转化图标
+          document.body.querySelectorAll(`div[data-type="NodeWidget"]`).forEach((widget) => {
             if (widget instanceof HTMLElement) {
-              this.addButton(widget);
+              this.addUiComponent(widget, h(widget_btn, { widget: widget }));
+            }
+          });
+          document.body.querySelectorAll(`img[data-src]`).forEach((img) => {
+            if (img instanceof HTMLImageElement) {
+              this.addUiComponent(
+                img.parentElement!,
+                h(img_ocr_text, {
+                  data: async () => {
+                    const path = img.dataset.src!.replace("/", "_");
+                    const storageName = `ocr_${path}.json`;
+                    return (await this.loadData(storageName))?.words_result || [];
+                  },
+                  imgEL:img
+                }),
+              );
             }
           });
         }, 1000);
@@ -35,6 +53,7 @@ export default class OceanPress extends Plugin {
           const path = imgSrc.replace("/", "_");
           const storageName = `ocr_${path}.json`;
           const storeValue = await this.loadData(storageName);
+
           // TODO dev
           if (storeValue) {
             console.log(storeValue);
@@ -42,6 +61,7 @@ export default class OceanPress extends Plugin {
           }
 
           const apiSK = await this.apiSK();
+
           if (!apiSK) return;
 
           const jobStatus = await ocr({
@@ -49,7 +69,18 @@ export default class OceanPress extends Plugin {
             imgBase64: base64,
             apiSK,
           });
-          this.saveData(storageName, jobStatus);
+          if (jobStatus?.words_result) {
+            this.saveData(storageName, jobStatus);
+            fetch("/api/asset/setImageOCRText", {
+              body: JSON.stringify({
+                path,
+                text: jobStatus.words_result.map((el) => el.words).join(" "),
+              }),
+              method: "POST",
+            });
+            showMessage(`OceanPress ocr 成功`);
+          } else {
+          }
         },
       });
     });
@@ -63,7 +94,7 @@ export default class OceanPress extends Plugin {
           title: "输入 sk",
           content: `<div class="b3-dialog__content">
            你对<a href="https://afdian.net/@llej0">崮生的爱发电</a>订单号可以作为 sk 填入下方
-            <input class="b3-text-field fn__block" value="" placeholder="请在这里输入 sk">
+            <input class="b3-text-field fn__block" value="" placeholder="请在这里输入 sk" value="${sk}">
             <div class="b3-dialog__action">
               <button class="b3-button b3-button--text">confirm</button>
             </div>
@@ -73,7 +104,9 @@ export default class OceanPress extends Plugin {
           destroyCallback: () => {
             const sk = dialog.element.querySelector("input")?.value;
             r(sk);
-            this.saveData("apiSK", sk);
+            if (sk) {
+              this.saveData("apiSK", sk);
+            }
           },
         });
         dialog.element.querySelector("button")?.addEventListener("click", () => dialog.destroy());
@@ -120,18 +153,15 @@ export default class OceanPress extends Plugin {
     this.unloadFn.forEach((fn) => fn());
   }
 
-  async addButton(widget: HTMLElement) {
-    // 因为思源会修改dom，导致添加在文档里的元素会消失，所以这里检测是否需要重新添加
+  async addUiComponent(parentEL: HTMLElement, vNode: any) {
+    // 因为思源会修改dom，导致添加在文档里的元素消失，所以这里检测是否需要重新添加
+    if (parentEL.querySelector("." + oceanpress_widget_ui)) return;
 
-    const oldFlag = widget.querySelector("." + oceanpress_widget_ui);
-    if (oldFlag) return;
+    const div = document.createElement("div");
+    this.unloadFn.push(() => div.remove());
 
-    const btn = document.createElement("div");
-    render(h(widget_bth, { widget }), btn);
-    widget.appendChild(btn);
-    // const flag = document.createElement("div");
-    // flag.className = "__flag__";
-    this.unloadFn.push(() => btn.remove());
+    render(vNode, div);
+    parentEL.appendChild(div);
   }
   previewCurrentPage() {}
 }
