@@ -1,20 +1,19 @@
-import { Dialog, Menu, Plugin, showMessage } from "siyuan";
+import { h, render } from "preact";
+import { Dialog, Menu, Plugin } from "siyuan";
+import { ICON, iconSVG, oceanpress_widget_ui } from "./const";
 import "./index.css";
-import { iconSVG } from "./icon";
-import { putFile, setBlockAttrs } from "./api";
-import { domToBlob } from "modern-screenshot";
 import { ocr } from "./libs/ocr/ocr";
-
-const ICON = "🌊";
+import { widget_bth } from "./ui/widget_btn";
 
 export default class OceanPress extends Plugin {
-  private btn_selector = "oceanpress_widget_button";
   async onload() {
     this.unloadFn.push(
       (() => {
         const id = setInterval(() => {
           document.body.querySelectorAll(`[data-type="NodeWidget"]`).forEach((widget) => {
-            this.addButton(widget);
+            if (widget instanceof HTMLElement) {
+              this.addButton(widget);
+            }
           });
         }, 1000);
         return () => clearInterval(id);
@@ -121,40 +120,20 @@ export default class OceanPress extends Plugin {
     this.unloadFn.forEach((fn) => fn());
   }
 
-  async addButton(widget: Element) {
-    const oldBtn = widget.querySelector("." + this.btn_selector);
-    oldBtn?.remove();
-    const btn = document.createElement("div");
-    this.unloadFn.push(() => btn.remove());
+  async addButton(widget: HTMLElement) {
+    // 因为思源会修改dom，导致添加在文档里的元素会消失，所以这里检测是否需要重新添加
 
-    btn.classList.add(this.btn_selector);
-    btn.innerText = ICON;
-    btn.title = `点击保存当前挂件为图片供OceanPress使用,图标为灰色表示尚未保存过此挂件`;
+    const oldFlag = widget.querySelector("." + oceanpress_widget_ui);
+    if (oldFlag) return;
+
+    const btn = document.createElement("div");
+    render(h(widget_bth, { widget }), btn);
     widget.appendChild(btn);
-    btn.onclick = () => {
-      btn.innerText = "🔄️";
-      saveWidgetImg(widget as HTMLElement).then(() => {
-        btn.innerText = ICON;
-      });
-    };
+    // const flag = document.createElement("div");
+    // flag.className = "__flag__";
+    this.unloadFn.push(() => btn.remove());
   }
   previewCurrentPage() {}
-}
-
-async function saveWidgetImg(widgetDom: HTMLElement) {
-  const id = widgetDom.dataset.nodeId;
-  if (!id) {
-    return showMessage("没有获取到挂件块的id");
-  }
-
-  const iframeBody: HTMLElement = (widgetDom.querySelector("iframe") as HTMLIFrameElement)
-    .contentDocument!.body;
-  iframeBody.querySelectorAll("noscript").forEach((el) => (el.style.display = "none"));
-  const blob = await domToBlob(iframeBody);
-  await putFile(`/data/storage/oceanpress/widget_img/${id}.jpg`, false, blob);
-
-  showMessage(`保存成功 `);
-  await setBlockAttrs(id, { "custom-oceanpress-widget-update": String(Date.now()) });
 }
 
 async function imageToBase64(url: string) {

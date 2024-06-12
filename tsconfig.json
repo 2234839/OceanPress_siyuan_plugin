@@ -11,12 +11,14 @@
         "skipLibCheck": true,
         // "allowImportingTsExtensions": true,
         "allowSyntheticDefaultImports": true,
-        "moduleResolution":"Bundler",
+        "moduleResolution": "Bundler",
         "resolveJsonModule": true,
         "isolatedModules": true,
         "esModuleInterop": true,
         "noEmit": true,
-        "jsx": "preserve",
+        // "jsx": "preserve",
+        "jsx": "react-jsx",
+        "jsxImportSource": "preact",
         /* Linting */
         "strict": true,
         "noUnusedLocals": true,
@@ -36,8 +38,12 @@
         ],
         // "baseUrl": "./src",
         "paths": {
-            "~/*": ["./src/*"],
-            "~/libs/*": ["./src/libs/*"],
+            "~/*": [
+                "./src/*"
+            ],
+            "~/libs/*": [
+                "./src/libs/*"
+            ],
         }
     },
     "include": [
