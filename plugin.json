@@ -2,7 +2,7 @@
   "name": "oceanpress-siyuan-plugin",
   "author": "",
   "url": "",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"

@@ -28,7 +28,7 @@ export default class OceanPress extends Plugin {
                     const storageName = `ocr_${path}.json`;
                     return (await this.loadData(storageName))?.words_result || [];
                   },
-                  imgEL:img
+                  imgEL: img,
                 }),
               );
             }
@@ -73,7 +73,7 @@ export default class OceanPress extends Plugin {
             this.saveData(storageName, jobStatus);
             fetch("/api/asset/setImageOCRText", {
               body: JSON.stringify({
-                path,
+                path: imgSrc,
                 text: jobStatus.words_result.map((el) => el.words).join(" "),
               }),
               method: "POST",
