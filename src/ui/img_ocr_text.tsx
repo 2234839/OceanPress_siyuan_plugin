@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "preact/hooks";
-import { oceanpress_widget_ui } from "~/const";
+import { oceanpress_ui_flag } from "~/const";
 import { debounce } from "~/libs/js_util";
 import type { words_result } from "~/libs/ocr/ocr";
 
@@ -53,7 +53,7 @@ export function img_ocr_text(props: {
   }
   return (
     <div
-      className={oceanpress_widget_ui}
+      className={oceanpress_ui_flag}
       title="点击保存当前挂件为图片供OceanPress使用,图标为灰色表示尚未保存过此挂件"
       style={{
         position: "absolute",
@@ -61,7 +61,8 @@ export function img_ocr_text(props: {
         width: "100%",
         height: "100%",
         left: 0,
-        outline: `solid 1px #2ecb23`,
+        top: 0,
+        outline: data?.length ? `solid 1px #2ecb23` : "",
       }}
       onClick={onClick}
       onCopy={onCopy}>
@@ -76,52 +77,59 @@ export function img_ocr_text(props: {
         const left = miniBox.left * widthRate;
         const width = miniBox.width * widthRate;
 
+        const scale = calcScale(item.words, width, height);
         return (
           <span
             style={{
               position: `absolute`,
+              display: "inline-block",
               top: `${top}px`,
               left: `${left}px`,
               width: `${width}px`,
               height: `${height}px`,
-              "font-size": ` ${calculateTextSize(item.words, width)}px`,
-              outline: `solid 1px #2ecb23`,
+              "font-size": `${height}px`,
+              // outline: `solid 1px #2ecb23`,
               "white-space": `nowrap`,
               "text-align": "center",
               color: "rgba(0,0,0,0)",
+              // color: "red",
             }}>
-            {item.words}
+            <span
+              style={{
+                display: "inline-block",
+                width: `${width}px`,
+                height: `${height}px`,
+                transform: `scale(${scale}) translateX(${
+                  (width * scale - width) / 2
+                }px) translateY(${(height * scale - height) / 2 - 2}px)`,
+                // outline: `solid 1px #2ecb23`,
+                "white-space": `nowrap`,
+                "text-align": "center",
+              }}>
+              {item.words}
+            </span>
           </span>
         );
       })}
     </div>
   );
 }
-function calculateTextSize(text: string, width: number) {
+function calcScale(text: string, width: number, baseFontSize: number) {
   // 创建一个临时的div元素
   const tempDiv = document.createElement("div");
   tempDiv.style.width = `${width}px`; // 设置固定宽度
+  tempDiv.style.fontSize = `${baseFontSize}px`; // 设置固定宽度
   tempDiv.style.visibility = "hidden"; // 隐藏div，避免影响页面布局
   tempDiv.style.position = "absolute"; // 绝对定位，同样避免影响布局
   tempDiv.style.whiteSpace = "nowrap"; // 文本不换行
-  document.body.appendChild(tempDiv); // 将临时div添加到文档中
-
-  // 设置临时div的文本内容
   tempDiv.textContent = text;
-
+  document.body.appendChild(tempDiv); // 将临时div添加到文档中
+  // 设置临时div的文本内容
   // 测量文本所需的宽度
   const requiredWidth = tempDiv.scrollWidth;
-
-  // 计算字体大小，这里使用了简单的线性关系，实际情况可能需要更复杂的计算
-  // 假设在宽度完全填满时的字体大小为基础大小，如果宽度不够则按比例缩小
-  const baseFontSize = 16; // 基础字体大小，根据实际情况调整
-  const actualFontSize = (width / requiredWidth) * baseFontSize;
-
   // 移除临时div
   document.body.removeChild(tempDiv);
-
-  // 返回计算出的字体大小
-  return actualFontSize;
+  return width / requiredWidth;
 }
 
 function convertVerticesToRect(vertices: words_result[0]["vertexes_location"]) {

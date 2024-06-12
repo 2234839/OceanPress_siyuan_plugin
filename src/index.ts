@@ -1,10 +1,10 @@
 import { h, render } from "preact";
 import { Dialog, Menu, Plugin, showMessage } from "siyuan";
-import { ICON, iconSVG, oceanpress_widget_ui } from "./const";
+import { ICON, iconSVG, oceanpress_ui_flag } from "./const";
 import "./index.css";
 import { ocr } from "./libs/ocr/ocr";
-import { widget_btn } from "./ui/widget_btn";
 import { img_ocr_text } from "./ui/img_ocr_text";
+import { widget_btn } from "./ui/widget_btn";
 
 export default class OceanPress extends Plugin {
   async onload() {
@@ -155,7 +155,7 @@ export default class OceanPress extends Plugin {
 
   async addUiComponent(parentEL: HTMLElement, vNode: any) {
     // 因为思源会修改dom，导致添加在文档里的元素消失，所以这里检测是否需要重新添加
-    if (parentEL.querySelector("." + oceanpress_widget_ui)) return;
+    if (parentEL.querySelector("." + oceanpress_ui_flag)) return;
 
     const div = document.createElement("div");
     this.unloadFn.push(() => div.remove());
