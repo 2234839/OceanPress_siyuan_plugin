@@ -15,8 +15,6 @@ export function img_ocr_text(props: {
 
   if (!data) {
     props.data().then((r) => {
-      console.log("get Data", r);
-
       setData(r);
     });
   }
@@ -29,7 +27,6 @@ export function img_ocr_text(props: {
     debounce(() => {
       set_widthRate(img.width / img.naturalWidth);
       set_heightRate(img.height / img.naturalHeight);
-      console.log(3);
     }, 500),
     [img],
   );

@@ -1,11 +1,11 @@
 {
   "name": "oceanpress-siyuan-plugin",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "type": "module",
   "description": "",
-  "repository": "",
+  "repository": "https://github.com/2234839/OceanPress_siyuan_plugin",
   "homepage": "",
-  "author": "",
+  "author": "崮生",
   "license": "GPL-3.0",
   "scripts": {
     "make-link": "node  --no-warnings ./scripts/make_dev_link.js",
@@ -27,7 +27,6 @@
   },
   "dependencies": {
     "@llej/js_util": "^1.0.9",
-    "OceanPress": "workspace:^",
     "modern-screenshot": "^4.4.39",
     "preact": "^10.22.0"
   }
