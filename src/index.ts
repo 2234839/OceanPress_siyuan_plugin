@@ -10,25 +10,18 @@ const ICON = "🌊";
 export default class OceanPress extends Plugin {
   private btn_selector = "oceanpress_widget_button";
   async onload() {
-    // 监听挂件块的出现  TODO 目前发现挂件块更新时会导致按钮消失
-    const dom$ = new MutationObserver((mutations) => {
-      for (const { target: el, addedNodes } of mutations) {
-        if (el instanceof HTMLElement && el.dataset.docType === "NodeDocument") {
-          addedNodes.forEach((el) => {
-            if (el instanceof HTMLElement && el.dataset.type === "NodeWidget") {
-              this.addButton(el);
-            }
+    this.unloadFn.push(
+      (() => {
+        const id = setInterval(() => {
+          document.body.querySelectorAll(`[data-type="NodeWidget"]`).forEach((widget) => {
+            this.addButton(widget);
           });
-          return;
-        }
-      }
-    });
-    dom$.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-    this.unloadFn.push(() => dom$.disconnect());
+        }, 1000);
+        return () => clearInterval(id);
+      })(),
+    );
 
+    // ocr 功能
     this.eventBus.on("open-menu-image", (event) => {
       (globalThis.window.siyuan.menus.menu as Menu).addItem({
         label: "OceanPress Ocr",
@@ -129,28 +122,23 @@ export default class OceanPress extends Plugin {
   }
 
   async addButton(widget: Element) {
-    const btn = widget.querySelector("." + this.btn_selector);
-    if (!btn) {
-      const btn = document.createElement("div");
-      this.unloadFn.push(() => btn.remove());
+    const oldBtn = widget.querySelector("." + this.btn_selector);
+    oldBtn?.remove();
+    const btn = document.createElement("div");
+    this.unloadFn.push(() => btn.remove());
 
-      btn.classList.add(this.btn_selector);
-      btn.innerText = ICON;
-      btn.title = `点击保存当前挂件为图片供OceanPress使用,图标为灰色表示尚未保存过此挂件`;
-      widget.appendChild(btn);
-      btn.onclick = () => {
-        btn.innerText = "🔄️";
-        saveWidgetImg(widget as HTMLElement).then(() => {
-          btn.innerText = ICON;
-        });
-      };
-    }
+    btn.classList.add(this.btn_selector);
+    btn.innerText = ICON;
+    btn.title = `点击保存当前挂件为图片供OceanPress使用,图标为灰色表示尚未保存过此挂件`;
+    widget.appendChild(btn);
+    btn.onclick = () => {
+      btn.innerText = "🔄️";
+      saveWidgetImg(widget as HTMLElement).then(() => {
+        btn.innerText = ICON;
+      });
+    };
   }
   previewCurrentPage() {}
-}
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function saveWidgetImg(widgetDom: HTMLElement) {
