@@ -3,6 +3,7 @@ import { oceanpress_ui_flag } from "~/const";
 import { debounce } from "~/libs/js_util";
 import type { words_result } from "~/libs/ocr/ocr";
 
+// assetsPath, "ocr-texts.json" 思源的ocr结果存储在这里
 export function img_ocr_text(props: {
   data: () => Promise<words_result>;
   /**

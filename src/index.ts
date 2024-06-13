@@ -8,6 +8,19 @@ import { widget_btn } from "./ui/widget_btn";
 
 export default class OceanPress extends Plugin {
   async onload() {
+    // 移动端 debug
+    //     eval(`
+    //       var script = document.createElement('script');
+    // script.src = 'https://unpkg.com/vconsole@latest/dist/vconsole.min.js';
+    // script.onload = function () {
+    //     if (window.VConsole) {
+    //         var vConsole = new window.VConsole();
+    //         console.log(vConsole)
+    //     }
+    // };
+    // document.head.appendChild(script);
+    //       `);
+
     // 定时遍历新元素
     this.unloadFn.push(
       (() => {

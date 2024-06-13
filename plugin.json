@@ -1,8 +1,8 @@
 {
   "name": "oceanpress-siyuan-plugin",
-  "author": "",
-  "url": "",
-  "version": "0.3.6",
+  "author": "崮生",
+  "url": "https://github.com/2234839/OceanPress_siyuan_plugin",
+  "version": "0.3.7",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"

@@ -15,8 +15,12 @@ writeFile("./plugin.json", JSON.stringify(siyuan.mergePluginPackage(pkg, pluginJ
 
 const args = minimist(process.argv.slice(2));
 const isWatch = args.watch || args.w || false;
-const devDistDir = "./dev";
-const distDir = isWatch ? devDistDir : "./dev";
+
+const env = loadEnv(isWatch, "./") as {
+  VITE_targetDir?: string;
+};
+
+const distDir = env.VITE_targetDir ? `${env.VITE_targetDir}/${pkg.name}` : "./dist";
 
 console.log("isWatch=>", isWatch);
 console.log("distDir=>", distDir);
@@ -47,10 +51,6 @@ export default defineConfig({
           src: "./plugin.json",
           dest: "./",
         },
-        // {
-        //   src: "./src/i18n/**",
-        //   dest: "./i18n/",
-        // },
       ],
     }),
   ],
@@ -88,7 +88,9 @@ export default defineConfig({
       plugins: [
         ...(isWatch
           ? [
-              livereload(devDistDir),
+              livereload({
+                watch: distDir,
+              }),
               {
                 //监听静态资源文件
                 name: "watch-external",
