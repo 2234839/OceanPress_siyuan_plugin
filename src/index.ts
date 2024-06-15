@@ -6,6 +6,8 @@ import { ocr } from "./libs/ocr/ocr";
 import { img_ocr_text } from "./ui/img_ocr_text";
 import { widget_btn } from "./ui/widget_btn";
 
+import { UTIF } from "./libs/UTIF";
+
 export default class OceanPress extends Plugin {
   async onload() {
     // 移动端 debug
@@ -31,21 +33,51 @@ export default class OceanPress extends Plugin {
               this.addUiComponent(widget, h(widget_btn, { widget: widget }));
             }
           });
-          document.body.querySelectorAll(`img[data-src]`).forEach((img) => {
-            if (img instanceof HTMLImageElement) {
-              this.addUiComponent(
-                img.parentElement!,
-                h(img_ocr_text, {
-                  data: async () => {
-                    const path = img.dataset.src!.replace("/", "_");
-                    const storageName = `ocr_${path}.json`;
-                    return (await this.loadData(storageName))?.words_result || [];
-                  },
-                  imgEL: img,
-                }),
-              );
-            }
+          document.body.querySelectorAll<HTMLImageElement>(`img[data-src]`).forEach((img) => {
+            this.addUiComponent(
+              img.parentElement!,
+              h(img_ocr_text, {
+                data: async () => {
+                  const path = img.dataset.src!.replace("/", "_");
+                  const storageName = `ocr_${path}.json`;
+                  return (await this.loadData(storageName))?.words_result || [];
+                },
+                imgEL: img,
+              }),
+            );
           });
+          // 替换 tif 资源链接为图片链接
+          document
+            .querySelectorAll<HTMLElement>('span[data-type="a"][data-href$=".tif"]')
+            .forEach((span) => {
+              const href = span.dataset.href;
+              const name = span.textContent;
+
+              var htmlString = `<span contenteditable="false" data-type="img"
+            class="img"><span> </span><span><span class="protyle-action protyle-icons"><span
+                        class="protyle-icon protyle-icon--only"><svg class="svg">
+                            <use xlink:href="#iconMore"></use>
+                        </svg></span></span><img src="${href}"
+                    data-src="${href}" alt="image"><span
+                    class="protyle-action__drag"></span><span class="protyle-action__title"></span></span><span>
+            </span></span>`;
+              var tempDiv = document.createElement("div");
+              tempDiv.innerHTML = htmlString;
+              var domElement = tempDiv.firstChild!;
+
+              span.parentNode!.replaceChild(domElement, span);
+              console.log("替换tif为img", href, name, domElement);
+              setTimeout(() => {}, 300);
+            });
+          const imgTifEl = [
+            ...document.querySelectorAll<HTMLImageElement>('img[data-src$=".tif"]'),
+          ].filter((el) => !el.src.startsWith("data:"));
+
+          if (imgTifEl.length > 0) {
+            console.log("[imgTifEl]", imgTifEl);
+            // @ts-ignore
+            UTIF.replaceIMG();
+          }
         }, 1000);
         return () => clearInterval(id);
       })(),

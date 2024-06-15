@@ -39,7 +39,6 @@
             text-align: center;
             color: rgba(0, 0, 0, 0);
         }
-
     </style>
 </head>
 
@@ -58,7 +57,12 @@
             const zoomLevel = event.target.value
             image.style.transform = `scale(${zoomLevel})`
         })
-        const ocrResp = {
+        const youdaoRes = { "requestId": "744b1f01-253b-47a6-ac01-9a855c798c9b", "errorCode": "0", "Result": { "orientation": "UP", "regions": [ { "boundingBox": "249,355,540,355,540,474,249,474", "dir": "h", "lang": "zh", "lines": [ { "boundingBox": "249,355,540,355,540,474,249,474", "text_height": 119, "style": "printing", "text": "服务器", "lang": "zh" } ] }, { "boundingBox": "246,624,642,624,642,832,246,832", "dir": "h", "lang": "zh", "lines": [ { "boundingBox": "252,624,642,624,642,690,252,690", "text_height": 66, "style": "printing", "text": "非程序员请勿尝试", "lang": "zh" }, { "boundingBox": "249,700,507,700,507,760,249,760", "text_height": 60, "style": "printing", "text": "Docker 镜像", "lang": "ja" }, { "boundingBox": "246,772,393,772,393,832,246,832", "text_height": 60, "style": "printing", "text": "源代码", "lang": "zh" } ] } ], "angle": "0.000000", "exif": "UP", "scene": "screen_shot" } }
+
+
+
+
+        const ocrResp1 = {
             "words_result": [
                 {
                     "min_finegrained_vertexes_location": [
@@ -5594,21 +5598,17 @@
                 "regions": []
             }
         }
-        for (const item of ocrResp.words_result) {
+        for (const item of youdao2resp().words_result) {
             const el = document.createElement("span")
             // 这个盒子看起来比 words_result.location 的效果要好
-            const miniBox = convertVerticesToRect(item.min_finegrained_vertexes_location)
+            const miniBox = convertVerticesToRect(item.min_finegrained_vertexes_location || item.vertexes_location)
             const { height, left, top, width } = miniBox
             el.style = `top:${top}px;left: ${left}px;width: ${width}px;height: ${height}px;`
+            console.log(`top:${top}px;left: ${left}px;width: ${width}px;height: ${height}px;`)
             el.className = "box"
             el.style.fontSize = `${height}px`
-            const wordSpan = [ ...item.words ].map(char => {
-                const span = document.createElement("span")
-                span.innerText = char
-                span.className = "text"
-                return span
-            })
-            wordSpan.forEach(span => el.appendChild(span))
+            el.textContent = item.words
+
             image_container.appendChild(el)
         }
 
@@ -5632,6 +5632,7 @@
          * @returns {Rectangle} The rectangle defined by top, left, width, and height.
          */
         function convertVerticesToRect(vertices) {
+
             // 初始化最小和最大值
             let minX = vertices[ 0 ].x
             let maxX = vertices[ 0 ].x
