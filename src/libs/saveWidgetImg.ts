@@ -1,6 +1,6 @@
 import { domToBlob } from "modern-screenshot";
 import { showMessage } from "siyuan";
-import { putFile, setBlockAttrs } from "~/oceanpress/api";
+import { putFile, setBlockAttrs } from "~/libs/api";
 
 export async function saveWidgetImg(widgetDom: HTMLElement) {
   const id = widgetDom.dataset.nodeId;

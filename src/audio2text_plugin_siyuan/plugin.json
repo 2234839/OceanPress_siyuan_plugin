@@ -1,8 +1,8 @@
 {
-  "name": "vite-plugin-siyuan",
+  "name": "audio2text_plugin_siyuan",
   "author": "崮生",
-  "url": "https://github.com/2234839/vite-plugin-siyuan",
-  "version": "0.0.7",
+  "url": "https://github.com/2234839/siyuan_audio2text",
+  "version": "0.0.1",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
@@ -11,8 +11,8 @@
     "all"
   ],
   "displayName": {
-    "en_US": "vite-plugin-siyuan",
-    "zh_CN": "vite-plugin-siyuan"
+    "en_US": "audio2text_plugin_siyuan",
+    "zh_CN": "audio2text_plugin_siyuan"
   },
   "description": {
     "en_US": "",

@@ -53,15 +53,41 @@ jobs:
       - name: build
         run: pnpm buildAll
 
+      - name: git config
+        run: |
+          git config --global user.email "admin@shenzilong.cn"
+          git config --global user.name "崮生"
+
       - name: Deploy vite-plugin-siyuan
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
-          git config --global user.email "admin@shenzilong.cn"
-          git config --global user.name "崮生"
           git clone --quiet --branch=main https://x-access-token:${DEPLOY_KEY}@github.com/2234839/vite-plugin-siyuan.git main
           cd main
           rm -rf ./* && cp -R ../dist/vite-plugin-siyuan/. .
+          ls
+          export CURRENT_VERSION=$(cat plugin.json | jq -r '.version')
+          export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
+          echo "CURRENT_VERSION=$CURRENT_VERSION   LATEST_TAG=$LATEST_TAG"
+          git add .
+          git commit -m "Update dist to GitHub Pages"
+          git push -f origin main
+          if [ "$CURRENT_VERSION" != "$LATEST_TAG" ] && [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "CURRENT_VERSION_IS_NEWER=true"
+            git tag -a "v$CURRENT_VERSION" -m "Release version $CURRENT_VERSION"
+            git push --tags
+          else
+            echo "CURRENT_VERSION_IS_NEWER=false"
+          fi
+          cd .. && rm -r main
+
+      - name: Deploy audio2text_plugin_siyuan
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          git clone --quiet --branch=main https://x-access-token:${DEPLOY_KEY}@github.com/2234839/siyuan_audio2text.git main
+          cd main
+          rm -rf ./* && cp -R ../dist/audio2text_plugin_siyuan/. .
           ls
           export CURRENT_VERSION=$(cat plugin.json | jq -r '.version')
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
