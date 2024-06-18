@@ -2,8 +2,8 @@ name: Create Release on Tag Push
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -51,15 +51,27 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      # Build for production, 这一步会生成一个 package.zip
-      - name: Build for production
-        run: pnpm build
+      - name: Deploy to another repository
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }} # 你的 PAT
+        run: |
+          git config --global user.email "admin@shenzilong.cn"
+          git config --global user.name "崮生"
+          git clone --quiet --branch=main https://x-access-token:${DEPLOY_KEY}@github.com/2234839/vite-plugin-siyuan.git main
+          cd main
+          cp -R ../dist/* .
+          git add -A
+          git commit -m "Update dist to GitHub Pages"
+          git push -f origin main
+      # # Build for production, 这一步会生成一个 package.zip
+      # - name: Build for production
+      #   run: pnpm build
 
-      - name: Release
-        uses: ncipollo/release-action@v1
-        with:
-          allowUpdates: true
-          artifactErrorsFailBuild: true
-          artifacts: "package.zip"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # prerelease: true
+      # - name: Release
+      #   uses: ncipollo/release-action@v1
+      #   with:
+      #     allowUpdates: true
+      #     artifactErrorsFailBuild: true
+      #     artifacts: "package.zip"
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     # prerelease: true

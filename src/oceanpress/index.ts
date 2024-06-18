@@ -2,11 +2,11 @@ import { h, render } from "preact";
 import { Dialog, Menu, Plugin, showMessage } from "siyuan";
 import { ICON, iconSVG, oceanpress_ui_flag } from "./const";
 import "./index.css";
-import { ocr } from "./libs/ocr/ocr";
+import { ocr } from "../libs/ocr/ocr";
 import { img_ocr_text } from "./ui/img_ocr_text";
 import { widget_btn } from "./ui/widget_btn";
 
-import { UTIF } from "./libs/UTIF";
+import { UTIF } from "../libs/UTIF";
 
 export default class OceanPress extends Plugin {
   async onload() {
@@ -33,6 +33,7 @@ export default class OceanPress extends Plugin {
               this.addUiComponent(widget, h(widget_btn, { widget: widget }));
             }
           });
+          // ocr 文本显示
           document.body.querySelectorAll<HTMLImageElement>(`img[data-src]`).forEach((img) => {
             this.addUiComponent(
               img.parentElement!,
@@ -79,10 +80,14 @@ export default class OceanPress extends Plugin {
             UTIF.replaceIMG();
           }
         }, 1000);
+
         return () => clearInterval(id);
       })(),
     );
-
+    using cleanup = new DisposableStack();
+    cleanup.defer(() => {
+      console.log(333333);
+    });
     // ocr 功能
     this.eventBus.on("open-menu-image", (event) => {
       setTimeout(() => {

@@ -1,5 +1,5 @@
 import { useState } from "preact/hooks";
-import { ICON, oceanpress_ui_flag, oceanpress_widget_ui } from "~/const";
+import { ICON, oceanpress_ui_flag, oceanpress_widget_ui } from "~/oceanpress/const";
 import { saveWidgetImg } from "~/libs/saveWidgetImg";
 
 export function widget_btn(props: { widget: HTMLElement }) {

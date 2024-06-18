@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "preact/hooks";
-import { oceanpress_ui_flag } from "~/const";
+import { oceanpress_ui_flag } from "~/oceanpress/const";
 import { debounce } from "~/libs/js_util";
 import type { words_result } from "~/libs/ocr/ocr";
 
