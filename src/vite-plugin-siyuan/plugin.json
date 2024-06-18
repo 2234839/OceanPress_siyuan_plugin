@@ -2,7 +2,7 @@
   "name": "vite-plugin",
   "author": "崮生",
   "url": "https://github.com/2234839/OceanPress_siyuan_plugin",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
