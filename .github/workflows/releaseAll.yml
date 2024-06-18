@@ -122,7 +122,6 @@ jobs:
 
       - name: Release
         uses: ncipollo/release-action@v1
-        if: startsWith(github.ref, 'refs/tags/')
         with:
           allowUpdates: true
           artifactErrorsFailBuild: true
