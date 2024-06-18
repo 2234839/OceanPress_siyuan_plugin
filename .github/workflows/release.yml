@@ -53,7 +53,7 @@ jobs:
       - name: build
         run: pnpm build
 
-      - name: Deploy to another repository
+      - name: Deploy vite-plugin-siyuan
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
