@@ -71,6 +71,9 @@ jobs:
           else
             echo "CURRENT_VERSION_IS_NEWER=false" | tee -a $GITHUB_ENV
           fi
+          echo "333333"
+          echo "$CURRENT_VERSION   $TAG"
+          cat $GITHUB_ENV
           git tag -a "v$CURRENT_VERSION" -m "Release version $CURRENT_VERSION"
           git push --tags
           git commit -m "Update dist to GitHub Pages"
