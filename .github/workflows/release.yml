@@ -61,7 +61,7 @@ jobs:
           git config --global user.name "崮生"
           git clone --quiet --branch=main https://x-access-token:${DEPLOY_KEY}@github.com/2234839/vite-plugin-siyuan.git main
           cd main
-          cp -R ../dist/vite-plugin-siyuan/. .
+          rm -rf ./* && cp -R ../dist/vite-plugin-siyuan/. .
           ls
           echo "CURRENT_VERSION=$(cat plugin.json | jq -r '.version')" | tee -a $GITHUB_ENV
           TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
@@ -71,7 +71,7 @@ jobs:
           else
             echo "CURRENT_VERSION_IS_NEWER=false" | tee -a $GITHUB_ENV
           fi
-          git tag -a "v${{ env.VERSION }}" -m "Release version ${{ env.VERSION }}"
+          git tag -a "v${{ env.CURRENT_VERSION }}" -m "Release version ${{ env.CURRENT_VERSION }}"
           git push --tags
           git commit -m "Update dist to GitHub Pages"
           git push -f origin main
