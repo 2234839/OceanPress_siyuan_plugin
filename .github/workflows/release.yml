@@ -55,19 +55,26 @@ jobs:
 
       - name: Deploy to another repository
         env:
-          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }} # 你的 PAT
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
           git config --global user.email "admin@shenzilong.cn"
           git config --global user.name "崮生"
           git clone --quiet --branch=main https://x-access-token:${DEPLOY_KEY}@github.com/2234839/vite-plugin-siyuan.git main
           cd main
-          cp -R ../dist/* .
-          git add -A
-          git commit -m "Update dist to GitHub Pages"
-          git push -f origin main
-      # # Build for production, 这一步会生成一个 package.zip
-      # - name: Build for production
-      #   run: pnpm build
+          cp -R ../dist/vite-plugin-siyuan .
+          echo "CURRENT_VERSION=$(cat package.json | jq -r '.version')" | tee -a $GITHUB_ENV
+          TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
+          echo "LATEST_TAG=$TAG" | tee -a $GITHUB_ENV
+          if [ "$CURRENT_VERSION" != "$LATEST_TAG" ] && [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "CURRENT_VERSION_IS_NEWER=true" | tee -a $GITHUB_ENV
+          else
+            echo "CURRENT_VERSION_IS_NEWER=false" | tee -a $GITHUB_ENV
+          fi
+          # git tag -a "v${{ env.VERSION }}" -m "Release version ${{ env.VERSION }}"
+          # git add -A
+          # git commit -m "Update dist to GitHub Pages"
+          # git push -f origin main
+          # cd .. && rm -r main
 
       # - name: Release
       #   uses: ncipollo/release-action@v1
