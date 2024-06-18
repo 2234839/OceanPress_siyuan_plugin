@@ -70,7 +70,7 @@ jobs:
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
           echo "CURRENT_VERSION=$CURRENT_VERSION   LATEST_TAG=$LATEST_TAG"
           git add .
-          if [git status --porcelain | grep -q '^'] ; then
+          if  git status --porcelain | grep -q '^ M' ; then
             git commit -m "Update dist to GitHub Pages"
             git push -f origin main
           else
@@ -97,7 +97,7 @@ jobs:
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
           echo "CURRENT_VERSION=$CURRENT_VERSION   LATEST_TAG=$LATEST_TAG"
           git add .
-          if [git status --porcelain | grep -q '^'] ; then
+          if  git status --porcelain | grep -q '^ M' ; then
             git commit -m "Update dist to GitHub Pages"
             git push -f origin main
           else
