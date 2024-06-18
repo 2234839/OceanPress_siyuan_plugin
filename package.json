@@ -8,18 +8,16 @@
   "author": "崮生",
   "license": "GPL-3.0",
   "scripts": {
-    "make-link": "node --no-warnings ./scripts/make_dev_link.js",
-    "dev": "vite build --watch",
-    "build": "vite build"
+    "dev": "vite",
+    "buildAll": "pnpm /build:.*/",
+    "dev:vite-plugin-siyuan": "cross-env plugin_name=vite-plugin-siyuan pnpm vite",
+    "build:vite-plugin-siyuan": "cross-env plugin_name=vite-plugin-siyuan vite build"
   },
   "devDependencies": {
-    "glob": "^7.2.3",
+    "cross-env": "^7.0.3",
     "siyuan": "^1.0.2",
-    "svelte": "^3.59.2",
-    "ts-node": "^10.9.2",
     "typescript": "^5.4.5",
     "vite": "^5.3.1",
-    "vite-plugin-static-copy": "^0.15.0",
     "vite-plugin-zip-pack": "^1.2.3"
   },
   "dependencies": {

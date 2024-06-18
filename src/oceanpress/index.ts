@@ -84,10 +84,7 @@ export default class OceanPress extends Plugin {
         return () => clearInterval(id);
       })(),
     );
-    using cleanup = new DisposableStack();
-    cleanup.defer(() => {
-      console.log(333333);
-    });
+
     // ocr 功能
     this.eventBus.on("open-menu-image", (event) => {
       setTimeout(() => {

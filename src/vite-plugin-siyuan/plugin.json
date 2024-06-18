@@ -1,8 +1,8 @@
 {
-  "name": "vite-plugin",
+  "name": "vite-plugin-siyuan",
   "author": "崮生",
   "url": "https://github.com/2234839/vite-plugin-siyuan",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
@@ -11,8 +11,8 @@
     "all"
   ],
   "displayName": {
-    "en_US": "vite-plugin",
-    "zh_CN": "vite-plugin"
+    "en_US": "vite-plugin-siyuan",
+    "zh_CN": "vite-plugin-siyuan"
   },
   "description": {
     "en_US": "",
