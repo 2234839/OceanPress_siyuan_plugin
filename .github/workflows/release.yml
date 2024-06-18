@@ -51,7 +51,7 @@ jobs:
         run: pnpm install
 
       - name: build
-        run: pnpm build
+        run: pnpm buildAll
 
       - name: Deploy vite-plugin-siyuan
         env:
