@@ -6,7 +6,7 @@ const viteConfig: UserConfigExport = (ctx) => {
   const env = loadEnv(ctx.mode, "./") as {
     VITE_targetDir?: string;
   };
-  const pluginName = "vite-plugin";
+  const pluginName = "vite-plugin-siyuan";
   return defineConfig({
     publicDir: `./src/${pluginName}`,
     resolve: {
