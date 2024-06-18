@@ -60,7 +60,6 @@ jobs:
           git config --global user.email "admin@shenzilong.cn"
           git config --global user.name "崮生"
           git clone --quiet --branch=main https://x-access-token:${DEPLOY_KEY}@github.com/2234839/vite-plugin-siyuan.git main
-          cd dist && ls && cd vite-plugin-siyuan && ls && cd ../../
           cd main
           cp -R ../dist/vite-plugin-siyuan/. .
           ls
@@ -72,11 +71,11 @@ jobs:
           else
             echo "CURRENT_VERSION_IS_NEWER=false" | tee -a $GITHUB_ENV
           fi
-          # git tag -a "v${{ env.VERSION }}" -m "Release version ${{ env.VERSION }}"
-          # git add -A
-          # git commit -m "Update dist to GitHub Pages"
-          # git push -f origin main
-          # cd .. && rm -r main
+          git tag -a "v${{ env.VERSION }}" -m "Release version ${{ env.VERSION }}"
+          git push --tags
+          git commit -m "Update dist to GitHub Pages"
+          git push -f origin main
+          cd .. && rm -r main
 
       # - name: Release
       #   uses: ncipollo/release-action@v1
