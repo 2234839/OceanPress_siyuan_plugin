@@ -17,8 +17,7 @@
     "cross-env": "^7.0.3",
     "siyuan": "^1.0.2",
     "typescript": "^5.4.5",
-    "vite": "^5.3.1",
-    "vite-plugin-zip-pack": "^1.2.3"
+    "vite": "^5.3.1"
   },
   "dependencies": {
     "@llej/js_util": "^1.0.10",

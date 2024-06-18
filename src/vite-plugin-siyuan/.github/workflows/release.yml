@@ -16,6 +16,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Manual Zip
+        run: |
+          zip -r package.zip .
+
       - name: Release
         uses: ncipollo/release-action@v1
         with:

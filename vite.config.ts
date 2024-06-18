@@ -1,6 +1,5 @@
 import { resolve } from "path";
 import { defineConfig, loadEnv, type UserConfigExport } from "vite";
-import zipPack from "vite-plugin-zip-pack";
 
 const viteConfig: UserConfigExport = (ctx) => {
   const env = loadEnv(ctx.mode, "./") as {
@@ -69,14 +68,6 @@ const viteConfig: UserConfigExport = (ctx) => {
             format: "cjs",
             assetFileNames: `asset/[name]-[hash][extname]`,
           },
-        ],
-        plugins: [
-          ctx.mode === "production" &&
-            zipPack({
-              inDir: `dist/${pluginName}`,
-              outDir: `dist/${pluginName}`,
-              outFileName: "package.zip",
-            }),
         ],
         external: ["siyuan", "process"],
       },

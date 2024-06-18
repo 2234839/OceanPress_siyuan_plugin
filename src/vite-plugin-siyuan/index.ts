@@ -13,15 +13,21 @@ globalThis.require = (moduleName: string) => {
 };
 
 export default class VitePlugin extends siyuan.Plugin {
-  onload(): void {
+  async onload() {
     // @ts-ignore
     globalThis.vitePlugin = this;
-    if (!this.data.url) return;
-    this.loadByUrl(this.data.url);
+    const url = await this.loadData("url");
+    if (!url) return;
+    this.loadByUrl(url);
+  }
+  layoutRead = false;
+  onLayoutReady(): void {
+    this.layoutRead = true;
   }
   public loadByUrl(url: string) {
+    this.saveData("url", url);
+
     let src = `${url}?t=${Date.now()}`;
-    this.saveData("url", src);
     import(src).then((module) => {
       const pluginClass = module.default;
       const plugin = new pluginClass({
@@ -29,9 +35,12 @@ export default class VitePlugin extends siyuan.Plugin {
         displayName: pluginClass.name,
         name: pluginClass.name,
         i18n: {},
-      });
+      }) as siyuan.Plugin;
       this.app.plugins.push(plugin);
       plugin.onload();
+      if (this.layoutRead) {
+        plugin.onLayoutReady();
+      }
       console.log("[load plugin]", { module, pluginClass, plugin });
     });
   }
