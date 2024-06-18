@@ -74,7 +74,7 @@ jobs:
             git commit -m "Update dist to GitHub Pages"
             git push -f origin main
           else
-            echo "No changes"
+            echo "No changes  "
           fi
           if [ "$CURRENT_VERSION" != "$LATEST_TAG" ] && [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "CURRENT_VERSION_IS_NEWER=true"
