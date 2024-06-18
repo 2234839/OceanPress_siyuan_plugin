@@ -61,6 +61,7 @@ jobs:
           git config --global user.name "崮生"
           git clone --quiet --branch=main https://x-access-token:${DEPLOY_KEY}@github.com/2234839/vite-plugin-siyuan.git main
           cd main
+          cd dist && ls && cd vite-plugin-siyuan && ls && cd ../../
           cp -R ../dist/vite-plugin-siyuan .
           ls
           echo "CURRENT_VERSION=$(cat plugin.json | jq -r '.version')" | tee -a $GITHUB_ENV
