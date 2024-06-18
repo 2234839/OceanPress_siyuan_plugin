@@ -70,10 +70,13 @@ jobs:
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
           echo "CURRENT_VERSION=$CURRENT_VERSION   LATEST_TAG=$LATEST_TAG"
           git add .
-          git commit -m "Update dist to GitHub Pages"
-          git push -f origin main
-          # 判断是否有更改                                tag
-          if [git status --porcelain | grep -q '^'] && [ "$CURRENT_VERSION" != "$LATEST_TAG" ] && [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [git status --porcelain | grep -q '^'] ; then
+            git commit -m "Update dist to GitHub Pages"
+            git push -f origin main
+          else
+            echo "No changes"
+          fi
+          if [ "$CURRENT_VERSION" != "$LATEST_TAG" ] && [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "CURRENT_VERSION_IS_NEWER=true"
             git tag -a "v$CURRENT_VERSION" -m "Release version $CURRENT_VERSION"
             git push --tags
@@ -94,9 +97,13 @@ jobs:
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
           echo "CURRENT_VERSION=$CURRENT_VERSION   LATEST_TAG=$LATEST_TAG"
           git add .
-          git commit -m "Update dist to GitHub Pages"
-          git push -f origin main
-          if [git status --porcelain | grep -q '^'] && [ "$CURRENT_VERSION" != "$LATEST_TAG" ] && [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [git status --porcelain | grep -q '^'] ; then
+            git commit -m "Update dist to GitHub Pages"
+            git push -f origin main
+          else
+            echo "No changes"
+          fi
+          if [ "$CURRENT_VERSION" != "$LATEST_TAG" ] && [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "CURRENT_VERSION_IS_NEWER=true"
             git tag -a "v$CURRENT_VERSION" -m "Release version $CURRENT_VERSION"
             git push --tags
