@@ -16,6 +16,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: cleanup
+        run: |
+          rm -r .git
+          rm -r .github
+
       - name: Manual Zip
         run: |
           zip -r package.zip .
