@@ -1,14 +1,35 @@
 import { resolve } from "path";
-import { defineConfig, loadEnv, type UserConfigExport } from "vite";
-import solidPlugin from "vite-plugin-solid";
-console.log("=============================");
+import { defineConfig, type UserConfigExport } from "vite";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
+import solidPlugin from "vite-plugin-solid";
+import { writeFile } from "fs/promises";
+import { execSync } from "child_process";
+
+console.log("=============================");
 const viteConfig: UserConfigExport = (ctx) => {
-  const env = loadEnv(ctx.mode, "./") as {
-    VITE_targetDir?: string;
-  };
   const pluginName = process.env.plugin_name ?? "vite-plugin-siyuan";
   console.log("[pluginName]", pluginName, ctx.mode);
+  if (ctx.mode === "production") {
+    // 自动提升插件版本号
+    import(`./src/${pluginName}/plugin.json`).then((r) => {
+      const res = execSync(`git status --porcelain ./src/${pluginName}/`).toString("utf-8");
+      if (res.length > 0) {
+        writeFile(
+          `./src/${pluginName}/plugin.json`,
+          JSON.stringify(
+            {
+              ...r.default,
+              version: r.default.version.replace(/(\d+)$/, (match) => parseInt(match, 10) + 1),
+            },
+            null,
+            2,
+          ),
+        );
+      }
+      const pluginJSON = console.log("[r]", res);
+    });
+  }
+
   return defineConfig({
     // base: ctx.mode ==="development" ? "/" :"/plugins/oceanpress-siyuan-plugin/",
     publicDir: `./src/${pluginName}`,
@@ -77,7 +98,7 @@ const viteConfig: UserConfigExport = (ctx) => {
             entryFileNames: "index.js",
             format: "cjs",
             assetFileNames: `asset/[name]-[hash][extname]`,
-            manualChunks:undefined
+            manualChunks: undefined,
           },
         ],
         external: ["siyuan", "process"],
