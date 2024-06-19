@@ -170,15 +170,21 @@ LIMIT 99999`);
     let i = 0;
     let successful: string[] = [];
     let failing: string[] = [];
-    showMessage(`可以打开开发者工具查看进度`)
-    for (const img of assets) {
-      const ok = await this.ocrAssetsUrl(img.path);
+    showMessage(`可以打开开发者工具查看进度`);
+    for (const img of assets.slice(0, 10)) {
+      let ok = false;
+      try {
+        ok = (await this.ocrAssetsUrl(img.path)) ?? false;
+      } catch (error) {
+        ok = false;
+        console.log("[ocr error]", error);
+      }
       i += 1;
       if (ok) {
         successful.push(img.path);
       } else {
         failing.push(img.path);
-        console.log("失败失败", img.path);
+        console.log("失败", img.path);
       }
       console.log(
         `总计:${assets.length} 进度 ${((i / assets.length) * 100).toFixed(2)} 成功识别:${
@@ -186,6 +192,14 @@ LIMIT 99999`);
         } 失败:${failing.length} `,
       );
     }
+    console.log(`以下图片识别失败:`, failing);
+    showMessage(
+      `识别完毕<br/> 总计:${assets.length} 进度 ${((i / assets.length) * 100).toFixed(
+        2,
+      )} 成功识别:${successful.length} 失败:${failing.length} `,
+      999_000000,
+      "info",
+    );
   }
   async ocrConfIsOK() {
     const ocrConf = this.ocrConfig.value();
