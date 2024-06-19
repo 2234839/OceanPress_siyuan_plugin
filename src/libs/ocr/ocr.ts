@@ -1,6 +1,13 @@
 import { showMessage } from "siyuan";
 
-export async function ocr(opt: { name: string; imgBase64: string; apiSK: string }) {
+export async function ocr(
+  opt:
+    | { name: string; imgBase64: string; apiSK: string; type?: "oceanpress" }
+    | { name: string; imgBase64: string; type: "umi-ocr" },
+) {
+  if (opt.type === "umi-ocr") {
+    return;
+  }
   return fetch(`https://apis.shenzilong.cn/api/ocr?sk=${opt.apiSK}`, {
     method: "POST",
     headers: {

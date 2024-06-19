@@ -1,37 +1,33 @@
-import { useCallback, useEffect, useState } from "preact/hooks";
 import { oceanpress_ui_flag } from "~/oceanpress-siyuan-plugin/const";
 import { debounce } from "~/libs/js_util";
 import type { words_result } from "~/libs/ocr/ocr";
-
+import { createEffect, createSignal } from "solid-js";
+import styles from "./img_ocr_text.module.css";
 // assetsPath, "ocr-texts.json" 思源的ocr结果存储在这里
 export function img_ocr_text(props: {
-  data: () => Promise<words_result>;
+  data: () => words_result;
   /**
    * 图片显示高度宽度和实际高宽显示比，用于处理图片缩放
    */
   imgEL: HTMLImageElement;
 }) {
   const img = props.imgEL;
-  const [data, setData] = useState(null as null | words_result);
+  const [data, setData] = createSignal(null as null | words_result);
 
-  if (!data) {
-    props.data().then((r) => {
-      setData(r);
-    });
+  // console.log("[props]", data(),props.data());
+  if (!data()) {
+    setData(props.data());
   }
 
   // 处理图片缩放
-  const [widthRate, set_widthRate] = useState(img.width / img.naturalWidth);
-  const [heightRate, set_heightRate] = useState(img.height / img.naturalHeight);
+  const [widthRate, set_widthRate] = createSignal(img.width / img.naturalWidth);
+  const [heightRate, set_heightRate] = createSignal(img.height / img.naturalHeight);
 
-  const resizeFn = useCallback(
-    debounce(() => {
-      set_widthRate(img.width / img.naturalWidth);
-      set_heightRate(img.height / img.naturalHeight);
-    }, 500),
-    [img],
-  );
-  useEffect(() => {
+  const resizeFn = debounce(() => {
+    set_widthRate(img.width / img.naturalWidth);
+    set_heightRate(img.height / img.naturalHeight);
+  }, 500);
+  createEffect(() => {
     const resizeObserver = new ResizeObserver(resizeFn);
     resizeObserver.observe(img, {
       box: "border-box", // 可选，指定盒子模型
@@ -41,39 +37,26 @@ export function img_ocr_text(props: {
     };
   });
 
-  function onClick(event: MouseEvent) {
-    // 阻止事件冒泡，因为思源会处理此事件导致不符合预期的行为
-    event.stopPropagation();
-  }
-  function onCopy(event: ClipboardEvent) {
-    // 阻止事件冒泡，因为思源会处理此事件导致不符合预期的行为
-    event.stopPropagation();
-  }
   return (
     <div
-      className={oceanpress_ui_flag}
+      class={oceanpress_ui_flag + " " + styles.ocr_text_panel}
       title="点击保存当前挂件为图片供OceanPress使用,图标为灰色表示尚未保存过此挂件"
       style={{
-        position: "absolute",
-        "user-select": "text",
-        width: "100%",
-        height: "100%",
-        left: 0,
-        top: 0,
-        outline: data?.length ? `solid 1px #2ecb23` : "",
+        outline: data()?.length ? `solid 1px #2ecb23` : "",
       }}
-      onClick={onClick}
-      onCopy={onCopy}>
-      {data?.map((item) => {
+      // 阻止事件冒泡，因为思源会处理此事件导致不符合预期的行为
+      onclick={(e) => e.stopPropagation()}
+      onCopy={(e) => e.stopPropagation()}>
+      {data()?.map((item) => {
         const miniBox = convertVerticesToRect(
           // 这个盒子看起来比 words_result.location 的效果要好
           item.min_finegrained_vertexes_location || item.vertexes_location,
         );
-        const top = miniBox.top * heightRate;
-        const height = miniBox.height * heightRate;
+        const top = miniBox.top * heightRate();
+        const height = miniBox.height * heightRate();
 
-        const left = miniBox.left * widthRate;
-        const width = miniBox.width * widthRate;
+        const left = miniBox.left * widthRate();
+        const width = miniBox.width * widthRate();
 
         const scale = calcScale(item.words, width, height);
         return (

@@ -1,6 +1,6 @@
 import { resolve } from "path";
 import { defineConfig, loadEnv, type UserConfigExport } from "vite";
-
+import solidPlugin from "vite-plugin-solid";
 console.log("=============================");
 
 const viteConfig: UserConfigExport = (ctx) => {
@@ -26,6 +26,12 @@ const viteConfig: UserConfigExport = (ctx) => {
       "process.env.DEV_MODE": `"${ctx.mode}"`,
     },
     plugins: [
+      solidPlugin({
+        solid: {
+          // 禁止事件委派，不禁用的话 需要 on:click 的形式才能阻止事件冒泡，但 typescript 类型不友好会报错
+          delegateEvents: false,
+        },
+      }),
       // siyuan lib 实际上是空的，在运行时才能够通过 require 进行加载，
       // 而 vite 使用 import 会无法加载到改包，这里做一个 hack 给改成 require
       // 这样配合 vite-plugin-siyuan 就可以在开发的时候直接引用了

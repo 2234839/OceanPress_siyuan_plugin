@@ -1,12 +1,13 @@
-import { h, render } from "preact";
 import { Dialog, Menu, Plugin, showMessage } from "siyuan";
 import { ICON, iconSVG, oceanpress_ui_flag } from "./const";
 import "./index.css";
 import { ocr } from "../libs/ocr/ocr";
 import { img_ocr_text } from "./ui/img_ocr_text";
 import { widget_btn } from "./ui/widget_btn";
-
+import { render } from "solid-js/web";
 import { UTIF } from "../libs/UTIF";
+import { setting_view } from "./ui/setting_view";
+import type { JSX } from "solid-js/jsx-runtime";
 
 export default class OceanPress extends Plugin {
   async onload() {
@@ -27,7 +28,7 @@ export default class OceanPress extends Plugin {
       // 为挂件添加 oceanpress 转化图标
       document.body.querySelectorAll(`div[data-type="NodeWidget"]`).forEach((widget) => {
         if (widget instanceof HTMLElement) {
-          this.addUiComponent(widget, h(widget_btn, { widget: widget }));
+          this.addUiComponent(widget, () => widget_btn({ widget: widget }));
         }
       });
       // ocr 文本显示
@@ -36,11 +37,9 @@ export default class OceanPress extends Plugin {
         const storageName = `ocr_${path}.json`;
         const data = (await this.loadData(storageName))?.words_result;
         if (!data) return;
-
-        this.addUiComponent(
-          img.parentElement!,
-          h(img_ocr_text, {
-            data: async () => data,
+        this.addUiComponent(img.parentElement!, () =>
+          img_ocr_text({
+            data: () => data,
             imgEL: img || [],
           }),
         );
@@ -80,7 +79,7 @@ export default class OceanPress extends Plugin {
     }, 1000);
     this.unloadFn.push(() => clearInterval(id));
 
-    // ocr 功能
+    // ocr 图片菜单按钮
     this.eventBus.on("open-menu-image", (event) => {
       setTimeout(() => {
         // 阻止 思源自身关闭菜单时的ocr TODO 应该要修改思源的 ocr 触发方式
@@ -99,20 +98,6 @@ export default class OceanPress extends Plugin {
 
           const path = imgSrc.replace("/", "_");
           const storageName = `ocr_${path}.json`;
-          const storeValue = await this.loadData(storageName);
-
-          // TODO dev
-          if (storeValue) {
-            console.log(storeValue);
-            fetch("/api/asset/setImageOCRText", {
-              body: JSON.stringify({
-                path: imgSrc,
-                text: storeValue.words_result.map((el: any) => el.words).join(" "),
-              }),
-              method: "POST",
-            });
-            return;
-          }
 
           const apiSK = await this.apiSK();
 
@@ -170,6 +155,14 @@ export default class OceanPress extends Plugin {
       return sk;
     }
   }
+  async settingView() {
+    const dialog = new Dialog({
+      content: `<div class="b3-dialog__content"></div>`,
+    });
+    const div = dialog.element.querySelector(".b3-dialog__content")!;
+    render(() => setting_view({ dialog, setData: () => {} }), div);
+    // render(h(setting_view, { dialog }), dialog.element.querySelector(".b3-dialog__content")!);
+  }
   async onLayoutReady() {
     this.addIcons(`<symbol id="oceanpress_preview">
     <text x="50%" y="50%" text-anchor="middle" alignment-baseline="middle" font-size="13px">👀</text>
@@ -187,20 +180,18 @@ export default class OceanPress extends Plugin {
           },
         });
         menu.addItem({
-          label: "修改 sk",
+          label: "修改 ocr 配置",
           icon: `oceanpress_preview`,
-          click: () => {
-            this.apiSK(true);
-          },
+          click: () => this.settingView(),
         });
         menu.open(event);
       },
     });
-    this.addCommand({
-      hotkey: "",
-      langKey: "预览当前页面",
-      langText: "预览当前页面",
-    });
+    // this.addCommand({
+    //   hotkey: "",
+    //   langKey: "预览当前页面",
+    //   langText: "预览当前页面",
+    // });
   }
 
   unloadFn: (() => void)[] = [];
@@ -208,14 +199,13 @@ export default class OceanPress extends Plugin {
     this.unloadFn.forEach((fn) => fn());
   }
 
-  async addUiComponent(parentEL: HTMLElement, vNode: any) {
+  async addUiComponent(parentEL: HTMLElement, jsxEl: () => JSX.Element) {
     // 因为思源会修改dom，导致添加在文档里的元素消失，所以这里检测是否需要重新添加
     if (parentEL.querySelector("." + oceanpress_ui_flag)) return;
 
     const div = document.createElement("div");
-    this.unloadFn.push(() => div.remove());
-
-    render(vNode, div);
+    const dispose = render(jsxEl, parentEL);
+    this.unloadFn.push(() => (div.remove(), dispose()));
     parentEL.appendChild(div);
   }
   previewCurrentPage() {}

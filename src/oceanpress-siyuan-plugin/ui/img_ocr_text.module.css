@@ -1,0 +1,11 @@
+.ocr_text_panel {
+  position: absolute;
+  user-select: text;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  /* outline: solid 1px #2ecb23; */
+
+  /* outline: data?.length ? `solid 1px #2ecb23` : "", */
+}

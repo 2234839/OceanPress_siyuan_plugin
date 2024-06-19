@@ -19,11 +19,12 @@
     "cross-env": "^7.0.3",
     "siyuan": "^1.0.2",
     "typescript": "^5.4.5",
-    "vite": "^5.3.1"
+    "vite": "^5.3.1",
+    "vite-plugin-solid": "^2.10.2"
   },
   "dependencies": {
     "@llej/js_util": "^1.0.10",
     "modern-screenshot": "^4.4.39",
-    "preact": "^10.22.0"
+    "solid-js": "^1.8.17"
   }
 }
