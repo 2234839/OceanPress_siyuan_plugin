@@ -112,14 +112,14 @@ export default class OceanPress extends Plugin {
           const path = imgSrc.replace("/", "_");
           const storageName = `ocr_${path}.json`;
 
-          const apiSK = await this.apiSK();
+          const ok = await this.ocrConfIsOK();
 
-          if (!apiSK) return;
+          if (!ok) return;
 
           const jobStatus = await ocr({
             name: name || "test.png",
             imgBase64: base64,
-            apiSK,
+            ...this.ocrConfig.value(),
           });
           if (jobStatus?.words_result) {
             this.saveData(storageName, jobStatus);
@@ -130,8 +130,8 @@ export default class OceanPress extends Plugin {
               }),
               method: "POST",
             });
-            // 移除ui组件，定时循环会自动添加一个新的，能够重新加载一遍 json 数据
-            spanImg.querySelector('.'+oceanpress_ui_flag)?.remove()
+            // 移除ui组件，定时循环就会自动添加一个新的，能够重新加载一遍 json 数据
+            spanImg.querySelector("." + oceanpress_ui_flag)?.remove();
             showMessage(`OceanPress ocr 成功`);
           } else {
             showMessage(`OceanPress ocr 失败`);
@@ -140,35 +140,16 @@ export default class OceanPress extends Plugin {
       });
     });
   }
-  async apiSK(rest = false) {
-    const sk: string = this.ocrConfig.value().sk;
-
-    if (!sk || rest) {
-      return new Promise<string | undefined>((r) => {
-        const dialog = new Dialog({
-          title: "输入 sk",
-          content: `<div class="b3-dialog__content">
-           你对<a href="https://afdian.net/@llej0">崮生的爱发电</a>订单号可以作为 sk 填入下方
-            <input class="b3-text-field fn__block" value="" placeholder="请在这里输入 sk" value="${sk}">
-            <div class="b3-dialog__action">
-              <button class="b3-button b3-button--text">confirm</button>
-            </div>
-          </div>
-  `,
-          width: "75%",
-          destroyCallback: () => {
-            const sk = dialog.element.querySelector("input")?.value;
-            r(sk);
-            if (sk) {
-              this.ocrConfig.set({ ...this.ocrConfig.value(), sk });
-            }
-          },
-        });
-        dialog.element.querySelector("button")?.addEventListener("click", () => dialog.destroy());
-      });
+  async ocrConfIsOK() {
+    const ocrConf = this.ocrConfig.value();
+    if (ocrConf.type === "oceanpress" && ocrConf.sk) {
+    } else if (ocrConf.type === "oceanpress" && ocrConf.sk) {
     } else {
-      return sk;
+      showMessage("请先填写 ocr 配置");
+      this.settingView();
+      return false;
     }
+    return true;
   }
   async settingView() {
     const dialog = new Dialog({

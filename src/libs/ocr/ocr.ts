@@ -2,13 +2,13 @@ import { showMessage } from "siyuan";
 
 export async function ocr(
   opt:
-    | { name: string; imgBase64: string; apiSK: string; type?: "oceanpress" }
-    | { name: string; imgBase64: string; type: "umi-ocr" },
+    | { name: string; imgBase64: string; sk: string; type?: "oceanpress" }
+    | { name: string; imgBase64: string; type: "umi-ocr"; umiApi: string },
 ) {
   if (opt.type === "umi-ocr") {
     return;
   }
-  return fetch(`https://apis.shenzilong.cn/api/ocr?sk=${opt.apiSK}`, {
+  return fetch(`https://apis.shenzilong.cn/api/ocr?sk=${opt.sk}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
