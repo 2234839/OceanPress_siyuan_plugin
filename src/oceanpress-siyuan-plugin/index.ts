@@ -12,6 +12,10 @@ import { siyuan as siyuanUtil } from "@llej/js_util";
 import { createSignal } from "solid-js";
 import { sql } from "~/libs/api";
 
+// TODO 无效 ocr 资源清理
+// ocr 时 图标旋转
+// 识别失败的设置指定 ocr 文本
+
 export default class OceanPress extends Plugin {
   ocrConfig = siyuanUtil.bindData({
     that: this,

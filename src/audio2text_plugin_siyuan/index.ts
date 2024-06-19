@@ -1,5 +1,4 @@
 import { Plugin } from "siyuan";
-import "./index.css";
 import { insertBlock, setBlockAttrs, sql, updateBlock } from "~/libs/api";
 
 const custom_audio_id = "custom-audio_id";
