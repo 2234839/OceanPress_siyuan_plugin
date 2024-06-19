@@ -136,7 +136,8 @@ export default class OceanPress extends Plugin {
       name: name || "test.png",
       imgBase64: base64,
       ...this.ocrConfig.value(),
-    });
+      // 防止下面的逻辑因为 throw 无法执行
+    }).catch((e) => ({ words_result: undefined }));
     if (jobStatus?.words_result) {
       this.saveData(storageName, jobStatus);
       fetch("/api/asset/setImageOCRText", {
@@ -148,6 +149,9 @@ export default class OceanPress extends Plugin {
       });
       return true;
     } else {
+      // 识别失败的也生成结果文件，避免有许多识别失败的文件批量重新识别的时候消耗时间在这些文件上
+      console.log("[storageName]", storageName);
+      this.saveData(storageName, {});
       return false;
     }
   }
@@ -202,7 +206,12 @@ LIMIT 99999`);
       } 失败:${failing.length} 跳过:${skip.length} `;
       console.log(msg);
     }
-    console.log(`以下图片识别失败:`, failing);
+    msg = `总计:${assets.length} 进度 ${((i / assets.length) * 100).toFixed(2)} 成功识别:${
+      successful.length
+    } 失败:${failing.length} 跳过:${skip.length} `;
+    if (failing.length) {
+      console.log(`以下图片识别失败:`, failing);
+    }
     showMessage(msg, 999_000000, "info");
   }
   async ocrConfIsOK() {
@@ -267,6 +276,8 @@ LIMIT 99999`);
 
   unloadFn: (() => void)[] = [];
   async onunload() {
+    console.log("[onunload]");
+
     this.unloadFn.forEach((fn) => fn());
   }
 
