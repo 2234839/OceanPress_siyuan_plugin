@@ -1,0 +1,30 @@
+{
+  "name": "template",
+  "author": "崮生",
+  "url": "https://github.com/2234839/template",
+  "version": "0.0.1",
+  "minAppVersion": "2.10.3",
+  "backends": [
+    "all"
+  ],
+  "frontends": [
+    "all"
+  ],
+  "displayName": {
+    "en_US": "template",
+    "zh_CN": "template"
+  },
+  "description": {
+    "en_US": "",
+    "zh_CN": ""
+  },
+  "readme": {
+    "en_US": "README.md",
+    "zh_CN": "README.md"
+  },
+  "funding": {
+    "custom": [
+      "https://afdian.net/@llej0"
+    ]
+  }
+}

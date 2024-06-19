@@ -1,0 +1,30 @@
+{
+  "name": "sy2video-plugin-siyuan",
+  "author": "崮生",
+  "url": "https://github.com/2234839/sy2video-plugin-siyuan",
+  "version": "0.0.1",
+  "minAppVersion": "2.10.3",
+  "backends": [
+    "all"
+  ],
+  "frontends": [
+    "all"
+  ],
+  "displayName": {
+    "en_US": "sy2video-plugin-siyuan",
+    "zh_CN": "sy2video-plugin-siyuan"
+  },
+  "description": {
+    "en_US": "",
+    "zh_CN": ""
+  },
+  "readme": {
+    "en_US": "README.md",
+    "zh_CN": "README.md"
+  },
+  "funding": {
+    "custom": [
+      "https://afdian.net/@llej0"
+    ]
+  }
+}
