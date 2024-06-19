@@ -47,14 +47,16 @@ export default class VitePlugin extends siyuan.Plugin {
         name: pluginName,
         i18n: {},
       }) as siyuan.Plugin;
+
+      const oldPlugin = this.app.plugins.find((el) => el.name === pluginName);
+      oldPlugin?.onunload();
+
       this.app.plugins.push(plugin);
       plugin.onload();
       if (this.layoutRead) {
         plugin.onLayoutReady();
       }
       console.log("[load plugin]", { module, pluginClass, plugin });
-      const oldPlugin = this.app.plugins.find((el) => el.name === pluginName);
-      oldPlugin?.onunload();
     });
   }
   public async setViteUrl(url: string) {
