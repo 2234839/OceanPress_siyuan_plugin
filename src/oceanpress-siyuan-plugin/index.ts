@@ -9,7 +9,6 @@ import { widget_btn } from "./ui/widget_btn";
 import { UTIF } from "../libs/UTIF";
 
 export default class OceanPress extends Plugin {
-  pluginName = "oceanpress-siyuan-plugin";
   async onload() {
     // 移动端 debug
     //     eval(`
@@ -23,68 +22,63 @@ export default class OceanPress extends Plugin {
     // };
     // document.head.appendChild(script);
     //       `);
-
     // 定时遍历新元素
-    this.unloadFn.push(
-      (() => {
-        const id = setInterval(() => {
-          // 为挂件添加 oceanpress 转化图标
-          document.body.querySelectorAll(`div[data-type="NodeWidget"]`).forEach((widget) => {
-            if (widget instanceof HTMLElement) {
-              this.addUiComponent(widget, h(widget_btn, { widget: widget }));
-            }
-          });
-          // ocr 文本显示
-          document.body.querySelectorAll<HTMLImageElement>(`img[data-src]`).forEach((img) => {
-            this.addUiComponent(
-              img.parentElement!,
-              h(img_ocr_text, {
-                data: async () => {
-                  const path = img.dataset.src!.replace("/", "_");
-                  const storageName = `ocr_${path}.json`;
-                  return (await this.loadData(storageName))?.words_result || [];
-                },
-                imgEL: img,
-              }),
-            );
-          });
-          // 替换 tif 资源链接为图片链接
-          document
-            .querySelectorAll<HTMLElement>('span[data-type="a"][data-href$=".tif"]')
-            .forEach((span) => {
-              const href = span.dataset.href;
-              const name = span.textContent;
+    const id = setInterval(() => {
+      // 为挂件添加 oceanpress 转化图标
+      document.body.querySelectorAll(`div[data-type="NodeWidget"]`).forEach((widget) => {
+        if (widget instanceof HTMLElement) {
+          this.addUiComponent(widget, h(widget_btn, { widget: widget }));
+        }
+      });
+      // ocr 文本显示
+      document.body.querySelectorAll<HTMLImageElement>(`img[data-src]`).forEach(async (img) => {
+        const path = img.dataset.src!.replace("/", "_");
+        const storageName = `ocr_${path}.json`;
+        const data = (await this.loadData(storageName))?.words_result;
+        if (!data) return;
 
-              var htmlString = `<span contenteditable="false" data-type="img"
-            class="img"><span> </span><span><span class="protyle-action protyle-icons"><span
-                        class="protyle-icon protyle-icon--only"><svg class="svg">
-                            <use xlink:href="#iconMore"></use>
-                        </svg></span></span><img src="${href}"
-                    data-src="${href}" alt="image"><span
-                    class="protyle-action__drag"></span><span class="protyle-action__title"></span></span><span>
-            </span></span>`;
-              var tempDiv = document.createElement("div");
-              tempDiv.innerHTML = htmlString;
-              var domElement = tempDiv.firstChild!;
+        this.addUiComponent(
+          img.parentElement!,
+          h(img_ocr_text, {
+            data: async () => data,
+            imgEL: img || [],
+          }),
+        );
+      });
+      // 替换 tif 资源链接为图片链接
+      document
+        .querySelectorAll<HTMLElement>('span[data-type="a"][data-href$=".tif"]')
+        .forEach((span) => {
+          const href = span.dataset.href;
+          const name = span.textContent;
 
-              span.parentNode!.replaceChild(domElement, span);
-              console.log("替换tif为img", href, name, domElement);
-              setTimeout(() => {}, 300);
-            });
-          const imgTifEl = [
-            ...document.querySelectorAll<HTMLImageElement>('img[data-src$=".tif"]'),
-          ].filter((el) => !el.src.startsWith("data:"));
+          var htmlString = `<span contenteditable="false" data-type="img"
+        class="img"><span> </span><span><span class="protyle-action protyle-icons"><span
+                    class="protyle-icon protyle-icon--only"><svg class="svg">
+                        <use xlink:href="#iconMore"></use>
+                    </svg></span></span><img src="${href}"
+                data-src="${href}" alt="image"><span
+                class="protyle-action__drag"></span><span class="protyle-action__title"></span></span><span>
+        </span></span>`;
+          var tempDiv = document.createElement("div");
+          tempDiv.innerHTML = htmlString;
+          var domElement = tempDiv.firstChild!;
 
-          if (imgTifEl.length > 0) {
-            console.log("[imgTifEl]", imgTifEl);
-            // @ts-ignore
-            UTIF.replaceIMG();
-          }
-        }, 1000);
+          span.parentNode!.replaceChild(domElement, span);
+          console.log("替换tif为img", href, name, domElement);
+          setTimeout(() => {}, 300);
+        });
+      const imgTifEl = [
+        ...document.querySelectorAll<HTMLImageElement>('img[data-src$=".tif"]'),
+      ].filter((el) => !el.src.startsWith("data:"));
 
-        return () => clearInterval(id);
-      })(),
-    );
+      if (imgTifEl.length > 0) {
+        console.log("[imgTifEl]", imgTifEl);
+        // @ts-ignore
+        UTIF.replaceIMG();
+      }
+    }, 1000);
+    this.unloadFn.push(() => clearInterval(id));
 
     // ocr 功能
     this.eventBus.on("open-menu-image", (event) => {
