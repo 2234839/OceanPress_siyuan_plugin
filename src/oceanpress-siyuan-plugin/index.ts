@@ -143,7 +143,7 @@ export default class OceanPress extends Plugin {
   async ocrConfIsOK() {
     const ocrConf = this.ocrConfig.value();
     if (ocrConf.type === "oceanpress" && ocrConf.sk) {
-    } else if (ocrConf.type === "oceanpress" && ocrConf.sk) {
+    } else if (ocrConf.type === "umi-ocr" && ocrConf.umiApi) {
     } else {
       showMessage("请先填写 ocr 配置");
       this.settingView();
@@ -168,7 +168,6 @@ export default class OceanPress extends Plugin {
         }),
       div,
     );
-    // render(h(setting_view, { dialog }), dialog.element.querySelector(".b3-dialog__content")!);
   }
   async onLayoutReady() {
     this.addIcons(`<symbol id="oceanpress_preview">
