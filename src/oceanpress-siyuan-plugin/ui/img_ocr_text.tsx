@@ -5,7 +5,7 @@ import { createEffect, createSignal } from "solid-js";
 import styles from "./img_ocr_text.module.css";
 // assetsPath, "ocr-texts.json" 思源的ocr结果存储在这里
 export function img_ocr_text(props: {
-  data: () => words_result;
+  data: () => Promise<words_result>;
   /**
    * 图片显示高度宽度和实际高宽显示比，用于处理图片缩放
    */
@@ -13,10 +13,13 @@ export function img_ocr_text(props: {
 }) {
   const img = props.imgEL;
   const [data, setData] = createSignal(null as null | words_result);
+  console.log(11);
 
   // console.log("[props]", data(),props.data());
   if (!data()) {
-    setData(props.data());
+    props.data().then((d) => {
+      setData(d);
+    });
   }
 
   // 处理图片缩放

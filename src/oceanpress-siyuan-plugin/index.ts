@@ -8,8 +8,19 @@ import { render } from "solid-js/web";
 import { UTIF } from "../libs/UTIF";
 import { setting_view } from "./ui/setting_view";
 import type { JSX } from "solid-js/jsx-runtime";
+import { siyuan as siyuanUtil } from "@llej/js_util";
+import { createSignal } from "solid-js";
 
 export default class OceanPress extends Plugin {
+  ocrConfig = siyuanUtil.bindData({
+    that: this,
+    initValue: {
+      type: "oceanpress" as "oceanpress" | "umi-ocr",
+      sk: "",
+      umiApi: "",
+    },
+    storageName: "ocrConfig.json",
+  });
   async onload() {
     // 移动端 debug
     //     eval(`
@@ -24,6 +35,7 @@ export default class OceanPress extends Plugin {
     // document.head.appendChild(script);
     //       `);
     // 定时遍历新元素
+
     const id = setInterval(() => {
       // 为挂件添加 oceanpress 转化图标
       document.body.querySelectorAll(`div[data-type="NodeWidget"]`).forEach((widget) => {
@@ -33,13 +45,14 @@ export default class OceanPress extends Plugin {
       });
       // ocr 文本显示
       document.body.querySelectorAll<HTMLImageElement>(`img[data-src]`).forEach(async (img) => {
-        const path = img.dataset.src!.replace("/", "_");
-        const storageName = `ocr_${path}.json`;
-        const data = (await this.loadData(storageName))?.words_result;
-        if (!data) return;
         this.addUiComponent(img.parentElement!, () =>
           img_ocr_text({
-            data: () => data,
+            data: async () => {
+              const path = img.dataset.src!.replace("/", "_");
+              const storageName = `ocr_${path}.json`;
+              const data = (await this.loadData(storageName))?.words_result;
+              return data;
+            },
             imgEL: img || [],
           }),
         );
@@ -117,6 +130,8 @@ export default class OceanPress extends Plugin {
               }),
               method: "POST",
             });
+            // 移除ui组件，定时循环会自动添加一个新的，能够重新加载一遍 json 数据
+            spanImg.querySelector('.'+oceanpress_ui_flag)?.remove()
             showMessage(`OceanPress ocr 成功`);
           } else {
             showMessage(`OceanPress ocr 失败`);
@@ -126,7 +141,7 @@ export default class OceanPress extends Plugin {
     });
   }
   async apiSK(rest = false) {
-    const sk: string = await this.loadData("apiSK");
+    const sk: string = this.ocrConfig.value().sk;
 
     if (!sk || rest) {
       return new Promise<string | undefined>((r) => {
@@ -145,7 +160,7 @@ export default class OceanPress extends Plugin {
             const sk = dialog.element.querySelector("input")?.value;
             r(sk);
             if (sk) {
-              this.saveData("apiSK", sk);
+              this.ocrConfig.set({ ...this.ocrConfig.value(), sk });
             }
           },
         });
@@ -160,7 +175,18 @@ export default class OceanPress extends Plugin {
       content: `<div class="b3-dialog__content"></div>`,
     });
     const div = dialog.element.querySelector(".b3-dialog__content")!;
-    render(() => setting_view({ dialog, setData: () => {} }), div);
+    const dataSignal = createSignal(this.ocrConfig.value());
+    render(
+      () =>
+        setting_view({
+          dialog,
+          dataSignal,
+          save: () => {
+            this.ocrConfig.set(dataSignal[0]());
+          },
+        }),
+      div,
+    );
     // render(h(setting_view, { dialog }), dialog.element.querySelector(".b3-dialog__content")!);
   }
   async onLayoutReady() {
@@ -199,6 +225,7 @@ export default class OceanPress extends Plugin {
     this.unloadFn.forEach((fn) => fn());
   }
 
+  // 如果 ui 组件已添加，就不会重复添加
   async addUiComponent(parentEL: HTMLElement, jsxEl: () => JSX.Element) {
     // 因为思源会修改dom，导致添加在文档里的元素消失，所以这里检测是否需要重新添加
     if (parentEL.querySelector("." + oceanpress_ui_flag)) return;
