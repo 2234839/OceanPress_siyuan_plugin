@@ -10,6 +10,7 @@ import { setting_view } from "./ui/setting_view";
 import type { JSX } from "solid-js/jsx-runtime";
 import { siyuan as siyuanUtil } from "@llej/js_util";
 import { createSignal } from "solid-js";
+import { sql } from "~/libs/api";
 
 export default class OceanPress extends Plugin {
   ocrConfig = siyuanUtil.bindData({
@@ -106,39 +107,85 @@ export default class OceanPress extends Plugin {
           const spanImg = event.detail.element as HTMLElement;
           const img = spanImg.querySelector(`img[data-src]`) as HTMLImageElement;
           const imgSrc = img.dataset.src!;
-          const name = imgSrc.split("/").pop()!;
-          const base64 = await imageToBase64(imgSrc);
-
-          const path = imgSrc.replace("/", "_");
-          const storageName = `ocr_${path}.json`;
-
-          const ok = await this.ocrConfIsOK();
-
-          if (!ok) return;
-
-          const jobStatus = await ocr({
-            name: name || "test.png",
-            imgBase64: base64,
-            ...this.ocrConfig.value(),
-          });
-          if (jobStatus?.words_result) {
-            this.saveData(storageName, jobStatus);
-            fetch("/api/asset/setImageOCRText", {
-              body: JSON.stringify({
-                path: imgSrc,
-                text: jobStatus.words_result.map((el) => el.words).join(" "),
-              }),
-              method: "POST",
-            });
+          const ok = await this.ocrAssetsUrl(imgSrc);
+          if (ok) {
+            showMessage(`OceanPress ocr 成功`);
             // 移除ui组件，定时循环就会自动添加一个新的，能够重新加载一遍 json 数据
             spanImg.querySelector("." + oceanpress_ui_flag)?.remove();
-            showMessage(`OceanPress ocr 成功`);
           } else {
             showMessage(`OceanPress ocr 失败`);
           }
         },
       });
     });
+  }
+  async ocrAssetsUrl(imgSrc: string) {
+    const name = imgSrc.split("/").pop()!;
+    const base64 = await imageToBase64(imgSrc);
+
+    const path = imgSrc.replace("/", "_");
+    const storageName = `ocr_${path}.json`;
+
+    const ok = await this.ocrConfIsOK();
+
+    if (!ok) return;
+
+    const jobStatus = await ocr({
+      name: name || "test.png",
+      imgBase64: base64,
+      ...this.ocrConfig.value(),
+    });
+    if (jobStatus?.words_result) {
+      this.saveData(storageName, jobStatus);
+      fetch("/api/asset/setImageOCRText", {
+        body: JSON.stringify({
+          path: imgSrc,
+          text: jobStatus.words_result.map((el) => el.words).join(" "),
+        }),
+        method: "POST",
+      });
+      return true;
+    } else {
+      return false;
+    }
+  }
+  async batchOcr() {
+    const assets: {
+      block_id: string;
+      box: string;
+      docpath: string;
+      hash: string;
+      id: string;
+      name: string;
+      path: string;
+      root_id: string;
+      title: string;
+    }[] = await sql(`SELECT * FROM assets
+WHERE PATH LIKE '%.png'
+   OR PATH LIKE '%.jpg'
+   OR PATH LIKE '%.jpeg'
+   OR PATH LIKE '%.gif'
+   OR PATH LIKE '%.bmp'
+LIMIT 99999`);
+    let i = 0;
+    let successful: string[] = [];
+    let failing: string[] = [];
+    showMessage(`可以打开开发者工具查看进度`)
+    for (const img of assets) {
+      const ok = await this.ocrAssetsUrl(img.path);
+      i += 1;
+      if (ok) {
+        successful.push(img.path);
+      } else {
+        failing.push(img.path);
+        console.log("失败失败", img.path);
+      }
+      console.log(
+        `总计:${assets.length} 进度 ${((i / assets.length) * 100).toFixed(2)} 成功识别:${
+          successful.length
+        } 失败:${failing.length} `,
+      );
+    }
   }
   async ocrConfIsOK() {
     const ocrConf = this.ocrConfig.value();
@@ -190,14 +237,14 @@ export default class OceanPress extends Plugin {
           icon: `oceanpress_preview`,
           click: () => this.settingView(),
         });
+        menu.addItem({
+          label: "识别所有图片",
+          icon: `oceanpress_preview`,
+          click: () => this.batchOcr(),
+        });
         menu.open(event);
       },
     });
-    // this.addCommand({
-    //   hotkey: "",
-    //   langKey: "预览当前页面",
-    //   langText: "预览当前页面",
-    // });
   }
 
   unloadFn: (() => void)[] = [];

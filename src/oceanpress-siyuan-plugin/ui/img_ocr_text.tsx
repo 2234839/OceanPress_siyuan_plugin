@@ -13,9 +13,6 @@ export function img_ocr_text(props: {
 }) {
   const img = props.imgEL;
   const [data, setData] = createSignal(null as null | words_result);
-  console.log(11);
-
-  // console.log("[props]", data(),props.data());
   if (!data()) {
     props.data().then((d) => {
       setData(d);

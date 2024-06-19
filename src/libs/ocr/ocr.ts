@@ -39,7 +39,10 @@ export async function ocr(
         base64: opt.imgBase64.slice(`data:image/png;base64,`.length),
       }),
     }).then((r) => r.json());
-    if (res.code !== 100) {
+    if (res.code === 101) {
+      // 未找到文字
+      return { words_result: [] };
+    } else if (res.code !== 100) {
       showMessage("umi-ocr 失败<br/>" + res.data, 5_000, "error");
       return;
     }
