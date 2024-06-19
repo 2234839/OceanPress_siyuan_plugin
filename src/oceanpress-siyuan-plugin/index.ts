@@ -122,9 +122,7 @@ export default class OceanPress extends Plugin {
   async ocrAssetsUrl(imgSrc: string) {
     const name = imgSrc.split("/").pop()!;
     const base64 = await imageToBase64(imgSrc);
-
-    const path = imgSrc.replace("/", "_");
-    const storageName = `ocr_${path}.json`;
+    const storageName = ocrStorageName(imgSrc);
 
     const ok = await this.ocrConfIsOK();
 
@@ -170,36 +168,38 @@ LIMIT 99999`);
     let i = 0;
     let successful: string[] = [];
     let failing: string[] = [];
+    let skip: string[] = [];
     showMessage(`可以打开开发者工具查看进度`);
+    let msg = "";
     for (const img of assets) {
+      i += 1;
       let ok = false;
+      const imgSrc = img.path;
+      const storageName = ocrStorageName(imgSrc);
+      const r = await this.loadData(storageName);
+      if (r) {
+        skip.push(imgSrc);
+        continue;
+      }
       try {
-        ok = (await this.ocrAssetsUrl(img.path)) ?? false;
+        ok = (await this.ocrAssetsUrl(imgSrc)) ?? false;
       } catch (error) {
         ok = false;
         console.log("[ocr error]", error);
       }
-      i += 1;
       if (ok) {
-        successful.push(img.path);
+        successful.push(imgSrc);
       } else {
-        failing.push(img.path);
-        console.log("失败", img.path);
+        failing.push(imgSrc);
+        console.log("失败", imgSrc);
       }
-      console.log(
-        `总计:${assets.length} 进度 ${((i / assets.length) * 100).toFixed(2)} 成功识别:${
-          successful.length
-        } 失败:${failing.length} `,
-      );
+      msg = `总计:${assets.length} 进度 ${((i / assets.length) * 100).toFixed(2)} 成功识别:${
+        successful.length
+      } 失败:${failing.length} 跳过:${skip.length} `;
+      console.log(msg);
     }
     console.log(`以下图片识别失败:`, failing);
-    showMessage(
-      `识别完毕<br/> 总计:${assets.length} 进度 ${((i / assets.length) * 100).toFixed(
-        2,
-      )} 成功识别:${successful.length} 失败:${failing.length} `,
-      999_000000,
-      "info",
-    );
+    showMessage(msg, 999_000000, "info");
   }
   async ocrConfIsOK() {
     const ocrConf = this.ocrConfig.value();
@@ -252,7 +252,7 @@ LIMIT 99999`);
           click: () => this.settingView(),
         });
         menu.addItem({
-          label: "识别所有图片",
+          label: "识别所有无 ocr 数据的图片",
           icon: `oceanpress_preview`,
           click: () => this.batchOcr(),
         });
@@ -277,6 +277,11 @@ LIMIT 99999`);
     parentEL.appendChild(div);
   }
   previewCurrentPage() {}
+}
+
+function ocrStorageName(imgSrc: string) {
+  const path = imgSrc.replace("/", "_");
+  return `ocr_${path}.json`;
 }
 
 async function imageToBase64(url: string) {
