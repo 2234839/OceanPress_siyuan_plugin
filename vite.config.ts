@@ -2,14 +2,15 @@ import { resolve } from "path";
 import { defineConfig, loadEnv, type UserConfigExport } from "vite";
 import solidPlugin from "vite-plugin-solid";
 console.log("=============================");
-
+import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 const viteConfig: UserConfigExport = (ctx) => {
   const env = loadEnv(ctx.mode, "./") as {
     VITE_targetDir?: string;
   };
   const pluginName = process.env.plugin_name ?? "vite-plugin-siyuan";
-  console.log("[pluginName]", pluginName);
+  console.log("[pluginName]", pluginName, ctx.mode);
   return defineConfig({
+    // base: ctx.mode ==="development" ? "/" :"/plugins/oceanpress-siyuan-plugin/",
     publicDir: `./src/${pluginName}`,
     // optimizeDeps: {
     //   include: ["siyuan"],
@@ -26,6 +27,7 @@ const viteConfig: UserConfigExport = (ctx) => {
       "process.env.DEV_MODE": `"${ctx.mode}"`,
     },
     plugins: [
+      cssInjectedByJsPlugin(),
       solidPlugin({
         solid: {
           // 禁止事件委派，不禁用的话 需要 on:click 的形式才能阻止事件冒泡，但 typescript 类型不友好会报错
@@ -75,6 +77,7 @@ const viteConfig: UserConfigExport = (ctx) => {
             entryFileNames: "index.js",
             format: "cjs",
             assetFileNames: `asset/[name]-[hash][extname]`,
+            manualChunks:undefined
           },
         ],
         external: ["siyuan", "process"],
