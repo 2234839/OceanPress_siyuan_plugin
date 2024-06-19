@@ -29,6 +29,7 @@ export default class VitePlugin extends siyuan.Plugin {
 
     let moduleSrc = `${url}?t=${Date.now()}`;
     console.log("[url]", url);
+    // 插件名，插件的loadData 之类的方法和插件名是相关的
     let name = "";
     if (url.endsWith("/index.ts")) {
       const pluginJSON: { name: string } = await fetch(
