@@ -116,7 +116,7 @@ jobs:
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
-            cd dist/oceanpress
+            cd dist/oceanpress-siyuan-plugin
             zip -r package.zip .
             cp package.zip ../../
             echo "PACKAGE_VERSION=$(node -p -e "const p = require('./plugin.json'); p.version;")" >> $GITHUB_ENV

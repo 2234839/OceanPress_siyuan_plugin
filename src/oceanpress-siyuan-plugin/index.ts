@@ -9,6 +9,7 @@ import { widget_btn } from "./ui/widget_btn";
 import { UTIF } from "../libs/UTIF";
 
 export default class OceanPress extends Plugin {
+  pluginName = "oceanpress-siyuan-plugin";
   async onload() {
     // 移动端 debug
     //     eval(`
