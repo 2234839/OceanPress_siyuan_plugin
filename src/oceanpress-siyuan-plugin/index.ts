@@ -171,7 +171,7 @@ LIMIT 99999`);
     let successful: string[] = [];
     let failing: string[] = [];
     showMessage(`可以打开开发者工具查看进度`);
-    for (const img of assets.slice(0, 10)) {
+    for (const img of assets) {
       let ok = false;
       try {
         ok = (await this.ocrAssetsUrl(img.path)) ?? false;
