@@ -1,6 +1,8 @@
 import { resolve } from "path";
 import { defineConfig, loadEnv, type UserConfigExport } from "vite";
 
+console.log("=============================");
+
 const viteConfig: UserConfigExport = (ctx) => {
   const env = loadEnv(ctx.mode, "./") as {
     VITE_targetDir?: string;
@@ -31,9 +33,9 @@ const viteConfig: UserConfigExport = (ctx) => {
         name: "siyuan shim",
         transform(code, id) {
           // 仅当代码包含 "siyuan" 包的 import 语句时进行处理
-          if (/^import \{(.*)\} from "siyuan"/.test(code)) {
+          if (/import \{(.*)\} from "siyuan"/.test(code)) {
             const transformedCode = code.replace(
-              /^import \{(.*)\} from "siyuan"/,
+              /import \{(.*)\} from "siyuan"/,
               'const {$1} = require("siyuan")',
             );
             return {
