@@ -144,9 +144,7 @@ export default class OceanPress extends Plugin {
       });
       return true;
     } else {
-      // // 识别失败的也生成结果文件，避免有许多识别失败的文件批量重新识别的时候消耗时间在这些文件上
-      // 无法判断识别失败还是 umi 未启动
-      // this.saveData(storageName, {});
+      this.saveData(storageName, {});
       return false;
     }
   }
