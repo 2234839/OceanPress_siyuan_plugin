@@ -32,13 +32,14 @@ export default class VitePlugin extends siyuan.Plugin {
     // 插件名，插件的loadData 之类的方法和插件名是相关的
     let name = "";
     if (url.endsWith("/index.ts")) {
-      const pluginJSON: { name: string } = await fetch(
-        url.replace(/\/index\.ts$/, "/plugin.json"),
-      ).then((r) => r.json());
-      console.log("[pluginJSON]", pluginJSON);
-      name = pluginJSON.name;
     }
-    import(moduleSrc).then((module) => {
+    Promise.all([
+      fetch(url.replace(/\/index\.ts$/, "/plugin.json")).then((r) => r.json()),
+      import(moduleSrc),
+    ]).then(([pluginJSON, module]) => {
+      console.log("[pluginJSON]", pluginJSON);
+      const name = pluginJSON.name;
+
       const pluginClass = module.default;
       const pluginName = name || pluginClass.name;
       const plugin = new pluginClass({

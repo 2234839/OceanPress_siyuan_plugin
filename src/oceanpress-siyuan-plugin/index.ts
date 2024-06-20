@@ -132,11 +132,7 @@ export default class OceanPress extends Plugin {
       imgBase64: base64,
       ...this.ocrConfig.value(),
       // 防止下面的逻辑因为 throw 无法执行
-    }).catch((e) => {
-      console.log(e);
-
-      return { words_result: undefined };
-    });
+    }).catch((e) => ({ words_result: undefined }));
     if (jobStatus?.words_result) {
       this.saveData(storageName, jobStatus);
       fetch("/api/asset/setImageOCRText", {
@@ -148,13 +144,13 @@ export default class OceanPress extends Plugin {
       });
       return true;
     } else {
-      // 识别失败的也生成结果文件，避免有许多识别失败的文件批量重新识别的时候消耗时间在这些文件上
-      console.log("[storageName]", storageName);
-      this.saveData(storageName, {});
+      // // 识别失败的也生成结果文件，避免有许多识别失败的文件批量重新识别的时候消耗时间在这些文件上
+      // 无法判断识别失败还是 umi 未启动
+      // this.saveData(storageName, {});
       return false;
     }
   }
-  async batchOcr() {
+  async batchOcr(options: { type: "failing" | "all" }) {
     const assets: {
       block_id: string;
       box: string;
@@ -184,30 +180,32 @@ LIMIT 99999`);
       const imgSrc = img.path;
       const storageName = ocrStorageName(imgSrc);
       const r = await this.loadData(storageName);
-      if (r) {
+      if (options.type === "all" && r) {
+        // 识别所有无 ocr 的图片时，跳过具有本地 ocr 数据的图片
         skip.push(imgSrc);
-        continue;
-      }
-      try {
-        ok = (await this.ocrAssetsUrl(imgSrc)) ?? false;
-      } catch (error) {
-        ok = false;
-        console.log("[ocr error]", error);
-      }
-      if (ok) {
-        successful.push(imgSrc);
+      } else if (options.type === "failing" && r.words_result) {
+        // 跳过识别结果中有 words_result 的图片
+        skip.push(imgSrc);
       } else {
-        failing.push(imgSrc);
-        console.log("失败", imgSrc);
+        try {
+          ok = (await this.ocrAssetsUrl(imgSrc)) ?? false;
+        } catch (error) {
+          ok = false;
+          console.log("[ocr error]", error);
+        }
+        if (ok) {
+          successful.push(imgSrc);
+        } else {
+          failing.push(imgSrc);
+          console.log("失败", imgSrc);
+        }
       }
       msg = `总计:${assets.length} 进度 ${((i / assets.length) * 100).toFixed(2)} 成功识别:${
         successful.length
       } 失败:${failing.length} 跳过:${skip.length} `;
       console.log(msg);
     }
-    msg = `总计:${assets.length} 进度 ${((i / assets.length) * 100).toFixed(2)} 成功识别:${
-      successful.length
-    } 失败:${failing.length} 跳过:${skip.length} `;
+
     if (failing.length) {
       console.log(`以下图片识别失败:`, failing);
     }
@@ -266,7 +264,12 @@ LIMIT 99999`);
         menu.addItem({
           label: "识别所有无 ocr 数据的图片",
           icon: `oceanpress_preview`,
-          click: () => this.batchOcr(),
+          click: () => this.batchOcr({ type: "all" }),
+        });
+        menu.addItem({
+          label: "再次识别所有识别失败的图片",
+          icon: `oceanpress_preview`,
+          click: () => this.batchOcr({ type: "failing" }),
         });
         menu.open(event);
       },

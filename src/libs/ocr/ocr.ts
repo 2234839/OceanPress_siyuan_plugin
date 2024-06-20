@@ -11,6 +11,10 @@ type umi_ocr_res = {
   time: number;
   timestamp: number;
 };
+
+let umiEnabled = {
+  time: Date.now(),
+};
 export async function ocr(
   opt:
     | { name: string; imgBase64: string; sk: string; type?: "oceanpress" }
@@ -29,6 +33,25 @@ export async function ocr(
   | undefined
 > {
   if (opt.type === "umi-ocr") {
+    if (Date.now() - umiEnabled.time > 3_000) {
+      const _: { code: 300 } = await fetch(opt.umiApi, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          /** 去除前缀 */
+          base64: `data:image/png;base64,`,
+        }),
+      })
+        .then((r) => r.json())
+        .catch((e) => {
+          showMessage(`umi-ocr 似乎未启动，请启动`, 10_000, "error");
+          throw e;
+        });
+      umiEnabled.time = Date.now();
+    }
+
     const res: umi_ocr_res = await fetch(opt.umiApi, {
       method: "POST",
       headers: {
@@ -46,6 +69,9 @@ export async function ocr(
       showMessage("umi-ocr 失败<br/>" + res.data, 5_000, "error");
       return;
     }
+
+    // 刷新启动判断计时
+    umiEnabled.time = Date.now();
     return {
       words_result: res.data.map((el) => ({
         vertexes_location: el.box.map((el) => ({
