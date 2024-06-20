@@ -99,11 +99,6 @@ export default class OceanPress extends Plugin {
 
     // ocr 图片菜单按钮
     this.eventBus.on("open-menu-image", (event) => {
-      setTimeout(() => {
-        // 阻止 思源自身关闭菜单时的ocr TODO 应该要修改思源的 ocr 触发方式
-        globalThis.window.siyuan.menus.menu.removeCB = () => {};
-      }, 50);
-
       (globalThis.window.siyuan.menus.menu as Menu).addItem({
         label: "OceanPress Ocr",
         iconHTML: ICON,
@@ -137,13 +132,17 @@ export default class OceanPress extends Plugin {
       imgBase64: base64,
       ...this.ocrConfig.value(),
       // 防止下面的逻辑因为 throw 无法执行
-    }).catch((e) => ({ words_result: undefined }));
+    }).catch((e) => {
+      console.log(e);
+
+      return { words_result: undefined };
+    });
     if (jobStatus?.words_result) {
       this.saveData(storageName, jobStatus);
       fetch("/api/asset/setImageOCRText", {
         body: JSON.stringify({
           path: imgSrc,
-          text: jobStatus.words_result.map((el) => el.words).join(" "),
+          text: jobStatus.words_result.map((el) => el.words).join(""),
         }),
         method: "POST",
       });
