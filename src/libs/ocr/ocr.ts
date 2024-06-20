@@ -47,7 +47,7 @@ export async function ocr(
         .then((r) => r.json())
         .catch((e) => {
           showMessage(`umi-ocr 似乎未启动，请启动`, 10_000, "error");
-          throw e;
+          throw new ocr_enabled_Error("umi-ocr 未启动");
         });
       umiEnabled.time = Date.now();
     }
@@ -100,6 +100,8 @@ export async function ocr(
     });
   }
 }
+
+export class ocr_enabled_Error extends Error {}
 
 export type words_result = {
   min_finegrained_vertexes_location: {

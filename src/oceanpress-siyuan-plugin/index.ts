@@ -1,7 +1,7 @@
 import { Dialog, Menu, Plugin, showMessage } from "siyuan";
 import { ICON, iconSVG, oceanpress_ui_flag } from "./const";
 import "./index.css";
-import { ocr } from "../libs/ocr/ocr";
+import { ocr, ocr_enabled_Error } from "../libs/ocr/ocr";
 import { img_ocr_text } from "./ui/img_ocr_text";
 import { widget_btn } from "./ui/widget_btn";
 import { render } from "solid-js/web";
@@ -132,7 +132,12 @@ export default class OceanPress extends Plugin {
       imgBase64: base64,
       ...this.ocrConfig.value(),
       // 防止下面的逻辑因为 throw 无法执行
-    }).catch((e) => ({ words_result: undefined }));
+    }).catch((e) => {
+      if (e instanceof ocr_enabled_Error) {
+        throw e;
+      }
+      return { words_result: undefined };
+    });
     if (jobStatus?.words_result) {
       this.saveData(storageName, jobStatus);
       fetch("/api/asset/setImageOCRText", {
@@ -189,6 +194,11 @@ LIMIT 99999`);
           ok = (await this.ocrAssetsUrl(imgSrc)) ?? false;
         } catch (error) {
           ok = false;
+          if (error instanceof ocr_enabled_Error) {
+            console.log(`退出批量 ocr 识别`, error);
+            showMessage(`已退出批量 ocr 识别`);
+            return;
+          }
           console.log("[ocr error]", error);
         }
         if (ok) {
