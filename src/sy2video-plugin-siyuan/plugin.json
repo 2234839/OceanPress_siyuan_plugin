@@ -2,7 +2,7 @@
   "name": "sy2video-plugin-siyuan",
   "author": "崮生",
   "url": "https://github.com/2234839/sy2video-plugin-siyuan",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"

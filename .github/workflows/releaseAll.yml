@@ -72,7 +72,7 @@ jobs:
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
           echo "CURRENT_VERSION=$CURRENT_VERSION   LATEST_TAG=$LATEST_TAG"
           git status --porcelain
-          if git status --porcelain | grep -qE '(M|A|D|R)' ; then
+          if git status --porcelain | grep -qE '(M|A|D|R|\\?)' ; then
             git add .
             git commit -m "Update dist to GitHub"
             git push -f origin main
@@ -102,7 +102,7 @@ jobs:
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
           echo "CURRENT_VERSION=$CURRENT_VERSION   LATEST_TAG=$LATEST_TAG"
           git status --porcelain
-          if git status --porcelain | grep -qE '(M|A|D|R)' ; then
+          if git status --porcelain | grep -qE '(M|A|D|R|\\?)' ; then
             git add .
             git commit -m "Update dist to GitHub"
             git push -f origin main
@@ -132,7 +132,7 @@ jobs:
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
           echo "CURRENT_VERSION=$CURRENT_VERSION   LATEST_TAG=$LATEST_TAG"
           git status --porcelain
-          if git status --porcelain | grep -qE '(M|A|D|R)' ; then
+          if git status --porcelain | grep -qE '(M|A|D|R|\\?)' ; then
             git add .
             git commit -m "Update dist to GitHub"
             git push -f origin main
