@@ -13,7 +13,8 @@
     "dev:vite-plugin-siyuan": "cross-env plugin_name=vite-plugin-siyuan pnpm vite",
     "build:vite-plugin-siyuan": "cross-env plugin_name=vite-plugin-siyuan vite build",
     "build:audio2text_plugin_siyuan": "cross-env plugin_name=audio2text_plugin_siyuan vite build",
-    "build:oceanpress-siyuan-plugin": "cross-env plugin_name=oceanpress-siyuan-plugin vite build"
+    "build:oceanpress-siyuan-plugin": "cross-env plugin_name=oceanpress-siyuan-plugin vite build",
+    "build:sy2video-plugin-siyuan": "cross-env plugin_name=sy2video-plugin-siyuan vite build"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
