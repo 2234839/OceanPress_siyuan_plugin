@@ -18,19 +18,20 @@ export default class VitePlugin extends siyuan.Plugin {
     globalThis.vitePlugin = this;
     const url = await this.loadData("url");
     if (!url) return;
-    this.loadByUrl(url);
+    this.loadByUrl(url, false);
   }
   layoutRead = false;
   onLayoutReady(): void {
     this.layoutRead = true;
   }
-  public async loadByUrl(url: string) {
-    this.saveData("url", url);
+  public async loadByUrl(url: string, save = true) {
+    if (save) {
+      this.saveData("url", url);
+    }
 
     let moduleSrc = `${url}?t=${Date.now()}`;
     console.log("[url]", url);
     // 插件名，插件的loadData 之类的方法和插件名是相关的
-    let name = "";
     if (url.endsWith("/index.ts")) {
     }
     Promise.all([
