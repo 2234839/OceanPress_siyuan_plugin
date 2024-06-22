@@ -8,5 +8,5 @@
     需要配置url参数：
 
     block_show (有此参数则功能生效)
-    block_id (块 id 数组)
-    例如：http://127.0.0.1:6809/stage/build/desktop/?r=iyqibyt&block_show=1&block_id=20240621163257-fp4jwg8
+    block_id
+    例如：http://127.0.0.1:6809/stage/build/desktop/?block_show=1&block_id=20240621163257-fp4jwg8
