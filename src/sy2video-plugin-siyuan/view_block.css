@@ -1,0 +1,9 @@
+body > * {
+  visibility: hidden;
+}
+.block__popover .protyle-content {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  visibility: visible;
+}
