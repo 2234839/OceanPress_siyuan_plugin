@@ -1,7 +1,7 @@
-body > * {
+body.sy2video-plugin-siyuan > * {
   visibility: hidden;
 }
-.block__popover .protyle-content {
+.sy2video-plugin-siyuan .block__popover .protyle-content {
   position: fixed;
   top: 0px;
   left: 0px;

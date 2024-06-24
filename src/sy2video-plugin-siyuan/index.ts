@@ -1,10 +1,13 @@
-import { Menu, Plugin } from "siyuan";
-import { appendBlock, getBlockKramdown, insertLocalAssets, upload } from "~/libs/api";
+import { Plugin } from "siyuan";
+import { appendBlock, upload } from "~/libs/api";
 import { chatTTS } from "~/libs/chat_tts";
+import "./view_block.css";
 // 引入这个变量后 vite 会自动注入 hot
 import.meta.hot;
 
-export default class VitePlugin extends Plugin {
+const classFlag = `sy2video-plugin-siyuan`;
+
+export default class sy2video extends Plugin {
   async onLayoutReady() {
     const urlParams = new URLSearchParams(window.location.search);
     const blockId = urlParams.getAll("block_id");
@@ -18,7 +21,12 @@ export default class VitePlugin extends Plugin {
       const el: HTMLElement = window.siyuan.blockPanels[0].element;
       //   钉住
       (el.querySelector(`[data-type="pin"]`) as HTMLButtonElement)?.click();
-      await import("./view_block.css");
+      console.log(block_show, blockId);
+
+      document.body.classList.add(classFlag);
+      this.onunloadFn.push(() => {
+        document.body.classList.remove(classFlag);
+      });
     }
 
     this.eventBus.on("click-blockicon", (event) => {
@@ -60,5 +68,9 @@ export default class VitePlugin extends Plugin {
         );
       }),
     );
+  }
+  onunloadFn: (() => void)[] = [];
+  onunload(): void {
+    this.onunloadFn.forEach((fn) => fn());
   }
 }
