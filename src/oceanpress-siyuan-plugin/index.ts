@@ -297,6 +297,7 @@ LIMIT 99999`);
     if (parentEL.querySelector("." + oceanpress_ui_flag)) return;
 
     const div = document.createElement("div");
+    div.style.pointerEvents = "none";
     const dispose = render(jsxEl, div);
     this.unloadFn.push(() => (div.remove(), dispose()));
     parentEL.appendChild(div);

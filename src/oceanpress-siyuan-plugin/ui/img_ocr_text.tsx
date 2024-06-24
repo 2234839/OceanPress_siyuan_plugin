@@ -43,6 +43,7 @@ export function img_ocr_text(props: {
       title="点击保存当前挂件为图片供OceanPress使用,图标为灰色表示尚未保存过此挂件"
       style={{
         outline: data()?.length ? `solid 1px #2ecb23` : "",
+        "pointer-events": "none",
       }}
       // 阻止事件冒泡，因为思源会处理此事件导致不符合预期的行为
       onclick={(e) => e.stopPropagation()}
@@ -73,7 +74,7 @@ export function img_ocr_text(props: {
               "white-space": `nowrap`,
               "text-align": "center",
               color: "rgba(0,0,0,0)",
-              // color: "red",
+              "pointer-events": "all",
             }}>
             <span
               style={{
