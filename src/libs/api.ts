@@ -129,7 +129,7 @@ export async function getHPathByID(id: BlockId): Promise<string> {
 
 // **************************************** Asset Files ****************************************
 
-export async function upload(assetsDirPath: string, files: any[]): Promise<IResUpload> {
+export async function upload(assetsDirPath: string, files: string | Blob[]): Promise<IResUpload> {
   let form = new FormData();
   form.append("assetsDirPath", assetsDirPath);
   for (let file of files) {

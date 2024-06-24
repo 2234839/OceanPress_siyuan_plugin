@@ -29,12 +29,12 @@ export default class VitePlugin extends Plugin {
           const el = event.detail.blockElements[0];
           const id = el.dataset.nodeId!;
           const text = el.textContent!;
-          this.tts(id, text);
+          this.ttsInsert(id, text);
         },
       });
     });
   }
-  async tts(id: string, text: string) {
+  async ttsInsert(id: string, text: string) {
     const res = await chatTTS({
       text,
     });
@@ -50,7 +50,6 @@ export default class VitePlugin extends Plugin {
           ),
         ]);
       });
-    console.log("[res2]", res2);
     const assets = Object.entries(res2.succMap);
     await Promise.all(
       assets.map(([_, assertName]) => {
