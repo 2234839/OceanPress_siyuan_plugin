@@ -33,25 +33,7 @@ export async function ocr(
   | undefined
 > {
   if (opt.type === "umi-ocr") {
-    if (Date.now() - umiEnabled.time > 3_000) {
-      const _: { code: 300 } = await fetch(opt.umiApi, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          /** 去除前缀 */
-          base64: `data:image/png;base64,`,
-        }),
-      })
-        .then((r) => r.json())
-        .catch((e) => {
-          showMessage(`umi-ocr 似乎未启动，请启动`, 10_000, "error");
-          throw new ocr_enabled_Error("umi-ocr 未启动");
-        });
-      umiEnabled.time = Date.now();
-    }
-
+    await umiOcrEnabled(opt.umiApi);
     const res: umi_ocr_res = await fetch(opt.umiApi, {
       method: "POST",
       headers: {
@@ -99,6 +81,27 @@ export async function ocr(
       }
     });
   }
+}
+export async function umiOcrEnabled(umiApi: string) {
+  if (Date.now() - umiEnabled.time > 3_000) {
+    const _: { code: 300 } = await fetch(umiApi, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        /** 去除前缀 */
+        base64: `data:image/png;base64,`,
+      }),
+    })
+      .then((r) => r.json())
+      .catch((e) => {
+        showMessage(`umi-ocr 似乎未启动，请启动`, 10_000, "error");
+        throw new ocr_enabled_Error("umi-ocr 未启动");
+      });
+    umiEnabled.time = Date.now();
+  }
+  return Date.now() - umiEnabled.time < 3_000;
 }
 
 export class ocr_enabled_Error extends Error {}

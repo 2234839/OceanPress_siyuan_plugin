@@ -1,7 +1,7 @@
 import { Dialog, Menu, Plugin, showMessage } from "siyuan";
 import { ICON, iconSVG, oceanpress_ui_flag } from "./const";
 import "./index.css";
-import { ocr, ocr_enabled_Error } from "../libs/ocr/ocr";
+import { ocr, ocr_enabled_Error, umiOcrEnabled } from "../libs/ocr/ocr";
 import { img_ocr_text } from "./ui/img_ocr_text";
 import { widget_btn } from "./ui/widget_btn";
 import { render } from "solid-js/web";
@@ -154,6 +154,14 @@ export default class OceanPress extends Plugin {
     }
   }
   async batchOcr(options: { type: "failing" | "all" }) {
+    const ocrConfig = this.ocrConfig.value();
+    console.log("[ocrConfig]", ocrConfig);
+    if (ocrConfig.type === "umi-ocr") {
+      const umiEnable = await umiOcrEnabled(ocrConfig.umiApi);
+      if (!umiEnable) {
+        return;
+      }
+    }
     const assets: {
       block_id: string;
       box: string;
