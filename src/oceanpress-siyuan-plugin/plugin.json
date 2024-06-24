@@ -15,8 +15,8 @@
     "zh_CN": "OceanPress 思源插件"
   },
   "description": {
-    "en_US": "To bestow OceanPress with enhanced capabilities.",
-    "zh_CN": "为 OceanPress 提供更多能力"
+    "en_US": "Supports ocr text copy, umi ocr, and tif image display",
+    "zh_CN": "支持 ocr 文本复制、umi ocr，支持 tif 图片显示"
   },
   "readme": {
     "en_US": "README.md",
