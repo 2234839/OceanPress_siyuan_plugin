@@ -43,7 +43,7 @@ export function img_ocr_text(props: {
       title="点击保存当前挂件为图片供OceanPress使用,图标为灰色表示尚未保存过此挂件"
       style={{
         // #9
-        outline: data()?.length ? `solid 1px #2ecb23` : "solid 1px #f78888",
+        outline: data()?.length ? `solid 1px #2ecb23` : "solid 1px gray",
         "pointer-events": "none",
         // #9
         height: `${img.height}px`,
