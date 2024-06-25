@@ -83,7 +83,7 @@ const viteConfig: UserConfigExport = (ctx) => {
       },
       // 输出路径
       outDir: `dist/${pluginName}`,
-      emptyOutDir: false,
+      emptyOutDir: true,
 
       // 构建后是否生成 source map 文件
       sourcemap: true,

@@ -21,8 +21,6 @@ export default class sy2video extends Plugin {
       const el: HTMLElement = window.siyuan.blockPanels[0].element;
       //   钉住
       (el.querySelector(`[data-type="pin"]`) as HTMLButtonElement)?.click();
-      console.log(block_show, blockId);
-
       document.body.classList.add(classFlag);
       this.onunloadFn.push(() => {
         document.body.classList.remove(classFlag);

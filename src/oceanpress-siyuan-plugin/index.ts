@@ -54,6 +54,10 @@ export default class OceanPress extends Plugin {
           img_ocr_text({
             data: async () => {
               const path = img.dataset.src!.replace("/", "_");
+              // TODO 对于在线图片暂时不处理
+              if(path.startsWith("http")){
+                return []
+              }
               const storageName = `ocr_${path}.json`;
               const data = (await this.loadData(storageName))?.words_result;
               return data;
