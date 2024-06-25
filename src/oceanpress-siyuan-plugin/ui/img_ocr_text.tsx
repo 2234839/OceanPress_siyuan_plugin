@@ -42,8 +42,11 @@ export function img_ocr_text(props: {
       class={oceanpress_ui_flag + " " + styles.ocr_text_panel}
       title="点击保存当前挂件为图片供OceanPress使用,图标为灰色表示尚未保存过此挂件"
       style={{
-        outline: data()?.length ? `solid 1px #2ecb23` : "",
+        // #9
+        outline: data()?.length ? `solid 1px #2ecb23` : "solid 1px #f78888",
         "pointer-events": "none",
+        // #9
+        height: `${img.height}px`,
       }}
       // 阻止事件冒泡，因为思源会处理此事件导致不符合预期的行为
       onclick={(e) => e.stopPropagation()}
