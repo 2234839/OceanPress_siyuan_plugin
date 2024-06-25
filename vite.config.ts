@@ -1,5 +1,5 @@
 import { resolve } from "path";
-import { defineConfig, type UserConfigExport } from "vite";
+import { defineConfig, type UserConfigExport, loadEnv } from "vite";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import solidPlugin from "vite-plugin-solid";
 import { writeFile } from "fs/promises";
@@ -7,6 +7,11 @@ import { execSync } from "child_process";
 
 console.log("=============================");
 const viteConfig: UserConfigExport = (ctx) => {
+  const env: {
+    /** 存在此变量编译输出至此目录,例如 C:/Users/llej/Documents/SiYuan/data/plugins */
+    VITE_dist_dir?: string;
+  } = loadEnv(ctx.mode, process.cwd());
+
   const pluginName = process.env.plugin_name ?? "vite-plugin-siyuan";
   console.log("[pluginName]", pluginName, ctx.mode);
   if (ctx.mode === "production") {
@@ -82,7 +87,7 @@ const viteConfig: UserConfigExport = (ctx) => {
         fileName: (format) => `index.js`,
       },
       // 输出路径
-      outDir: `dist/${pluginName}`,
+      outDir: `${env.VITE_dist_dir ?? "dist"}/${pluginName}`,
       emptyOutDir: true,
 
       // 构建后是否生成 source map 文件

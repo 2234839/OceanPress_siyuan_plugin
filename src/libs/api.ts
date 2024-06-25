@@ -6,7 +6,6 @@
  * API 文档见 [API_zh_CN.md](https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md)
  */
 
-import type { string } from "@llej/js_util/dist/src/js-core";
 import { fetchSyncPost, IWebSocketData } from "siyuan";
 
 async function request(url: string, data: any) {
@@ -301,6 +300,10 @@ export async function renderSprig(template: string): Promise<string> {
 
 // **************************************** File ****************************************
 
+/**
+ * https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md#%E8%8E%B7%E5%8F%96%E6%96%87%E4%BB%B6
+ * "/data/box_id/doc_id.sy"
+ */
 export async function getFile(path: string): Promise<any> {
   let data = {
     path: path,
@@ -310,6 +313,8 @@ export async function getFile(path: string): Promise<any> {
     let file = await fetchSyncPost(url, data);
     return file;
   } catch (error_msg) {
+    throw error_msg
+    console.log("[error_msg]", error_msg);
     return null;
   }
 }
