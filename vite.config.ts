@@ -30,8 +30,21 @@ const viteConfig: UserConfigExport = (ctx) => {
             2,
           ),
         );
+        // 特例
+        if (pluginName === "oceanpress-siyuan-plugin") {
+          writeFile(
+            `./plugin.json`,
+            JSON.stringify(
+              {
+                ...r.default,
+                version: r.default.version.replace(/(\d+)$/, (match) => parseInt(match, 10) + 1),
+              },
+              null,
+              2,
+            ),
+          );
+        }
       }
-      const pluginJSON = console.log("[r]", res);
     });
   }
 
