@@ -1,7 +1,8 @@
 // 引入这个变量后 vite 会自动注入 hot
 import.meta.hot;
 import siyuan from "siyuan";
-
+import { synchronousFetch } from "~/libs/xhr";
+import pluginJSON from "./plugin.json";
 //@ts-ignore
 const rawRequire = globalThis.require;
 //@ts-ignore
@@ -16,7 +17,10 @@ export default class VitePlugin extends siyuan.Plugin {
   async onload() {
     // @ts-ignore
     globalThis.vitePlugin = this;
-    const url = await this.loadData("url");
+    // 因为思源的 onload 中的一些方法调用需要在同步之前调用，所以这里阻塞加载
+    const url = await synchronousFetch("/api/file/getFile", {
+      path: `/data/storage/petal/${pluginJSON.name}/url`,
+    });
     if (!url) return;
     this.loadByUrl(url, false);
   }
@@ -35,7 +39,7 @@ export default class VitePlugin extends siyuan.Plugin {
     if (url.endsWith("/index.ts")) {
     }
     Promise.all([
-      fetch(url.replace(/\/index\.ts$/, "/plugin.json")).then((r) => r.json()),
+      JSON.parse(await synchronousFetch(url.replace(/\/index\.ts$/, "/plugin.json"), {})),
       import(moduleSrc),
     ]).then(([pluginJSON, module]) => {
       console.log("[pluginJSON]", pluginJSON);
