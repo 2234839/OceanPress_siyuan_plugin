@@ -5,7 +5,6 @@ export function synchronousFetch(url: string, data: any):Promise<string> {
     xhr.open("POST", url, false); // 第三个参数设置为 false 以启用同步请求
 
     xhr.onload = function () {
-console.log('[xhr]',xhr)
       if (xhr.status === 200) {
         resolve(xhr.responseText);
       } else {

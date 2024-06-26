@@ -2,7 +2,7 @@ import { resolve } from "path";
 import { defineConfig, type UserConfigExport, loadEnv } from "vite";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import solidPlugin from "vite-plugin-solid";
-import { writeFile } from "fs/promises";
+import { writeFile,copyFile } from "fs/promises";
 import { execSync } from "child_process";
 
 console.log("=============================");
@@ -43,6 +43,7 @@ const viteConfig: UserConfigExport = (ctx) => {
               2,
             ),
           );
+          copyFile("./README.md",`./src/${pluginName}/README.md`)
         }
       }
     });
