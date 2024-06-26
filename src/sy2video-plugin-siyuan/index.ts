@@ -21,6 +21,14 @@ export default class sy2video extends Plugin {
       const el: HTMLElement = window.siyuan.blockPanels[0].element;
       //   钉住
       (el.querySelector(`[data-type="pin"]`) as HTMLButtonElement)?.click();
+      // protyle-content
+      // (el.querySelector(`[data-type="pin"]`)
+      setTimeout(() => {
+        const contentEL = el.querySelector<HTMLElement>(`.protyle-content`)!;
+        const rate = window.innerHeight / contentEL.getBoundingClientRect().height;
+        console.log("[rate]", rate);
+        contentEL.style.setProperty("--scale-factor", String(rate));
+      }, 1000);
       document.body.classList.add(classFlag);
       this.onunloadFn.push(() => {
         document.body.classList.remove(classFlag);

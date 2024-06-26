@@ -5,5 +5,8 @@ body.sy2video-plugin-siyuan > * {
   position: fixed;
   top: 0px;
   left: 0px;
+  transform-origin: top left; /* 设置缩放的基点 */
+  transform: scale(var(--scale-factor));
   visibility: visible;
+  overflow: visible;
 }
