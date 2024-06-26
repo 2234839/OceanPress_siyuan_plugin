@@ -3,10 +3,10 @@ body.sy2video-plugin-siyuan > * {
 }
 .sy2video-plugin-siyuan .block__popover .protyle-content {
   position: fixed;
-  top: 0px;
-  left: 0px;
-  transform-origin: top left; /* 设置缩放的基点 */
-  transform: scale(var(--scale-factor));
+  top: 50%;
+  left: 50%;
+  transform-origin: center center; /* 设置缩放的基点 */
+  transform: translate(-50%, -50%) scale(var(--scale-factor));
   visibility: visible;
   overflow: visible;
 }

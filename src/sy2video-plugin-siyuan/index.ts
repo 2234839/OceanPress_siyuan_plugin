@@ -25,8 +25,9 @@ export default class sy2video extends Plugin {
       // (el.querySelector(`[data-type="pin"]`)
       setTimeout(() => {
         const contentEL = el.querySelector<HTMLElement>(`.protyle-content`)!;
-        const rate = window.innerHeight / contentEL.getBoundingClientRect().height;
-        console.log("[rate]", rate);
+        const rate_w = window.innerWidth / contentEL.getBoundingClientRect().width;
+        const rate_h = window.innerHeight / contentEL.getBoundingClientRect().height;
+        const rate = rate_h < rate_w ? rate_h : rate_w;
         contentEL.style.setProperty("--scale-factor", String(rate));
       }, 1000);
       document.body.classList.add(classFlag);
