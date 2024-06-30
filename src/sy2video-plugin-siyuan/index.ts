@@ -1,41 +1,45 @@
-import { Plugin } from "siyuan";
 import { appendBlock, upload } from "~/libs/api";
 import { chatTTS } from "~/libs/chat_tts";
 import "./view_block.css";
+import { SiyuanPlugin } from "~/libs/siyuanPlugin";
 // 引入这个变量后 vite 会自动注入 hot
 import.meta.hot;
 
 const classFlag = `sy2video-plugin-siyuan`;
 
-export default class sy2video extends Plugin {
+export default class sy2video extends SiyuanPlugin {
   async onLayoutReady() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const blockId = urlParams.getAll("block_id");
-    const block_show = urlParams.get("block_show");
-    if (block_show && blockId) {
-      this.addFloatLayer({
-        x: 0,
-        y: 0,
-        ids: [...blockId],
-      });
-      const el: HTMLElement = window.siyuan.blockPanels[0].element;
-      //   钉住
-      (el.querySelector(`[data-type="pin"]`) as HTMLButtonElement)?.click();
-      // protyle-content
-      // (el.querySelector(`[data-type="pin"]`)
-      setTimeout(() => {
-        const contentEL = el.querySelector<HTMLElement>(`.protyle-content`)!;
-        const rate_w = window.innerWidth / contentEL.getBoundingClientRect().width;
-        const rate_h = window.innerHeight / contentEL.getBoundingClientRect().height;
-        const rate = rate_h < rate_w ? rate_h : rate_w;
-        contentEL.style.setProperty("--scale-factor", String(rate));
-      }, 1000);
-      document.body.classList.add(classFlag);
-      this.onunloadFn.push(() => {
-        document.body.classList.remove(classFlag);
-      });
+    // 只显示指定块，自动缩放
+    {
+      const urlParams = new URLSearchParams(window.location.search);
+      const blockId = urlParams.getAll("block_id");
+      const block_show = urlParams.get("block_show");
+      if (block_show && blockId) {
+        this.addFloatLayer({
+          x: 0,
+          y: 0,
+          ids: [...blockId],
+        });
+        const el: HTMLElement = window.siyuan.blockPanels[0].element;
+        //   钉住
+        (el.querySelector(`[data-type="pin"]`) as HTMLButtonElement)?.click();
+        // protyle-content
+        // (el.querySelector(`[data-type="pin"]`)
+        setTimeout(() => {
+          const contentEL = el.querySelector<HTMLElement>(`.protyle-content`)!;
+          const rate_w = window.innerWidth / contentEL.getBoundingClientRect().width;
+          const rate_h = window.innerHeight / contentEL.getBoundingClientRect().height;
+          const rate = rate_h < rate_w ? rate_h : rate_w;
+          contentEL.style.setProperty("--scale-factor", String(rate));
+        }, 5000);
+        document.body.classList.add(classFlag);
+        this.onunloadFn.push(() => {
+          document.body.classList.remove(classFlag);
+        });
+      }
     }
 
+    // === 块文本转音频
     this.eventBus.on("click-blockicon", (event) => {
       window.siyuan.menus.menu.addItem({
         label: "转音频",
@@ -48,6 +52,8 @@ export default class sy2video extends Plugin {
         },
       });
     });
+
+
   }
   async ttsInsert(id: string, text: string) {
     const res = await chatTTS({
@@ -75,9 +81,5 @@ export default class sy2video extends Plugin {
         );
       }),
     );
-  }
-  onunloadFn: (() => void)[] = [];
-  onunload(): void {
-    this.onunloadFn.forEach((fn) => fn());
   }
 }

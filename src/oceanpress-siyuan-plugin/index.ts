@@ -1,22 +1,24 @@
-import { Dialog, Menu, Plugin, showMessage } from "siyuan";
+import { siyuan as siyuanUtil } from "@llej/js_util";
+import { Dialog, Menu, showMessage } from "siyuan";
+import { createSignal } from "solid-js";
+import type { JSX } from "solid-js/jsx-runtime";
+import { render } from "solid-js/web";
+import { sql } from "~/libs/api";
+import { SiyuanPlugin } from "~/libs/siyuanPlugin";
+import { ocr, ocr_enabled_Error, umiOcrEnabled } from "../libs/ocr/ocr";
+import { UTIF } from "../libs/UTIF";
 import { ICON, iconSVG, oceanpress_ui_flag } from "./const";
 import "./index.css";
-import { ocr, ocr_enabled_Error, umiOcrEnabled } from "../libs/ocr/ocr";
+import { refMedia } from "./refMedia";
 import { img_ocr_text } from "./ui/img_ocr_text";
-import { widget_btn } from "./ui/widget_btn";
-import { render } from "solid-js/web";
-import { UTIF } from "../libs/UTIF";
 import { setting_view } from "./ui/setting_view";
-import type { JSX } from "solid-js/jsx-runtime";
-import { siyuan as siyuanUtil } from "@llej/js_util";
-import { createSignal } from "solid-js";
-import { sql } from "~/libs/api";
+import { widget_btn } from "./ui/widget_btn";
 
 // TODO 无效 ocr 资源清理
 // ocr 时 图标旋转
 // 识别失败的设置指定 ocr 文本
-
-export default class OceanPress extends Plugin {
+// vitePlugin.setViteUrl("http://localhost:5173/src/oceanpress-siyuan-plugin/index.ts")
+export default class OceanPress extends SiyuanPlugin {
   ocrConfig = siyuanUtil.bindData({
     that: this,
     initValue: {
@@ -40,7 +42,8 @@ export default class OceanPress extends Plugin {
     // document.head.appendChild(script);
     //       `);
     // 定时遍历新元素
-
+    refMedia.load();
+    this.addUnloadFn(() => refMedia.unLoad());
     const id = setInterval(() => {
       // 为挂件添加 oceanpress 转化图标
       document.body.querySelectorAll(`div[data-type="NodeWidget"]`).forEach((widget) => {
@@ -55,8 +58,8 @@ export default class OceanPress extends Plugin {
             data: async () => {
               const path = img.dataset.src!.replace("/", "_");
               // TODO 对于在线图片暂时不处理
-              if(path.startsWith("http")){
-                return []
+              if (path.startsWith("http")) {
+                return [];
               }
               const storageName = `ocr_${path}.json`;
               const data = (await this.loadData(storageName))?.words_result;
@@ -99,7 +102,7 @@ export default class OceanPress extends Plugin {
         UTIF.replaceIMG();
       }
     }, 1000);
-    this.unloadFn.push(() => clearInterval(id));
+    this.addUnloadFn(() => clearInterval(id));
 
     // ocr 图片菜单按钮
     this.eventBus.on("open-menu-image", (event) => {
@@ -296,13 +299,6 @@ LIMIT 99999`);
     });
   }
 
-  unloadFn: (() => void)[] = [];
-  async onunload() {
-    console.log("[onunload]");
-
-    this.unloadFn.forEach((fn) => fn());
-  }
-
   // 如果 ui 组件已添加，就不会重复添加
   async addUiComponent(parentEL: HTMLElement, jsxEl: () => JSX.Element) {
     // 因为思源会修改dom，导致添加在文档里的元素消失，所以这里检测是否需要重新添加
@@ -311,7 +307,7 @@ LIMIT 99999`);
     const div = document.createElement("div");
     div.style.pointerEvents = "none";
     const dispose = render(jsxEl, div);
-    this.unloadFn.push(() => (div.remove(), dispose()));
+    this.addUnloadFn(() => (div.remove(), dispose()));
     parentEL.appendChild(div);
   }
   previewCurrentPage() {}

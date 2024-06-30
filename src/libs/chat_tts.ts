@@ -1,4 +1,3 @@
-
 type data = {
   prompt: string;
   voice: number;
@@ -35,16 +34,16 @@ export function chatTTS(...arg: [par] | [string, par]): Promise<chatTTS_res> {
     {
       text: "",
       prompt: "",
-      voice: 2222,
-      speed: 4,
+      voice: "11.csv",
+      speed: 5,
       temperature: 0.3,
       top_p: 0.7,
       top_k: 20,
       refine_max_new_token: 384,
       infer_max_new_token: 2048,
       text_seed: 42,
-      skip_refine: 1,
-      custom_voice: 324256,
+      skip_refine: 0,
+      custom_voice: 0,
     },
     data,
   );

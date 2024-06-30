@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@llej/js_util": "^1.0.10",
+    "@sinclair/typebox": "^0.32.34",
     "modern-screenshot": "^4.4.39",
     "solid-js": "^1.8.17",
     "vite-plugin-css-injected-by-js": "^3.5.1"
