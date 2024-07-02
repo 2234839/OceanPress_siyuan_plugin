@@ -314,7 +314,7 @@ LIMIT 99999`);
 }
 
 function ocrStorageName(imgSrc: string) {
-  const path = imgSrc.replace("/", "_");
+  const path = imgSrc.replace(/[:\/?#\*|<>"%]+/g, "_");
   return `ocr_${path}.json`;
 }
 

@@ -54,7 +54,7 @@ export function videoControls({ video, props }: { video: HTMLVideoElement; props
           }}>
           {(currentTime(), video.paused ? "▶️" : "⏸️")}
         </div>
-        {`${currentTime().toFixed(2)}/${props.endTime - props.startTime}s`}
+        {`${(currentTime() - props.startTime).toFixed(2)}/${props.endTime - props.startTime}s`}
       </div>
 
       <div title="进度条" style={{ background: "#333", overflow: "hidden" }}>
