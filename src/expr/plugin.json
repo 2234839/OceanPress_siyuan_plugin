@@ -1,0 +1,30 @@
+{
+  "name": "expr",
+  "author": "崮生_子虚",
+  "url": "https://github.com/2234839/siyuan_expr",
+  "version": "0.0.11",
+  "minAppVersion": "2.10.3",
+  "backends": [
+    "all"
+  ],
+  "frontends": [
+    "all"
+  ],
+  "displayName": {
+    "en_US": "OceanPress siyuan plugin",
+    "zh_CN": "expr 思源插件"
+  },
+  "description": {
+    "en_US": "To bestow OceanPress with enhanced capabilities.",
+    "zh_CN": "为 OceanPress 提供更多能力"
+  },
+  "readme": {
+    "en_US": "README_en.md",
+    "zh_CN": "README.md"
+  },
+  "funding": {
+    "custom": [
+      "https://afdian.net/@llej0"
+    ]
+  }
+}

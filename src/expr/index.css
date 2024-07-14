@@ -1,0 +1,24 @@
+/* 在伪元素中显示表达式，方便开发 */
+.expr-plugin [custom-expr]::before {
+  content: attr(custom-expr);
+  display: block;
+  background-color: #f0f0f0;
+  padding: 1px;
+  font-family: monospace;
+  font-size: x-small;
+
+  white-space: nowrap; /* 文本不换行 */
+  overflow: hidden; /* 隐藏超出部分 */
+  text-overflow: ellipsis; /* 显示省略号 */
+}
+[custom-expr]:hover::before {
+  overflow: visible; /* 允许溢出 */
+  white-space: normal; /* 允许文本换行 */
+  word-wrap: break-word; /* 长单词也能换行 */
+}
+/* .expr-plugin [custom-expr-value]::after {
+  content: attr(custom-expr-value);
+  background-color: #d25656;
+  padding: 1px;
+  font-family: monospace;
+} */
