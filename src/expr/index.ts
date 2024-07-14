@@ -1,17 +1,12 @@
-import { Plugin } from "siyuan";
-import "./index.css";
 import { siyuan } from "@llej/js_util";
-import { sql, updateBlock } from "~/libs/api";
+import { Plugin } from "siyuan";
+import { updateBlock } from "~/libs/api";
+import { pluginClassName } from "./constant";
+import { get_exprBlocks } from "./fn/get_exprBlocks";
+import "./index.css";
+import type { MergedBlock } from "./type";
 
-/** 用于控制插件属性显示 */
-const pluginClassName = "expr-plugin";
-const exprName = "custom-expr";
-const exprValueName = "custom-expr-value";
-
-type aliasAttribute = { [K in keyof attribute as `a_${K}`]: attribute[K] };
-/** 合并了block和attribute，其中attribute的属性key前面添加了`a_` */
-type MergedBlock = aliasAttribute & Block;
-
+import * as recast from "recast";
 const dev = console.log;
 declare global {
   var expr: Expr;
@@ -94,25 +89,9 @@ export default class Expr extends Plugin {
       return;
     }
 
-    const exprIDsStr = exprIDs.map((id) => `"${id}"`).join(",");
-
     try {
       this.evalState = true;
-      const exprBlock = (await sql(
-        `SELECT b.*,a.id AS a_id,a."name" AS a_name,a."value" as a_value,a."type" AS a_type,a.block_id AS a_block_id,a.root_id AS a_root_id,a.box AS a_box,a."path" AS a_path
-      FROM blocks AS  b
-      INNER JOIN attributes AS a
-      ON b.id = a.block_id
-      WHERE
-          a.name = "${exprName}"
-        AND
-          (
-            ( b.id IN (${exprIDsStr}) )
-              OR
-            (CAST(b.updated AS INTEGER)  > ${this.updated.value()})
-          )
-      ORDER BY b.updated DESC;`,
-      )) as MergedBlock[] | null;
+      const exprBlock = await get_exprBlocks(exprIDs);
 
       if (exprBlock && exprBlock.length > 0) {
         await Promise.all(exprBlock.map(this.exprEval.bind(this)));
@@ -125,8 +104,28 @@ export default class Expr extends Plugin {
   }
   /** 记录计算完成的 id ，不再计算 */
   evalExprIDs: string[] = [];
+  /** 对指定id进行求值 */
+  async exprEvalByID(block_id: string) {
+    const blocks = await get_exprBlocks([block_id]);
+    return this.exprEval(blocks[0]);
+  }
   async exprEval(block: MergedBlock) {
-    const evalValue = await eval(block.a_value);
+    // 如果没有 return 则为最后一个表达式添加 return
+    const code = `async ()=>{\n${block.a_value}\n}`;
+    const ast = recast.parse(code);
+    const b = recast.types.builders;
+    // 生成转换后的代码
+    const body: any[] = ast.program.body[0].expression.body.body;
+    if (body.find((item) => item.type === "ReturnStatement")) {
+    } else {
+      const lastExp = body.pop();
+      if ((lastExp.type = "ExpressionStatement")) {
+        // console.log("[lastExp]", lastExp);
+        body.push(b.returnStatement(lastExp.expression));
+      }
+    }
+    const output = recast.print(ast).code;
+    let evalValue = await eval(output)();
 
     const updated = generateTimestamp();
     if (Number(updated) > this.updated.value()) {
@@ -156,9 +155,10 @@ export default class Expr extends Plugin {
     // custom-expr-value="-0.56273369360008952"
     /** 将求值结果更新到块文本 */
     await updateBlock("markdown", String(evalValue_string + "\n" + newKramdownAttr), block.id);
-    dev("expr:", block.id, block.a_value, evalValue);
+    dev("expr eval:", { id: block.id, expr: block.a_value, evalValue });
 
     this.evalExprIDs.push(block.id);
+    return evalValue;
   }
 }
 
