@@ -1,5 +1,4 @@
 import { siyuan } from "@llej/js_util";
-import { Plugin } from "siyuan";
 import { updateBlock } from "~/libs/api";
 import { pluginClassName } from "./constant";
 import { get_exprBlocks } from "./fn/get_exprBlocks";
@@ -7,12 +6,14 @@ import "./index.css";
 import type { MergedBlock } from "./type";
 
 import * as recast from "recast";
+import { encodeHTML, generateTimestamp } from "~/libs/js_util";
+import { SiyuanPlugin } from "~/libs/siyuanPlugin";
 const dev = console.log;
 declare global {
   var expr: Expr;
 }
 
-export default class Expr extends Plugin {
+export default class Expr extends SiyuanPlugin {
   IntervalId = 0;
   /** 主循环的间隔毫秒数 */
   intervalMs = 1_000;
@@ -36,7 +37,7 @@ export default class Expr extends Plugin {
 
     /** 注册Expr实例到全局变量 */
     globalThis.expr = this;
-    this.onunloadFn.push(
+    this.addUnloadFn(
       () =>
         //@ts-ignore
         delete globalThis.expr,
@@ -49,17 +50,11 @@ export default class Expr extends Plugin {
 
     /** 注册求值循环 */
     this.IntervalId = setInterval(this.evalAllExpr.bind(this), this.intervalMs);
-    this.onunloadFn.push(() => clearInterval(this.IntervalId));
+    this.addUnloadFn(() => clearInterval(this.IntervalId));
 
     /** 在 body 上注册插件类名，用于控制样式的开关 */
     document.body.classList.add(pluginClassName);
-    this.onunloadFn.push(() => document.body.classList.remove(pluginClassName));
-  }
-
-  /** 插件卸载时会执行此数组中的函数 */
-  onunloadFn = [] as (() => void)[];
-  async onunload() {
-    this.onunloadFn.forEach((fn) => fn());
+    this.addUnloadFn(() => document.body.classList.remove(pluginClassName));
   }
 
   /** 对所有表达式进行求值 */
@@ -110,17 +105,15 @@ export default class Expr extends Plugin {
     return this.exprEval(blocks[0]);
   }
   async exprEval(block: MergedBlock) {
-    // 如果没有 return 则为最后一个表达式添加 return
     const code = `async ()=>{\n${block.a_value}\n}`;
     const ast = recast.parse(code);
     const b = recast.types.builders;
-    // 生成转换后的代码
+    // 如果没有 return 则为最后一个表达式添加 return
     const body: any[] = ast.program.body[0].expression.body.body;
     if (body.find((item) => item.type === "ReturnStatement")) {
     } else {
       const lastExp = body.pop();
       if ((lastExp.type = "ExpressionStatement")) {
-        // console.log("[lastExp]", lastExp);
         body.push(b.returnStatement(lastExp.expression));
       }
     }
@@ -160,30 +153,4 @@ export default class Expr extends Plugin {
     this.evalExprIDs.push(block.id);
     return evalValue;
   }
-}
-
-function generateTimestamp() {
-  const now = new Date();
-  return [
-    now.getFullYear(),
-    now.getMonth() + 1,
-    now.getDate(),
-    now.getHours(),
-    now.getMinutes(),
-    now.getSeconds(),
-  ]
-    .map((part) => part.toString().padStart(2, "0"))
-    .join("");
-}
-function encodeHTML(str: string) {
-  return str.replace(/[&<>"'\n]/g, function (match) {
-    return {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-      "\n": "_esc_newline_",
-    }[match]!;
-  });
 }

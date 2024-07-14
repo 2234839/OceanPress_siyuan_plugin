@@ -16,3 +16,28 @@ export function debounce(fn: Function, delay: number) {
     }, delay);
   };
 }
+export function generateTimestamp() {
+  const now = new Date();
+  return [
+    now.getFullYear(),
+    now.getMonth() + 1,
+    now.getDate(),
+    now.getHours(),
+    now.getMinutes(),
+    now.getSeconds(),
+  ]
+    .map((part) => part.toString().padStart(2, "0"))
+    .join("");
+}
+export function encodeHTML(str: string) {
+  return str.replace(/[&<>"'\n]/g, function (match) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+      "\n": "_esc_newline_",
+    }[match]!;
+  });
+}
