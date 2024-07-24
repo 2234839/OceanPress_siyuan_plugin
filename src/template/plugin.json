@@ -2,7 +2,7 @@
   "name": "template",
   "author": "崮生",
   "url": "https://github.com/2234839/template",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
@@ -24,7 +24,7 @@
   },
   "funding": {
     "custom": [
-      "https://afdian.net/@llej0"
+      "https://afdian.com/@llej0"
     ]
   }
 }

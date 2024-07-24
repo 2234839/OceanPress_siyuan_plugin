@@ -2,7 +2,7 @@
   "name": "oceanpress-siyuan-plugin",
   "author": "崮生",
   "url": "https://github.com/2234839/OceanPress_siyuan_plugin",
-  "version": "0.3.25",
+  "version": "0.3.26",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
@@ -24,7 +24,7 @@
   },
   "funding": {
     "custom": [
-      "https://afdian.net/@llej0"
+      "https://afdian.com/@llej0"
     ]
   }
 }

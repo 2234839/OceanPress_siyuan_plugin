@@ -2,7 +2,7 @@
   "name": "audio2text_plugin_siyuan",
   "author": "崮生",
   "url": "https://github.com/2234839/siyuan_audio2text",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
@@ -24,7 +24,7 @@
   },
   "funding": {
     "custom": [
-      "https://afdian.net/@llej0"
+      "https://afdian.com/@llej0"
     ]
   }
 }

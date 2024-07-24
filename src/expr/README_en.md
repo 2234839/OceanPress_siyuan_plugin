@@ -26,7 +26,7 @@ Subscription amount: Equivalent to 10 RMB, any payment method is acceptable, no 
 
 Subscription period: From the time of payment until the right to use the product for one hundred updates or 365 days, whichever is longer, and it is stackable. (That is, if I update more than a hundred times in a very short period, it will be calculated as one year)
 
-[Pay through the Love Power Platform](https://afdian.net/@llej0)
+[Pay through the Love Power Platform](https://afdian.com/@llej0)
 
 If you do not remember the above agreement, it is not considered a violation of the payment agreement.
 
