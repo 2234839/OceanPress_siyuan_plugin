@@ -1,0 +1,30 @@
+{
+  "name": "toolkit-plugin-siyuan",
+  "author": "崮生",
+  "url": "https://github.com/2234839/toolkit-plugin-siyuan",
+  "version": "0.0.5",
+  "minAppVersion": "2.10.3",
+  "backends": [
+    "all"
+  ],
+  "frontends": [
+    "all"
+  ],
+  "displayName": {
+    "en_US": "toolkit-plugin-siyuan",
+    "zh_CN": "toolkit-plugin-siyuan"
+  },
+  "description": {
+    "en_US": "",
+    "zh_CN": ""
+  },
+  "readme": {
+    "en_US": "README.md",
+    "zh_CN": "README.md"
+  },
+  "funding": {
+    "custom": [
+      "https://afdian.com/@llej0"
+    ]
+  }
+}

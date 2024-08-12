@@ -178,6 +178,36 @@ jobs:
           fi
           cd .. && rm -r main
 
+      - name: Deploy toolkit-plugin-siyuan
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          git clone --quiet --branch=main https://x-access-token:${DEPLOY_KEY}@github.com/2234839/toolkit-plugin-siyuan.git main
+          cd main
+          rm -rf ./* && cp -R ../dist/toolkit-plugin-siyuan/. .
+          mkdir -p ./.github/workflows/
+          cp ../releaseRepo.yml ./.github/workflows/release.yml
+          tree
+          export CURRENT_VERSION=$(cat plugin.json | jq -r '.version')
+          export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
+          echo "CURRENT_VERSION=$CURRENT_VERSION   LATEST_TAG=$LATEST_TAG"
+          git status --porcelain
+          if git status --porcelain | grep -qE '(M|A|D|R|\\?)' ; then
+            git add .
+            git commit -m "Update dist to GitHub"
+            git push -f origin main
+          else
+            echo "No changes"
+          fi
+          if [ "$CURRENT_VERSION" != "$LATEST_TAG" ] && [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "CURRENT_VERSION_IS_NEWER=true"
+            git tag -a "v$CURRENT_VERSION" -m "Release version $CURRENT_VERSION"
+            git push --tags
+          else
+            echo "CURRENT_VERSION_IS_NEWER=false"
+          fi
+          cd .. && rm -r main
+
       - name: Deploy OceanPress
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
