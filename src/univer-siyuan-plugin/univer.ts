@@ -19,6 +19,7 @@ import { UniverDocsUIPlugin } from "@univerjs/docs-ui";
 import { UniverSheetsPlugin } from "@univerjs/sheets";
 import { UniverSheetsFormulaPlugin } from "@univerjs/sheets-formula";
 import { UniverSheetsUIPlugin } from "@univerjs/sheets-ui";
+import { UniverSheetsNumfmtPlugin } from "@univerjs/sheets-numfmt";
 
 import DesignZhCN from "@univerjs/design/locale/zh-CN";
 import UIZhCN from "@univerjs/ui/locale/zh-CN";
@@ -56,6 +57,7 @@ univer.registerPlugin(UniverDocsUIPlugin);
 
 univer.registerPlugin(UniverSheetsPlugin);
 univer.registerPlugin(UniverSheetsUIPlugin);
+univer.registerPlugin(UniverSheetsNumfmtPlugin);
 univer.registerPlugin(UniverSheetsFormulaPlugin);
 
 import { FUniver } from "@univerjs/facade";

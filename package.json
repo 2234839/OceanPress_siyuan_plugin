@@ -39,6 +39,7 @@
     "@univerjs/facade": "^0.2.11",
     "@univerjs/sheets": "^0.2.11",
     "@univerjs/sheets-formula": "^0.2.11",
+    "@univerjs/sheets-numfmt": "^0.2.11",
     "@univerjs/sheets-ui": "^0.2.11",
     "@univerjs/ui": "^0.2.11",
     "locomotive-scroll": "^4.1.4",
