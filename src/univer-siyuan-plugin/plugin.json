@@ -1,0 +1,30 @@
+{
+  "name": "univer-siyuan-plugin",
+  "author": "崮生",
+  "url": "https://github.com/2234839/univer-siyuan-plugin",
+  "version": "0.0.36",
+  "minAppVersion": "2.10.3",
+  "backends": [
+    "all"
+  ],
+  "frontends": [
+    "all"
+  ],
+  "displayName": {
+    "en_US": "univer-siyuan-plugin",
+    "zh_CN": "univer-siyuan-plugin"
+  },
+  "description": {
+    "en_US": "",
+    "zh_CN": ""
+  },
+  "readme": {
+    "en_US": "README.md",
+    "zh_CN": "README.md"
+  },
+  "funding": {
+    "custom": [
+      "https://afdian.com/@llej0"
+    ]
+  }
+}

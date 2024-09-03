@@ -314,8 +314,6 @@ export async function getFile(path: string): Promise<any> {
     return file;
   } catch (error_msg) {
     throw error_msg
-    console.log("[error_msg]", error_msg);
-    return null;
   }
 }
 

@@ -41,3 +41,11 @@ export function encodeHTML(str: string) {
     }[match]!;
   });
 }
+
+export function generateUniqueId() {
+  // 生成随机字符串
+  const randomString = Math.random().toString(36).substring(2, 9);
+
+  // 组合成最终的 ID
+  return `${generateTimestamp()}-${randomString}`;
+}

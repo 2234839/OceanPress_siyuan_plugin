@@ -17,6 +17,7 @@
     "build:oceanpress-siyuan-plugin": "cross-env plugin_name=oceanpress-siyuan-plugin vite build",
     "build:sy2video-plugin-siyuan": "cross-env plugin_name=sy2video-plugin-siyuan vite build",
     "build:toolkit-plugin-siyuan": "cross-env plugin_name=toolkit-plugin-siyuan vite build",
+    "build:univer-siyuan-plugin": "cross-env plugin_name=univer-siyuan-plugin vite build && cross-env plugin_name=univer-siyuan-plugin fileName=univer.html format=esm emptyOutDir=0 vite build ",
     "build:expr": "cross-env plugin_name=expr vite build"
   },
   "devDependencies": {
@@ -29,6 +30,18 @@
   "dependencies": {
     "@llej/js_util": "^1.0.10",
     "@sinclair/typebox": "^0.32.34",
+    "@univerjs/core": "^0.2.11",
+    "@univerjs/design": "^0.2.11",
+    "@univerjs/docs": "^0.2.11",
+    "@univerjs/docs-ui": "^0.2.11",
+    "@univerjs/engine-formula": "^0.2.11",
+    "@univerjs/engine-render": "^0.2.11",
+    "@univerjs/facade": "^0.2.11",
+    "@univerjs/sheets": "^0.2.11",
+    "@univerjs/sheets-formula": "^0.2.11",
+    "@univerjs/sheets-ui": "^0.2.11",
+    "@univerjs/ui": "^0.2.11",
+    "locomotive-scroll": "^4.1.4",
     "modern-screenshot": "^4.4.39",
     "recast": "^0.23.9",
     "solid-js": "^1.8.17",

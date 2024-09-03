@@ -4,14 +4,16 @@ import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import solidPlugin from "vite-plugin-solid";
 import { writeFile, copyFile } from "fs/promises";
 import { execSync } from "child_process";
-
 console.log("=============================");
 const viteConfig: UserConfigExport = (ctx) => {
   const env: {
     /** 存在此变量编译输出至此目录,例如 C:/Users/llej/Documents/SiYuan/data/plugins */
     VITE_dist_dir?: string;
   } = loadEnv(ctx.mode, process.cwd());
-
+  console.log("[env]", env);
+  const scriptFile = process.env?.fileName ?? "index.ts";
+  const format: "cjs" | "esm" = (process.env?.format as "esm") ?? "cjs";
+  const emptyOutDir = process.env?.emptyOutDir ?? true;
   const pluginName = process.env.plugin_name ?? "vite-plugin-siyuan";
   console.log("[pluginName]", pluginName, ctx.mode);
   if (ctx.mode === "production") {
@@ -51,10 +53,16 @@ const viteConfig: UserConfigExport = (ctx) => {
 
   return defineConfig({
     server: {
-      cors: true,
+      // cors: true,
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["*"],
+      },
     },
-    // base: ctx.mode ==="development" ? "/" :"/plugins/oceanpress-siyuan-plugin/",
+    base: ctx.mode === "development" ? "/" : `/plugins/${pluginName}/`,
     publicDir: `./src/${pluginName}`,
+
     // optimizeDeps: {
     //   include: ["siyuan"],
     // },
@@ -99,26 +107,21 @@ const viteConfig: UserConfigExport = (ctx) => {
     ],
     build: {
       lib: {
-        entry: `src/${pluginName}/index.ts`,
+        entry: `src/${pluginName}/${scriptFile}`,
         name: pluginName,
-        fileName: (format) => `index.js`,
       },
       // 输出路径
       outDir: `${env.VITE_dist_dir ?? "dist"}/${pluginName}`,
-      emptyOutDir: true,
-
+      emptyOutDir: Boolean(Number(emptyOutDir)),
       // 构建后是否生成 source map 文件
       sourcemap: true,
 
-      minify: !ctx.mode,
+      minify: true,
       rollupOptions: {
-        // input: {
-        //   plugin: `./src/${pluginName}/index.ts`,
-        // },
         output: [
           {
-            entryFileNames: "index.js",
-            format: "cjs",
+            entryFileNames: (format === "esm" ? "es/" : "") + scriptFile.replace(".ts", ".js"),
+            format,
             assetFileNames: `asset/[name]-[hash][extname]`,
             manualChunks: undefined,
           },
