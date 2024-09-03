@@ -4,6 +4,7 @@ import "@univerjs/ui/lib/index.css";
 import "@univerjs/docs-ui/lib/index.css";
 import "@univerjs/sheets-ui/lib/index.css";
 import "@univerjs/sheets-formula/lib/index.css";
+import '@univerjs/sheets-numfmt/lib/index.css';
 
 import { CommandType, LocaleType, Tools, Univer, UniverInstanceType } from "@univerjs/core";
 import { defaultTheme } from "@univerjs/design";
@@ -118,7 +119,7 @@ async function main() {
     });
   });
   univerAPI.onCommandExecuted((command) => {
-    if (command.type !== 2) return;
+    if (command.type !== CommandType.MUTATION) return;
     save();
   });
 }
