@@ -19,9 +19,12 @@ export default class UniverPlugin extends SiyuanPlugin {
           const updated = generateTimestamp();
           apis.insertBlock(
             "markdown",
-            `<iframe sandbox="allow-forms allow-presentation allow-same-origin allow-scripts allow-modals allow-popups" src="/plugins/univer-siyuan-plugin/src/univer-siyuan-plugin/univer.html?id=${id}&type=sheet" data-src="" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="width: 794px; height: 636px;"></iframe>
-
-{: updated="${updated}" id="${id}"}`,
+            kramdownIframe({
+              updated,
+              id,
+              src: `/plugins/univer-siyuan-plugin/univer.html?id=${id}&type=sheet`,
+            }),
+            undefined,
             e.detail.blockElements[0]?.dataset.nodeId,
           );
         },
@@ -41,15 +44,20 @@ export default class UniverPlugin extends SiyuanPlugin {
           const block = iframe.closest<HTMLDivElement>('[data-type="NodeIFrame"]')!;
           const blockId = block.dataset.nodeId!;
           if (blockId !== event.blockId) {
-            const kmd = await apis.getBlockKramdown(blockId);
-            const newKmd = kmd.kramdown.replace(
+            await new Promise((r) => setTimeout(r, 500));
+            const newSrc = iframe.src.replace(
               `id=${event.blockId}`,
               `id=${blockId}&copy=${event.blockId}`,
             );
-            // console.log("[block]", block, event.blockId);
-            console.log("[kmd]", kmd.kramdown);
-            console.log("[newKmd]", {newKmd});
-            await apis.updateBlock("markdown", newKmd, blockId);
+            await apis.updateBlock(
+              "markdown",
+              kramdownIframe({
+                updated: generateTimestamp(),
+                id: blockId,
+                src: newSrc,
+              }),
+              blockId,
+            );
           }
         }
       } else if (event.type === "llej-plugin-rpc") {
@@ -75,3 +83,9 @@ export default class UniverPlugin extends SiyuanPlugin {
     window.addEventListener("message", fn);
   }
 }
+
+const kramdownIframe = (par: { updated: string; id: string; src: string }) => {
+  return `<iframe sandbox="allow-forms allow-presentation allow-same-origin allow-scripts allow-modals allow-popups" src="${par.src}" data-src="" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="width: 794px; height: 636px;"></iframe>
+
+{: updated="${par.updated}" id="${par.id}"}`;
+};

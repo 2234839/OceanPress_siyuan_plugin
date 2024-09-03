@@ -17,7 +17,7 @@
     "build:oceanpress-siyuan-plugin": "cross-env plugin_name=oceanpress-siyuan-plugin vite build",
     "build:sy2video-plugin-siyuan": "cross-env plugin_name=sy2video-plugin-siyuan vite build",
     "build:toolkit-plugin-siyuan": "cross-env plugin_name=toolkit-plugin-siyuan vite build",
-    "build:univer-siyuan-plugin": "cross-env plugin_name=univer-siyuan-plugin vite build && cross-env plugin_name=univer-siyuan-plugin fileName=univer.html format=esm emptyOutDir=0 vite build ",
+    "build:univer-siyuan-plugin": "cross-env plugin_name=univer-siyuan-plugin vite build && cross-env plugin_name=univer-siyuan-plugin fileName=univer.ts format=esm emptyOutDir=0 vite build ",
     "build:expr": "cross-env plugin_name=expr vite build"
   },
   "devDependencies": {

@@ -10,9 +10,15 @@
 <body>
     <div id="univer-siyuan-plugin--app" style="height:94vh;"></div>
     <script>var process = { env: { NODE_ENV: "production" } }</script>
-    <script type="module" src="/src/univer-siyuan-plugin/univer.ts"></script>
-    <!-- <script type="module" src="http://127.0.0.1:14238/plugins/univer-siyuan-plugin/univer.js"></script> -->
-    <!-- http://localhost:5173/src/univer-siyuan-plugin/univer.html -->
+    <script type="module">
+        const dev = import.meta.env?.MODE === 'development'
+        if (dev) {
+            import('/src/univer-siyuan-plugin/univer.ts')
+        } else {
+            // 生产环境下的动态导入，避免编译时加载
+            eval(`import('/plugins/univer-siyuan-plugin/es/univer.js')`)
+        }
+    </script>
 </body>
 
 </html>

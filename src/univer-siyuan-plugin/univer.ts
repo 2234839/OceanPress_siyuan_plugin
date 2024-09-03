@@ -9,7 +9,7 @@ import { CommandType, LocaleType, Tools, Univer, UniverInstanceType } from "@uni
 import { defaultTheme } from "@univerjs/design";
 
 import { UniverFormulaEnginePlugin } from "@univerjs/engine-formula";
-import { UniverRenderEnginePlugin } from "@univerjs/engine-render";
+import { DeviceInputEventType, UniverRenderEnginePlugin } from "@univerjs/engine-render";
 
 import { UniverUIPlugin } from "@univerjs/ui";
 
@@ -82,24 +82,42 @@ async function main() {
   let data = {};
   console.log("[dataPath]", dataPath, oldData);
   if (oldData.sheets === undefined) {
-    if (!copy) return;
-    data = await api.getFile(`/data/storage/petal/${pkg.name}/univer-${copy}.json`);
+    if (copy) data = await api.getFile(`/data/storage/petal/${pkg.name}/univer-${copy}.json`);
   } else {
     data = oldData;
   }
 
   const unit = univer.createUnit(UniverInstanceType.UNIVER_SHEET, data);
   const save = throttle(async () => {
+    // univerAPI.executeCommand("sheet.operation.set-cell-edit-visible", {
+    //   visible: true,
+    //   _eventType: DeviceInputEventType.PointerUp,
+    // });
+    const snapshot = unit.getSnapshot();
+
+    console.log("[snapshot]", JSON.stringify(snapshot));
     const res = await api.putFile(
       dataPath,
       false,
-      new Blob([JSON.stringify(unit.getSnapshot())], { type: "text/plain" }),
+      new Blob([JSON.stringify(snapshot)], { type: "text/plain" }),
     );
-  }, 3_000);
+  }, 500);
+
+  window.addEventListener("beforeunload", () => {
+    console.log("[beforeunload]", "beforeunload");
+    univerAPI.executeCommand("sheet.operation.set-cell-edit-visible", {
+      visible: false,
+      _eventType: DeviceInputEventType.PointerUp,
+    });
+    save();
+    univerAPI.executeCommand("sheet.operation.set-cell-edit-visible", {
+      visible: true,
+      _eventType: DeviceInputEventType.PointerUp,
+    });
+  });
   univerAPI.onCommandExecuted((command) => {
-    if (command.type === CommandType.MUTATION) {
-      save();
-    }
+    if (command.type !== 2) return;
+    save();
   });
 }
 main();
