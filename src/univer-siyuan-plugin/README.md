@@ -1,6 +1,6 @@
 ## univer-siyuan-plugin
 
-> 特别鸣谢 iqeqsq 的赞助支持
+> 特别鸣谢 [iqeqsq](https://ld246.com/member/iqeqsq) 的赞助支持
 
 在思源内嵌入电子表格
 
