@@ -67,6 +67,7 @@ jobs:
           rm -rf ./* && cp -R ../dist/vite-plugin-siyuan/. .
           mkdir -p ./.github/workflows/
           cp ../releaseRepo.yml ./.github/workflows/release.yml
+          cp ../LICENSE ./LICENSE
           tree
           export CURRENT_VERSION=$(cat plugin.json | jq -r '.version')
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
@@ -97,6 +98,7 @@ jobs:
           rm -rf ./* && cp -R ../dist/audio2text_plugin_siyuan/. .
           mkdir -p ./.github/workflows/
           cp ../releaseRepo.yml ./.github/workflows/release.yml
+          cp ../LICENSE ./LICENSE
           tree
           export CURRENT_VERSION=$(cat plugin.json | jq -r '.version')
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
@@ -127,6 +129,7 @@ jobs:
           rm -rf ./* && cp -R ../dist/sy2video-plugin-siyuan/. .
           mkdir -p ./.github/workflows/
           cp ../releaseRepo.yml ./.github/workflows/release.yml
+          cp ../LICENSE ./LICENSE
           tree
           export CURRENT_VERSION=$(cat plugin.json | jq -r '.version')
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
@@ -157,6 +160,7 @@ jobs:
           rm -rf ./* && cp -R ../dist/expr/. .
           mkdir -p ./.github/workflows/
           cp ../releaseRepo.yml ./.github/workflows/release.yml
+          cp ../LICENSE ./LICENSE
           tree
           export CURRENT_VERSION=$(cat plugin.json | jq -r '.version')
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
@@ -187,6 +191,7 @@ jobs:
           rm -rf ./* && cp -R ../dist/toolkit-plugin-siyuan/. .
           mkdir -p ./.github/workflows/
           cp ../releaseRepo.yml ./.github/workflows/release.yml
+          cp ../LICENSE ./LICENSE
           tree
           export CURRENT_VERSION=$(cat plugin.json | jq -r '.version')
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
@@ -217,6 +222,7 @@ jobs:
           rm -rf ./* && cp -R ../dist/univer-siyuan-plugin/. .
           mkdir -p ./.github/workflows/
           cp ../releaseRepo.yml ./.github/workflows/release.yml
+          cp ../LICENSE ./LICENSE
           tree
           export CURRENT_VERSION=$(cat plugin.json | jq -r '.version')
           export LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` | sed 's/^v//')
@@ -243,6 +249,7 @@ jobs:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
             cd dist/oceanpress-siyuan-plugin
+            cp ../LICENSE ./LICENSE
             zip -r package.zip .
             cp package.zip ../../
             echo "PACKAGE_VERSION=$(node -p -e "const p = require('./plugin.json'); p.version;")" >> $GITHUB_ENV
