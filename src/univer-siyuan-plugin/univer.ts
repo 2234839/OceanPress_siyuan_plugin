@@ -4,7 +4,7 @@ import "@univerjs/ui/lib/index.css";
 import "@univerjs/docs-ui/lib/index.css";
 import "@univerjs/sheets-ui/lib/index.css";
 import "@univerjs/sheets-formula/lib/index.css";
-import '@univerjs/sheets-numfmt/lib/index.css';
+import "@univerjs/sheets-numfmt/lib/index.css";
 
 import { CommandType, LocaleType, Tools, Univer, UniverInstanceType } from "@univerjs/core";
 import { defaultTheme } from "@univerjs/design";
@@ -20,7 +20,7 @@ import { UniverDocsUIPlugin } from "@univerjs/docs-ui";
 import { UniverSheetsPlugin } from "@univerjs/sheets";
 import { UniverSheetsFormulaPlugin } from "@univerjs/sheets-formula";
 import { UniverSheetsUIPlugin } from "@univerjs/sheets-ui";
-import { UniverSheetsNumfmtPlugin } from "@univerjs/sheets-numfmt";
+import { UniverSheetsNumfmtPlugin, } from "@univerjs/sheets-numfmt";
 
 import DesignZhCN from "@univerjs/design/locale/zh-CN";
 import UIZhCN from "@univerjs/ui/locale/zh-CN";
@@ -28,6 +28,7 @@ import DocsUIZhCN from "@univerjs/docs-ui/locale/zh-CN";
 import SheetsZhCN from "@univerjs/sheets/locale/zh-CN";
 import SheetsUIZhCN from "@univerjs/sheets-ui/locale/zh-CN";
 import SheetsFormulaZhCN from "@univerjs/sheets-formula/locale/zh-CN";
+import SheetsNumfmtZhCN from "@univerjs/sheets-numfmt/locale/zh-CN";
 
 const univer = new Univer({
   theme: defaultTheme,
@@ -38,14 +39,19 @@ const univer = new Univer({
       DocsUIZhCN,
       SheetsUIZhCN,
       SheetsFormulaZhCN,
+      SheetsNumfmtZhCN,
+      DesignZhCN,
       UIZhCN,
       DesignZhCN,
+      functionZhCN,
     ),
   },
 });
 
 univer.registerPlugin(UniverRenderEnginePlugin);
-univer.registerPlugin(UniverFormulaEnginePlugin);
+univer.registerPlugin(UniverFormulaEnginePlugin, {
+  function: functionUser,
+});
 
 univer.registerPlugin(UniverUIPlugin, {
   container: "univer-siyuan-plugin--app",
@@ -59,12 +65,15 @@ univer.registerPlugin(UniverDocsUIPlugin);
 univer.registerPlugin(UniverSheetsPlugin);
 univer.registerPlugin(UniverSheetsUIPlugin);
 univer.registerPlugin(UniverSheetsNumfmtPlugin);
-univer.registerPlugin(UniverSheetsFormulaPlugin);
+univer.registerPlugin(UniverSheetsFormulaPlugin, {
+  description: FUNCTION_LIST_USER,
+});
 
 import { FUniver } from "@univerjs/facade";
 import { apiProxy, sendMsg } from "~/libs/apiProxy";
 import pkg from "./plugin.json";
 import type { checkId } from "./msg";
+import { FUNCTION_LIST_USER, functionEnUS, functionUser, functionZhCN } from "./custom-function";
 const univerAPI = FUniver.newAPI(univer);
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -98,7 +107,7 @@ async function main() {
     // });
     const snapshot = unit.getSnapshot();
 
-    console.log("[snapshot]", JSON.stringify(snapshot));
+    // console.log("[snapshot]", JSON.stringify(snapshot));
     const res = await api.putFile(
       dataPath,
       false,
