@@ -38,6 +38,8 @@
     "@univerjs/engine-render": "^0.2.11",
     "@univerjs/facade": "^0.2.11",
     "@univerjs/sheets": "^0.2.11",
+    "@univerjs/sheets-filter": "^0.2.11",
+    "@univerjs/sheets-filter-ui": "^0.2.11",
     "@univerjs/sheets-formula": "^0.2.11",
     "@univerjs/sheets-numfmt": "^0.2.11",
     "@univerjs/sheets-ui": "^0.2.11",

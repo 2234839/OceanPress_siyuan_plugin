@@ -5,6 +5,8 @@ import "@univerjs/docs-ui/lib/index.css";
 import "@univerjs/sheets-ui/lib/index.css";
 import "@univerjs/sheets-formula/lib/index.css";
 import "@univerjs/sheets-numfmt/lib/index.css";
+import '@univerjs/sheets-filter-ui/lib/index.css';
+
 
 import { CommandType, LocaleType, Tools, Univer, UniverInstanceType } from "@univerjs/core";
 import { defaultTheme } from "@univerjs/design";
@@ -16,6 +18,9 @@ import { UniverUIPlugin } from "@univerjs/ui";
 
 import { UniverDocsPlugin } from "@univerjs/docs";
 import { UniverDocsUIPlugin } from "@univerjs/docs-ui";
+
+import { UniverSheetsFilterPlugin } from '@univerjs/sheets-filter';
+import { UniverSheetsFilterUIPlugin } from '@univerjs/sheets-filter-ui';
 
 import { UniverSheetsPlugin } from "@univerjs/sheets";
 import { UniverSheetsFormulaPlugin } from "@univerjs/sheets-formula";
@@ -29,7 +34,7 @@ import SheetsZhCN from "@univerjs/sheets/locale/zh-CN";
 import SheetsUIZhCN from "@univerjs/sheets-ui/locale/zh-CN";
 import SheetsFormulaZhCN from "@univerjs/sheets-formula/locale/zh-CN";
 import SheetsNumfmtZhCN from "@univerjs/sheets-numfmt/locale/zh-CN";
-
+import SheetsFilterUIZhCN from '@univerjs/sheets-filter-ui/locale/zh-CN';
 const univer = new Univer({
   theme: defaultTheme,
   locale: LocaleType.ZH_CN,
@@ -44,6 +49,7 @@ const univer = new Univer({
       UIZhCN,
       DesignZhCN,
       functionZhCN,
+      SheetsFilterUIZhCN
     ),
   },
 });
@@ -68,6 +74,8 @@ univer.registerPlugin(UniverSheetsNumfmtPlugin);
 univer.registerPlugin(UniverSheetsFormulaPlugin, {
   description: FUNCTION_LIST_USER,
 });
+univer.registerPlugin(UniverSheetsFilterPlugin);
+univer.registerPlugin(UniverSheetsFilterUIPlugin);
 
 import { FUniver } from "@univerjs/facade";
 import { apiProxy, sendMsg } from "~/libs/apiProxy";
@@ -92,7 +100,6 @@ async function main() {
   const oldData = await api.getFile(dataPath);
 
   let data = {};
-  console.log("[dataPath]", dataPath, oldData);
   if (oldData.sheets === undefined) {
     if (copy) data = await api.getFile(`/data/storage/petal/${pkg.name}/univer-${copy}.json`);
   } else {
@@ -101,13 +108,7 @@ async function main() {
 
   const unit = univer.createUnit(UniverInstanceType.UNIVER_SHEET, data);
   const save = throttle(async () => {
-    // univerAPI.executeCommand("sheet.operation.set-cell-edit-visible", {
-    //   visible: true,
-    //   _eventType: DeviceInputEventType.PointerUp,
-    // });
     const snapshot = unit.getSnapshot();
-
-    // console.log("[snapshot]", JSON.stringify(snapshot));
     const res = await api.putFile(
       dataPath,
       false,
