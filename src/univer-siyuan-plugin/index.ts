@@ -36,6 +36,7 @@ export default class UniverPlugin extends SiyuanPlugin {
     window["univerPlugin"] = this;
     const fn = async (ev: MessageEvent<apiRpcData | checkId>) => {
       const event = ev.data;
+      // 检测复制粘贴等情况
       if (event.type === "llej-plugin-rpc-univer-check-id") {
         const iframeList = document.querySelectorAll<HTMLIFrameElement>(
           `iframe[src*="univer-siyuan-plugin/univer.html?id=${event.blockId}"]`,
@@ -45,10 +46,15 @@ export default class UniverPlugin extends SiyuanPlugin {
           const blockId = block.dataset.nodeId!;
           if (blockId !== event.blockId) {
             await new Promise((r) => setTimeout(r, 500));
-            const newSrc = iframe.src.replace(
+
+            let newSrc = iframe.src.replace(
               `id=${event.blockId}`,
               `id=${blockId}&copy=${event.blockId}`,
             );
+            if(newSrc.startsWith(location.origin)){
+              newSrc=newSrc.slice(location.origin.length);
+            }
+
             await apis.updateBlock(
               "markdown",
               kramdownIframe({

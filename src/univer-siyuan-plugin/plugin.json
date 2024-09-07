@@ -2,7 +2,7 @@
   "name": "univer-siyuan-plugin",
   "author": "崮生",
   "url": "https://github.com/2234839/univer-siyuan-plugin",
-  "version": "0.0.48",
+  "version": "0.0.49",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
