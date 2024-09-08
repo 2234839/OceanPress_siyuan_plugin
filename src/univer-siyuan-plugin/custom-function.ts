@@ -134,7 +134,7 @@ async function asyncObjectFunction(...variants: BaseValueObject[]) {
 
       accumulatorAll = accumulatorAll.plus(variant as BaseValueObject);
     }
-
+    console.log("[accumulatorAll.toUnitRange()]", accumulatorAll.toUnitRange());
     resolve(StringValueObject.create(`expr: ${accumulatorAll.getValue()}`));
     return accumulatorAll;
   });

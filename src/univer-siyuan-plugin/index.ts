@@ -30,7 +30,37 @@ export default class UniverPlugin extends SiyuanPlugin {
         },
       });
     });
+    this.protyleSlash.push({
+      id: "univer-add-sheet",
+      filter: ["excel", "sheet", "表格", "univer"],
+      callback(protyle) {
+        console.log("[protyle]", protyle);
+        const id = generateUniqueId();
+        const updated = generateTimestamp();
+        protyle.insert(
+          `<div data-node-id="${id}" data-type="NodeIFrame" class="iframe" updated="${updated}">\
+<div class="iframe-content">\
+<iframe sandbox="allow-forms allow-presentation allow-same-origin allow-scripts allow-modals allow-popups" src="/plugins/univer-siyuan-plugin/univer.html?id=${id}&amp;type=sheet" data-src="" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="width: 1028px; height: 438px;"></iframe><span class="protyle-action__drag" contenteditable="false"></span></div><div class="protyle-attr" contenteditable="false">&ZeroWidthSpace;</div></div>`,
+          true,
+          true,
+        );
+        // const id = generateUniqueId();
+        // const updated = generateTimestamp();
+        // apis.insertBlock(
+        //   "markdown",
+        //   kramdownIframe({
+        //     updated,
+        //     id,
+        //     src: `/plugins/univer-siyuan-plugin/univer.html?id=${id}&type=sheet`,
+        //   }),
+        //   undefined,
+        //   ,
+        // );
+      },
+      html: `univer:sheet`,
+    });
   }
+
   onLayoutReady(): void {
     // @ts-expect-error
     window["univerPlugin"] = this;
@@ -51,8 +81,8 @@ export default class UniverPlugin extends SiyuanPlugin {
               `id=${event.blockId}`,
               `id=${blockId}&copy=${event.blockId}`,
             );
-            if(newSrc.startsWith(location.origin)){
-              newSrc=newSrc.slice(location.origin.length);
+            if (newSrc.startsWith(location.origin)) {
+              newSrc = newSrc.slice(location.origin.length);
             }
 
             await apis.updateBlock(
