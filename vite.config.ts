@@ -114,7 +114,7 @@ const viteConfig: UserConfigExport = (ctx) => {
       outDir: `${env.VITE_dist_dir ?? "dist"}/${pluginName}`,
       emptyOutDir: Boolean(Number(emptyOutDir)),
       // 构建后是否生成 source map 文件
-      sourcemap: true,
+      sourcemap: false,
 
       minify: true,
       rollupOptions: {
