@@ -1,0 +1,30 @@
+{
+  "name": "feed_siyuan_plugin",
+  "author": "崮生",
+  "url": "https://github.com/2234839/feed_siyuan_plugin",
+  "version": "0.0.7",
+  "minAppVersion": "2.10.3",
+  "backends": [
+    "all"
+  ],
+  "frontends": [
+    "all"
+  ],
+  "displayName": {
+    "en_US": "feed_siyuan_plugin",
+    "zh_CN": "feed_siyuan_plugin"
+  },
+  "description": {
+    "en_US": "",
+    "zh_CN": ""
+  },
+  "readme": {
+    "en_US": "README.md",
+    "zh_CN": "README.md"
+  },
+  "funding": {
+    "custom": [
+      "https://afdian.com/@llej0"
+    ]
+  }
+}
