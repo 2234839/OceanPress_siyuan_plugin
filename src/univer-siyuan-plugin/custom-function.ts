@@ -60,7 +60,6 @@ export const functionZhCN = {
   },
 };
 
-import type { Ctor } from "@univerjs/core";
 import type {
   ArrayValueObject,
   BaseValueObject,
@@ -105,11 +104,11 @@ export const FUNCTION_LIST_USER: IFunctionInfo[] = [
 ];
 
 export class CustomAsyncObject extends BaseFunction {
-  override calculate(...variants: BaseValueObject[]) {
+  calculate(...variants: BaseValueObject[]) {
     return new AsyncObject(asyncObjectFunction(...variants));
   }
 
-  override isAsync(): boolean {
+  isAsync(): boolean {
     return true;
   }
 }
@@ -141,6 +140,4 @@ async function asyncObjectFunction(...variants: BaseValueObject[]) {
 }
 
 // Mapping of algorithms and names
-export const functionUser: [[Ctor<BaseFunction>, IFunctionNames]] = [
-  [CustomAsyncObject, FUNCTION_NAMES_USER.EXPR],
-];
+export const functionUser = [[CustomAsyncObject, FUNCTION_NAMES_USER.EXPR]];

@@ -299,17 +299,7 @@ LIMIT 99999`);
     });
   }
 
-  // 如果 ui 组件已添加，就不会重复添加
-  async addUiComponent(parentEL: HTMLElement, jsxEl: () => JSX.Element) {
-    // 因为思源会修改dom，导致添加在文档里的元素消失，所以这里检测是否需要重新添加
-    if (parentEL.querySelector("." + oceanpress_ui_flag)) return;
 
-    const div = document.createElement("div");
-    div.style.pointerEvents = "none";
-    const dispose = render(jsxEl, div);
-    this.addUnloadFn(() => (div.remove(), dispose()));
-    parentEL.appendChild(div);
-  }
   previewCurrentPage() {}
 }
 

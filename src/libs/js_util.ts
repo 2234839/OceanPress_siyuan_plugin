@@ -49,3 +49,79 @@ export function generateUniqueId() {
   // 组合成最终的 ID
   return `${generateTimestamp()}-${randomString}`;
 }
+
+interface ResultItem {
+  path: string;
+  key: string;
+  value: any;
+  matchType: "key" | "value";
+}
+/** 递归查找对象属性key或者value 中是否存在 指定的字符串 */
+export function findKeysAndValuesWithString(
+  obj: Record<string, any>,
+  searchString: string,
+): ResultItem[] {
+  const result: ResultItem[] = [];
+  const visited = new WeakSet();
+
+  function traverse(currentObj: Record<string, any>, path: string[] = []): void {
+    if (typeof currentObj !== "object" || currentObj === null || visited.has(currentObj)) {
+      return;
+    }
+
+    visited.add(currentObj);
+    const list = Object.entries(currentObj);
+    if (currentObj?.children) {
+      list.push(["children", currentObj?.children] as [string, any]);
+    }
+    for (const [key, value] of list) {
+      const currentPath = [...path];
+
+      if (/^\d+$/.test(key)) {
+        currentPath.push(`[${key}]`);
+      } else {
+        currentPath.push(key);
+      }
+
+      const fullPath = currentPath.join(".").replace(/\.(\[\d+\])/g, "$1");
+
+      if (key.includes(searchString)) {
+        result.push({
+          path: fullPath,
+          key: key,
+          value: value,
+          matchType: "key",
+        });
+      }
+
+      if (typeof value === "string" && value.includes(searchString)) {
+        result.push({
+          path: fullPath,
+          key: key,
+          value: value,
+          matchType: "value",
+        });
+      }
+
+      if (typeof value === "object" && value !== null) {
+        traverse(value, currentPath);
+      }
+    }
+  }
+
+  traverse(obj);
+  return result;
+}
+export function getValueByPath(obj: Record<string, any>, path: string): any {
+  const parts = path.split(/\.|\[|\]/).filter(Boolean);
+  let current: any = obj;
+
+  for (const part of parts) {
+    if (current == null) {
+      return undefined;
+    }
+    current = current[part];
+  }
+
+  return current;
+}

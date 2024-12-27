@@ -14,7 +14,7 @@ declare global {
 }
 
 export default class Expr extends SiyuanPlugin {
-  IntervalId = 0;
+  IntervalId = setInterval(() => {});
   /** 主循环的间隔毫秒数 */
   intervalMs = 1_000;
   /** 控制sql相关 TODO 添加选项配置 */

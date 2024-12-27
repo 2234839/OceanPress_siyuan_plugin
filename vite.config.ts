@@ -4,6 +4,8 @@ import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import solidPlugin from "vite-plugin-solid";
 import { writeFile, copyFile } from "fs/promises";
 import { execSync } from "child_process";
+import vue from "@vitejs/plugin-vue";
+
 console.log("=============================");
 const viteConfig: UserConfigExport = (ctx) => {
   const env: {
@@ -50,7 +52,6 @@ const viteConfig: UserConfigExport = (ctx) => {
       }
     });
   }
-
   return defineConfig({
     server: {
       // cors: true,
@@ -79,6 +80,7 @@ const viteConfig: UserConfigExport = (ctx) => {
     },
     plugins: [
       cssInjectedByJsPlugin(),
+      vue(),
       solidPlugin({
         solid: {
           // 禁止事件委派，不禁用的话 需要 on:click 的形式才能阻止事件冒泡，但 typescript 类型不友好会报错
