@@ -1,8 +1,8 @@
 {
-  "name": "aiChat-plugin-siyuan",
+  "name": "aichat-plugin-siyuan",
   "author": "崮生",
-  "url": "https://github.com/2234839/aiChat-plugin-siyuan",
-  "version": "0.0.4",
+  "url": "https://github.com/2234839/aichat-plugin-siyuan",
+  "version": "0.0.5",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
@@ -11,8 +11,8 @@
     "all"
   ],
   "displayName": {
-    "en_US": "aiChat-plugin-siyuan",
-    "zh_CN": "aiChat-plugin-siyuan"
+    "en_US": "aichat-plugin-siyuan",
+    "zh_CN": "aichat-plugin-siyuan"
   },
   "description": {
     "en_US": "",
