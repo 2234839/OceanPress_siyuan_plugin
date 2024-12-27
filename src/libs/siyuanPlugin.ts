@@ -32,25 +32,40 @@ export class SiyuanPlugin extends Plugin {
     // Check if the component already exists to avoid duplicates
     if (parentEL.querySelector(`.${oceanpress_ui_flag}`)) return;
 
-    const mountEl = document.createElement("div");
+    const mountEl = parentEL.firstChild! as HTMLElement;
+    /** 防止事件和思源的编辑器相互影响 */
+    const stopPropagation = (e: Event) => {
+      e.stopImmediatePropagation();
+    };
+    const events = [
+      "compositionstart",
+      "compositionend",
+      "mousedown",
+      "mouseup",
+      "keydown",
+      "keyup",
+      "input",
+      "copy",
+      "cut",
+      "paste",
+    ];
+    events.forEach((event) => {
+      mountEl.addEventListener(event, stopPropagation);
+    });
     mountEl.classList.add(oceanpress_ui_flag);
 
+    const blockId = parentEL.dataset.nodeId;
     // Create and mount the Vue app
-    const app = createApp(VueComponent);
+    const app = createApp(VueComponent, {
+      blockId,
+    });
     const instance = app.mount(mountEl);
-
-    // Set pointer-events to none
-    // mountEl.style.pointerEvents = "none";
-
+    this.saveData;
     // Add cleanup function
     this.addUnloadFn(() => {
       app.unmount();
       mountEl.remove();
     });
-
-    // Append the mounted element to the parent
-    parentEL.appendChild(mountEl);
-
     return instance;
   }
 }

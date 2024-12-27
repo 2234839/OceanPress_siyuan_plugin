@@ -1,56 +1,57 @@
 <template>
-  <div
-    class="protyle-custom"
-    :class="oceanpress_ui_flag"
-    contenteditable="false"
-    style="border: solid 1px red"
-    ref="uiDiv">
-    思源ai测试版：
-    <template v-if="config.run">正在执行中...</template>
-    <template v-else>
+  <div class="protyle-custom" :class="oceanpress_ui_flag" contenteditable="false" ref="uiDiv">
+    <div class="input-row">
+      <h2 class="title">思源AI助手(测试版)</h2>
       <div class="editable-wrapper" @mousedown.stop>
-        <textarea v-model="config.searchText"></textarea>
+        <textarea v-model="config.searchText" placeholder="请输入您的问题..."></textarea>
       </div>
-      <button @click.stop="run">提交</button>
-    </template>
-    <div v-html="config.html"></div>
+      <button @click.stop="run" class="submit-button" :disabled="config.run">
+        {{ config.run ? "执行中..." : "提交问题" }}
+      </button>
+    </div>
+    <div v-if="config.html" ref="resultDiv" class="result" v-html="config.html"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { onMounted, reactive, useTemplateRef } from "vue";
+  import { onMount } from "solid-js";
+  import { reactive, useTemplateRef, watchEffect } from "vue";
   import { 执行ai问答 } from "~/aiChat-plugin-siyuan/openai";
+  import { getBlockAttrs, setBlockAttrs } from "~/libs/api";
   import { oceanpress_ui_flag } from "~/oceanpress-siyuan-plugin/const";
-  const ui = useTemplateRef("uiDiv");
-  onMounted(() => {
-    if (ui) {
-      const stopPropagation = (e: Event) => {
-        e.stopImmediatePropagation();
-      };
-      const oncapture = undefined;
-      [
-        "compositionstart", //如果不加这两个会无法正常输入中文
-        "compositionend",
-        "mousedown",
-        "mouseup",
-        "keydown",
-        "keyup",
-        "input",
-        "copy",
-        "cut",
-        "paste",
-      ].forEach((event) => {
-        ui.value?.addEventListener(event, stopPropagation, oncapture);
-      });
-      console.log("ui", ui.value);
-    }
+
+  const uiDiv = useTemplateRef<HTMLElement | null>("uiDiv");
+
+  const props = defineProps({
+    blockId: {
+      type: String,
+      required: true,
+    },
+  });
+  async function saveConfig() {
+    return await setBlockAttrs(props.blockId, { "custom-ai-config": JSON.stringify(config) });
+  }
+  async function loadConfig() {
+    const res = await getBlockAttrs(props.blockId);
+    console.log("res", res);
+    Object.assign(config, JSON.parse(res["custom-ai-config"] ?? "{}"));
+  }
+  onMount(() => {
+    loadConfig();
   });
   const config = reactive({
     html: ``,
-    searchText: ` `,
+    searchText: ``,
     run: false,
   });
-
+  const resultDiv = useTemplateRef<HTMLElement | null>("resultDiv");
+  /** 禁止编辑这些元素 */
+  watchEffect(() => {
+    config.html;
+    resultDiv.value?.querySelectorAll("[contenteditable]").forEach((el) => {
+      el.setAttribute("contenteditable", "false");
+    });
+  });
   async function run() {
     try {
       config.run = true;
@@ -58,6 +59,7 @@
       config.html = Md2BlockDOM(res.res);
     } finally {
       config.run = false;
+      await saveConfig();
     }
   }
 
@@ -71,30 +73,73 @@
 
 <style scoped>
   .protyle-custom {
-    position: relative;
-    user-select: none;
+    padding: 2px;
+    border-radius: 8px;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+    white-space: nowrap;
+    margin-right: 15px;
   }
 
   .editable-wrapper {
-    display: inline-block;
-    user-select: text;
+    flex-grow: 1;
+    margin-right: 15px;
   }
 
-  .editable-wrapper div[contenteditable] {
-    background: white;
+  textarea {
+    width: 100%;
+    height: 40px;
+    padding: 8px;
     border: 1px solid #ccc;
-    padding: 5px;
-    font-size: 16px;
-    line-height: 1.5;
-    min-height: 20px;
-    min-width: 200px;
-    user-select: text;
+    border-radius: 4px;
+    font-size: 14px;
+    resize: none;
   }
 
-  button {
-    margin-left: 10px;
-    padding: 5px 10px;
-    font-size: 16px;
-    user-select: none;
+  textarea:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  }
+
+  .submit-button {
+    margin-left: 8px;
+    padding: 8px 15px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .submit-button:hover:not(:disabled) {
+    background-color: #357abd;
+  }
+
+  .submit-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+
+  .result {
+    margin-top: 9px;
+    padding: 2px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
   }
 </style>
