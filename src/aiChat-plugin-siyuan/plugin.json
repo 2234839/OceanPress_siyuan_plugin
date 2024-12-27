@@ -1,7 +1,7 @@
 {
   "name": "apiProxy",
   "author": "崮生",
-  "url": "https://github.com/2234839/template",
+  "url": "https://github.com/2234839/aichat-plugin-siyuan",
   "version": "0.0.3",
   "minAppVersion": "2.10.3",
   "backends": [
