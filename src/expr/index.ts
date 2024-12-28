@@ -1,5 +1,6 @@
 import { siyuan } from "@llej/js_util";
 import { updateBlock } from "~/libs/api";
+import * as api from "~/libs/api";
 import { pluginClassName } from "./constant";
 import { get_exprBlocks } from "./fn/get_exprBlocks";
 import "./index.css";
@@ -147,4 +148,8 @@ export default class Expr extends SiyuanPlugin {
     this.evalExprIDs.push(block.id);
     return evalValue;
   }
+
+  util = {
+    api,
+  };
 }
