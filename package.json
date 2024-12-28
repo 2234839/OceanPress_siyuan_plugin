@@ -18,7 +18,7 @@
     "build:sy2video-plugin-siyuan": "cross-env plugin_name=sy2video-plugin-siyuan vite build",
     "build:toolkit-plugin-siyuan": "cross-env plugin_name=toolkit-plugin-siyuan vite build",
     "not-build:univer-siyuan-plugin": "cross-env plugin_name=univer-siyuan-plugin vite build && cross-env plugin_name=univer-siyuan-plugin fileName=univer.ts format=esm emptyOutDir=0 vite build ",
-    "build:aiChat": "cross-env plugin_name=aiChat-plugin-siyuan vite build",
+    "build:aiChat-plugin-siyuan": "cross-env plugin_name=aiChat-plugin-siyuan vite build",
     "build:expr": "cross-env plugin_name=expr vite build",
     "build:feed": "cross-env plugin_name=feed vite build"
   },

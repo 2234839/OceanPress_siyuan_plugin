@@ -8,6 +8,7 @@ import type { MergedBlock } from "./type";
 import * as recast from "recast";
 import { encodeHTML, generateTimestamp } from "~/libs/js_util";
 import { SiyuanPlugin } from "~/libs/siyuanPlugin";
+import { ialToJson, jsonToIal } from "~/libs/siyuan_util";
 const dev = console.log;
 declare global {
   var expr: Expr;
@@ -63,21 +64,25 @@ export default class Expr extends SiyuanPlugin {
       /** 只有上一轮求值计算进行完毕后才会开始新一轮计算 */
       return;
     }
-    const exprIDs = (
-      [...document.querySelectorAll("[custom-expr]")].filter((el) => {
-        if (!(el instanceof HTMLElement)) {
-          return false;
+    const exprIDs = [...document.querySelectorAll<HTMLElement>("[custom-expr]")]
+      .map((el) => {
+        let nodeId = el.dataset.nodeId;
+        if (el.dataset.docType === "NodeDocument") {
+          // 文档节点略有不同
+          nodeId = el
+            .closest(".protyle-content")
+            ?.querySelector<HTMLElement>(".protyle-top .protyle-title[data-node-id")
+            ?.dataset.nodeId;
         }
-        if (el.dataset.nodeId && this.evalExprIDs.includes(el.dataset.nodeId)) {
+        return nodeId!;
+      })
+      .filter((id) => {
+        if (id && this.evalExprIDs.includes(id)) {
           // 已经求值过了的不在参加计算
           return false;
         }
         return true;
-      }) as HTMLElement[]
-    ).map((el) => {
-      const id = el.dataset.nodeId as string;
-      return id;
-    });
+      });
 
     // 当配置不根据update字段更新的时候，不进行求值
     if (!this.intervalUpdateSql.value() && exprIDs.length === 0) {
@@ -127,28 +132,17 @@ export default class Expr extends SiyuanPlugin {
     /** TODO,这里应该要考虑ial中不存在相关字段的情况，需要进行添加而非替换 更新块的update时间戳
      * ial = `{: updated="20240604233920" custom-expr="10-11+Math.random()+&quot;2&quot;" custom-expr-value="-0.95897021536132312" id="20240514180539-3zvaoab" style="background-color: var(--b3-font-background4);"} `
      */
-    let newKramdownAttr = block.ial!;
-    if (/updated="\d+"/.test(newKramdownAttr)) {
-      newKramdownAttr = newKramdownAttr.replace(/updated="\d+"/, `updated="${updated}"`);
-    } else {
-      newKramdownAttr = newKramdownAttr.replace(/}$/, ` updated="${updated}"`);
-    }
+    let newKramdownAttr = ialToJson(block.ial!);
+    newKramdownAttr["updated"] = updated;
     const evalValue_string = String(evalValue);
-    if (/custom-expr-value=".*?"/.test(newKramdownAttr)) {
-      newKramdownAttr = newKramdownAttr.replace(
-        /custom-expr-value=".*?"/,
-        `custom-expr-value="${encodeHTML(evalValue_string)}"`,
-      );
-    } else {
-      newKramdownAttr = newKramdownAttr.replace(
-        /}$/,
-        ` custom-expr-value="${encodeHTML(evalValue_string)}"` + "}",
-      );
-    }
-    // custom-expr-value="-0.56273369360008952"
+    newKramdownAttr["custom-expr-value"] = encodeHTML(evalValue_string);
     /** 将求值结果更新到块文本 */
-    await updateBlock("markdown", String(evalValue_string + "\n" + newKramdownAttr), block.id);
-    dev("expr eval:", { id: block.id, expr: block.a_value, evalValue });
+    const updateBlockRes = await updateBlock(
+      "markdown",
+      String(evalValue_string + "\n" + jsonToIal(newKramdownAttr)),
+      block.id,
+    );
+    dev("expr eval:", { id: block.id, expr: block.a_value, evalValue, updateBlockRes });
 
     this.evalExprIDs.push(block.id);
     return evalValue;
