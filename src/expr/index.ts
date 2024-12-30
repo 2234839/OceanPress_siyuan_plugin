@@ -111,6 +111,8 @@ export default class Expr extends SiyuanPlugin {
     return this.exprEval(blocks[0]);
   }
   async exprEval(block: MergedBlock) {
+    const expr = this;
+
     const code = `async ()=>{\n${block.a_value}\n}`;
     const ast = recast.parse(code);
     const b = recast.types.builders;
@@ -145,7 +147,7 @@ export default class Expr extends SiyuanPlugin {
     );
     dev("expr eval:", { id: block.id, expr: block.a_value, evalValue, updateBlockRes });
 
-    this.evalExprIDs.push(block.id);
+    expr.evalExprIDs.push(block.id);
     return evalValue;
   }
 

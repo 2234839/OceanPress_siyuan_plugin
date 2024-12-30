@@ -2,8 +2,9 @@ import { Configuration, OpenAIApi, type ResponseTypes } from "openai-edge";
 import { fetchSyncPost } from "siyuan";
 
 const configuration = new Configuration({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  basePath: import.meta.env.VITE_OPENAI_BASE_PATH,
+  apiKey:
+    import.meta.env.VITE_OPENAI_API_KEY ?? "09bc63119e1f26d148cac77cda12e089.Rw7lnq1zkg3FcmYZ",
+  basePath: import.meta.env.VITE_OPENAI_BASE_PATH ?? "https://open.bigmodel.cn/api/paas/v4",
 });
 const openai = new OpenAIApi(configuration);
 
