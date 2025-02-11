@@ -86,7 +86,6 @@
   .title {
     font-size: 20px;
     font-weight: bold;
-    color: #333;
     margin: 0;
     white-space: nowrap;
     margin-right: 15px;

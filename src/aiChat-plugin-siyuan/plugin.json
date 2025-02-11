@@ -2,7 +2,7 @@
   "name": "aichat-plugin-siyuan",
   "author": "崮生",
   "url": "https://github.com/2234839/aichat-plugin-siyuan",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
