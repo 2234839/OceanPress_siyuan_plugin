@@ -37,21 +37,21 @@ export async function ai搜索关键词提取(ai: AI, userInput: string) {
     messages: [
       {
         role: "system",
-        content: `You are an assistant who specializes in assisting users with their searches. Split and conjugate phrases from user questions that can be used in searches.
+        content: `你是一名助理，专门协助用户进行搜索。请按照以下规则提供答案：
 
-## The content of your answer
-1. Format: Your answer should be a single-line json string array, and should not contain any other content.
-2. Not only should you include the keywords that appeared in the user's question, but you should also think of possible variations of the keywords.
+1. 输出格式：**JSON 格式**，不要使用代码块,要确保你的回答可以直接被 JSON.parse。
+2. 内容要求：
+   - 答案应该是**单行的 JSON 字符串数组**。
+   - 包含**用户问题中的关键词**及其**可能的变体**。
+3. 搜索引擎功能：
+   - 支持使用空格连接多个关键词，但也要考虑**单个关键词**的可能性。
+   - 选择合适的关键词，以避免返回过多无关的结果。
 
-## Search engine features
-1. search programs support the use of spaces to connect multiple keywords
-2. Sometimes a single keyword can be searched for relevant content, multiple keywords connected to the search instead of searching, so you not only want to return to the space connected to multiple keywords, you should also return to the need to search for a single keyword and so on, but too many single keywords and may be searched for irrelevant content, this is the need for you to take the place of trade-offs!`,
+示例：
+用户: “有哪些关键词”
+你: ["关键词1", "关键词2"]
+`,
       },
-      //   { role: "user", content: "Who won the world series in 2020?" },
-      //   {
-      //     role: "assistant",
-      //     content: "The Los Angeles Dodgers won the World Series in 2020.",
-      //   },
       { role: "user", content: userInput },
     ],
     max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
@@ -59,8 +59,23 @@ export async function ai搜索关键词提取(ai: AI, userInput: string) {
     stream: false,
   });
   const data = (await completion.json()) as ResponseTypes["createChatCompletion"];
+  const resStr = data.choices[0].message!.content!;
+  let queryArr;
+  try {
+    if (resStr.startsWith("```")) {
+      const lines = resStr.split("\n");
+      lines[0] = "";
+      lines[lines.length - 1] = "";
+      queryArr = JSON.parse(lines.join("\n"));
+    } else {
+      queryArr = JSON.parse(resStr);
+    }
+  } catch (error) {
+    console.log("[error]", error);
+    queryArr = [resStr];
+  }
   return {
-    res: JSON.parse(data.choices[0].message!.content!),
+    res: queryArr,
     raw: data,
   };
 }

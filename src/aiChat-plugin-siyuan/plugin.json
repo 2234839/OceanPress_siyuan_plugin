@@ -2,7 +2,7 @@
   "name": "aichat-plugin-siyuan",
   "author": "崮生",
   "url": "https://github.com/2234839/aichat-plugin-siyuan",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
@@ -16,7 +16,7 @@
   },
   "description": {
     "en_US": "",
-    "zh_CN": ""
+    "zh_CN": "通过多轮对话且自动搜索相关笔记提交给ai的形式得到回答"
   },
   "readme": {
     "en_US": "README.md",
