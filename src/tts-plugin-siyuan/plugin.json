@@ -1,0 +1,30 @@
+{
+  "name": "tts-plugin-siyuan",
+  "author": "崮生",
+  "url": "https://github.com/2234839/tts-plugin-siyuan",
+  "version": "0.0.2",
+  "minAppVersion": "2.10.3",
+  "backends": [
+    "all"
+  ],
+  "frontends": [
+    "all"
+  ],
+  "displayName": {
+    "en_US": "tts-plugin-siyuan",
+    "zh_CN": "tts-plugin-siyuan"
+  },
+  "description": {
+    "en_US": "",
+    "zh_CN": "tts 语音朗读"
+  },
+  "readme": {
+    "en_US": "README.md",
+    "zh_CN": "README.md"
+  },
+  "funding": {
+    "custom": [
+      "https://afdian.com/@llej0"
+    ]
+  }
+}
