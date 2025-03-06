@@ -1,12 +1,12 @@
-import { Configuration, OpenAIApi, type ResponseTypes } from "openai-edge";
-import { fetchSyncPost } from "siyuan";
+import { Configuration, OpenAIApi, type ResponseTypes } from 'openai-edge';
+import { fetchSyncPost } from 'siyuan';
 
 const configuration = new Configuration({
   apiKey:
-    import.meta.env.VITE_OPENAI_API_KEY ?? "09bc63119e1f26d148cac77cda12e089.Rw7lnq1zkg3FcmYZ",
-  basePath: import.meta.env.VITE_OPENAI_BASE_PATH ?? "https://open.bigmodel.cn/api/paas/v4",
+    import.meta.env.VITE_OPENAI_API_KEY ?? '09bc63119e1f26d148cac77cda12e089.Rw7lnq1zkg3FcmYZ',
+  basePath: import.meta.env.VITE_OPENAI_BASE_PATH ?? 'https://open.bigmodel.cn/api/paas/v4',
 });
-const openai = new OpenAIApi(configuration);
+export const openai = new OpenAIApi(configuration);
 
 type AI = {
   openai: OpenAIApi;
@@ -17,7 +17,7 @@ type AI = {
 const defaultConfig = {
   //   model: "gpt-3.5-turbo",
   /** 智谱清言 免费模型 */
-  model: "GLM-4-Flash",
+  model: 'GLM-4-Flash',
   //   max_tokens: undefined,
   max_tokens: 9999,
   temperature: 0.3,
@@ -36,7 +36,7 @@ export async function ai搜索关键词提取(ai: AI, userInput: string) {
     model: ai.model ?? defaultConfig.model,
     messages: [
       {
-        role: "system",
+        role: 'system',
         content: `你是一名助理，专门协助用户进行搜索。请按照以下规则提供答案：
 
 1. 输出格式：**JSON 格式**，不要使用代码块,要确保你的回答可以直接被 JSON.parse。
@@ -52,26 +52,26 @@ export async function ai搜索关键词提取(ai: AI, userInput: string) {
 你: ["关键词1", "关键词2"]
 `,
       },
-      { role: "user", content: userInput },
+      { role: 'user', content: userInput },
     ],
     max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
     temperature: ai.temperature ?? defaultConfig.temperature,
     stream: false,
   });
-  const data = (await completion.json()) as ResponseTypes["createChatCompletion"];
+  const data = (await completion.json()) as ResponseTypes['createChatCompletion'];
   const resStr = data.choices[0].message!.content!;
   let queryArr;
   try {
-    if (resStr.startsWith("```")) {
-      const lines = resStr.split("\n");
-      lines[0] = "";
-      lines[lines.length - 1] = "";
-      queryArr = JSON.parse(lines.join("\n"));
+    if (resStr.startsWith('```')) {
+      const lines = resStr.split('\n');
+      lines[0] = '';
+      lines[lines.length - 1] = '';
+      queryArr = JSON.parse(lines.join('\n'));
     } else {
       queryArr = JSON.parse(resStr);
     }
   } catch (error) {
-    console.log("[error]", error);
+    console.log('[error]', error);
     queryArr = [resStr];
   }
   return {
@@ -84,7 +84,7 @@ export async function ai回答(ai: AI, userInput: string, searchMd: string) {
     model: ai.model ?? defaultConfig.model,
     messages: [
       {
-        role: "system",
+        role: 'system',
         content: `你是用户的笔记ai提问助手，请根据用户的问题和你检索到的笔记内容来回答用户的问题
 ## 回答的格式
 
@@ -101,24 +101,45 @@ export async function ai回答(ai: AI, userInput: string, searchMd: string) {
 `,
       },
       {
-        role: "assistant",
+        role: 'assistant',
         content: `检索到的内容:\n${searchMd}`,
       },
-      { role: "user", content: userInput },
+      { role: 'user', content: userInput },
     ],
     max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
     temperature: ai.temperature ?? defaultConfig.temperature,
     stream: false,
   });
-  const data = (await completion.json()) as ResponseTypes["createChatCompletion"];
+  const data = (await completion.json()) as ResponseTypes['createChatCompletion'];
   return {
     res: data.choices[0].message!.content!,
     raw: data,
   };
 }
+export async function ai翻译为英文(ai: AI, userInput: string) {
+  const completion = await ai.openai.createChatCompletion({
+    model: ai.model ?? defaultConfig.model,
+    messages: [
+      {
+        role: 'system',
+        content: `你是一名翻译助手，专门将用户输入的内容翻译为英文。请确保翻译的准确性和流畅性。`,
+      },
+      { role: 'user', content: `请将以下内容翻译为英文：\n${userInput}` },
+    ],
+    max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
+    temperature: ai.temperature ?? defaultConfig.temperature,
+    stream: false,
+  });
+  const data = (await completion.json()) as ResponseTypes['createChatCompletion'];
+  return {
+    res: data.choices[0].message!.content!,
+    raw: data,
+  };
+}
+
 async function batchSearch(keywords: string[]) {
   async function search(query: string) {
-    return await fetchSyncPost("/api/search/fullTextSearchBlock", {
+    return await fetchSyncPost('/api/search/fullTextSearchBlock', {
       query,
       method: 0,
       types: {
@@ -175,10 +196,10 @@ ${JSON.stringify(
 
 export async function 执行ai问答(userInput: string) {
   const keywords = (await ai搜索关键词提取({ openai }, userInput)).res;
-  console.log("keywords", keywords);
+  console.log('keywords', keywords);
   const searchMd = await batchSearchParse(keywords);
-  console.log("searchMd", searchMd);
+  console.log('searchMd', searchMd);
   const aiRes = await ai回答({ openai }, userInput, searchMd);
-  console.log("aiRes", aiRes);
+  console.log('aiRes', aiRes);
   return aiRes;
 }

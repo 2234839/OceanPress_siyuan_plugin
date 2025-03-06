@@ -28,12 +28,12 @@
     "cross-env": "^7.0.3",
     "siyuan": "^1.0.8",
     "typescript": "^5.7.2",
-    "vite": "^5.4.11",
+    "vite": "^6.2.0",
     "vite-plugin-solid": "^2.11.0"
   },
   "dependencies": {
     "@llej/js_util": "^1.0.10",
-    "@sinclair/typebox": "^0.32.35",
+    "@sinclair/typebox": "^0.34.28",
     "@univerjs/core": "^0.2.15",
     "@univerjs/design": "^0.2.15",
     "@univerjs/docs": "^0.2.15",
@@ -57,5 +57,6 @@
     "superjson": "^2.2.2",
     "vite-plugin-css-injected-by-js": "^3.5.2",
     "vue": "^3.5.13"
-  }
+  },
+  "packageManager": "pnpm@10.5.2+sha512.da9dc28cd3ff40d0592188235ab25d3202add8a207afbedc682220e4a0029ffbff4562102b9e6e46b4e3f9e8bd53e6d05de48544b0c57d4b0179e22c76d1199b"
 }
