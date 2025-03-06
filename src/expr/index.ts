@@ -110,9 +110,13 @@ export default class Expr extends SiyuanPlugin {
     const blocks = await get_exprBlocks([block_id]);
     return this.exprEval(blocks[0]);
   }
+  flag = {
+    /** 表达式返回这个值则不会更新之前的内容 */
+    noOutput: Symbol(),
+  };
   async exprEval(block: MergedBlock) {
     const expr = this;
-
+    //#region 解析并执行表达式
     const code = `async ()=>{\n${block.a_value}\n}`;
     const ast = recast.parse(code);
     const b = recast.types.builders;
@@ -121,12 +125,14 @@ export default class Expr extends SiyuanPlugin {
     if (body.find((item) => item.type === 'ReturnStatement')) {
     } else {
       const lastExp = body.pop();
-      if ((lastExp.type = 'ExpressionStatement')) {
+      if (lastExp.type === 'ExpressionStatement') {
+        console.log('[lastExp]', lastExp);
         body.push(b.returnStatement(lastExp.expression));
       }
     }
     const output = recast.print(ast).code;
     let evalValue = await eval(output)();
+    //#endregion 解析并执行表达式
 
     const updated = generateTimestamp();
     if (Number(updated) > this.updated.value()) {
@@ -140,13 +146,23 @@ export default class Expr extends SiyuanPlugin {
     newKramdownAttr['custom-expr'] = newKramdownAttr['expr'];
     const evalValue_string = String(evalValue);
     newKramdownAttr['custom-expr-value'] = encodeHTML(evalValue_string);
-    /** 将求值结果更新到块文本 */
-    const updateBlockRes = await updateBlock(
-      'markdown',
-      String(evalValue_string + '\n' + jsonToIal(newKramdownAttr)),
-      block.id,
-    );
-    dev('expr eval:', { id: block.id, expr: block.a_value, evalValue,newKramdownAttr, updateBlockRes });
+    let updateBlockRes;
+    if (evalValue !== this.flag.noOutput) {
+      /** 将求值结果更新到块文本 */
+      updateBlockRes = await updateBlock(
+        'markdown',
+        String(evalValue_string + '\n' + jsonToIal(newKramdownAttr)),
+        block.id,
+      );
+    }
+    dev('expr eval:', {
+      id: block.id,
+      block,
+      expr: block.a_value,
+      evalValue,
+      newKramdownAttr,
+      updateBlockRes,
+    });
 
     expr.evalExprIDs.push(block.id);
     return evalValue;
