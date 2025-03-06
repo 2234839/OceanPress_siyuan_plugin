@@ -6,7 +6,6 @@ import { get_exprBlocks } from './fn/get_exprBlocks';
 import './index.css';
 import type { MergedBlock } from './type';
 
-import * as recast from 'recast';
 import { encodeHTML, generateTimestamp } from '~/libs/js_util';
 import { SiyuanPlugin } from '~/libs/siyuanPlugin';
 import { ialToJson, jsonToIal } from '~/libs/siyuan_util';
@@ -118,20 +117,7 @@ export default class Expr extends SiyuanPlugin {
     const expr = this;
     //#region 解析并执行表达式
     const code = `async ()=>{\n${block.a_value}\n}`;
-    const ast = recast.parse(code);
-    const b = recast.types.builders;
-    // 如果没有 return 则为最后一个表达式添加 return
-    const body: any[] = ast.program.body[0].expression.body.body;
-    if (body.find((item) => item.type === 'ReturnStatement')) {
-    } else {
-      const lastExp = body.pop();
-      if (lastExp.type === 'ExpressionStatement') {
-        console.log('[lastExp]', lastExp);
-        body.push(b.returnStatement(lastExp.expression));
-      }
-    }
-    const output = recast.print(ast).code;
-    let evalValue = await eval(output)();
+    let evalValue = await eval(code)();
     //#endregion 解析并执行表达式
 
     const updated = generateTimestamp();
@@ -141,7 +127,7 @@ export default class Expr extends SiyuanPlugin {
     /** TODO,这里应该要考虑ial中不存在相关字段的情况，需要进行添加而非替换 更新块的update时间戳
      * ial = `{: updated="20240604233920" custom-expr="10-11+Math.random()+&quot;2&quot;" custom-expr-value="-0.95897021536132312" id="20240514180539-3zvaoab" style="background-color: var(--b3-font-background4);"} `
      */
-    let newKramdownAttr = ialToJson(block.ial!);
+    let newKramdownAttr = { ...ialToJson(block.ial!), ...block.Attr };
     newKramdownAttr['updated'] = updated;
     newKramdownAttr['custom-expr'] = newKramdownAttr['expr'];
     const evalValue_string = String(evalValue);

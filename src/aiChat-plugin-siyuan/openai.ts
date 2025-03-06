@@ -122,7 +122,11 @@ export async function ai翻译为英文(ai: AI, userInput: string) {
     messages: [
       {
         role: 'system',
-        content: `你是一名翻译助手，专门将用户输入的内容翻译为英文。请确保翻译的准确性和流畅性。`,
+        content: `你是一名翻译助手，专门将用户输入的内容翻译为英文。请确保翻译的准确性和流畅性。
+## 注意
+
+1. 仅输出译文
+2. 原文是 kramdown 格式的，会有 {: id="20250306213356-961wtvs" updated="20250306213413"} 这样的属性，你不要输出其中的 id`,
       },
       { role: 'user', content: `请将以下内容翻译为英文：\n${userInput}` },
     ],
