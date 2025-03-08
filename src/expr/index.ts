@@ -46,7 +46,6 @@ export default class Expr extends SiyuanPlugin {
       if (id) this.ids.push(id);
       const element = document.querySelector(`[data-node-id="${id}"]`);
       if (element) {
-        console.log('[element]', element);
         element.classList.add(this.evalingClassName);
       }
     },
