@@ -1,7 +1,6 @@
 import { siyuan as siyuanUtil } from '@llej/js_util';
 import { Dialog, Menu, showMessage } from 'siyuan';
 import { createSignal } from 'solid-js';
-import type { JSX } from 'solid-js/jsx-runtime';
 import { render } from 'solid-js/web';
 import { sql } from '~/libs/api';
 import { SiyuanPlugin } from '~/libs/siyuanPlugin';
@@ -14,6 +13,9 @@ import { img_ocr_text } from './ui/img_ocr_text';
 import { setting_view } from './ui/setting_view';
 import { widget_btn } from './ui/widget_btn';
 
+/** 为了当 index.html 改变时触发 watch 编译 */
+import indexHTML from "./oceanpress_ui/index.html?raw";
+indexHTML
 // TODO 无效 ocr 资源清理
 // ocr 时 图标旋转
 // 识别失败的设置指定 ocr 文本
@@ -269,7 +271,8 @@ LIMIT 99999`);
     });
     const div = dialog.element.querySelector('.b3-dialog__content')!;
     const iframe = document.createElement('iframe');
-    iframe.src = '/plugins/oceanpress-siyuan-plugin/oceanpress_ui/index.html?model=siyuan_plugin';
+    const src = `/plugins/oceanpress-siyuan-plugin/oceanpress_ui/?model=siyuan_plugin&date=${Date.now()}`;
+    iframe.src = src;
     iframe.style.borderWidth = '0';
     iframe.style.width = '80vw';
     iframe.style.maxWidth = '600px';
