@@ -1,18 +1,18 @@
-import { siyuan as siyuanUtil } from "@llej/js_util";
-import { Dialog, Menu, showMessage } from "siyuan";
-import { createSignal } from "solid-js";
-import type { JSX } from "solid-js/jsx-runtime";
-import { render } from "solid-js/web";
-import { sql } from "~/libs/api";
-import { SiyuanPlugin } from "~/libs/siyuanPlugin";
-import { ocr, ocr_enabled_Error, umiOcrEnabled } from "../libs/ocr/ocr";
-import { UTIF } from "../libs/UTIF";
-import { ICON, iconSVG, oceanpress_ui_flag } from "./const";
-import "./index.css";
-import { refMedia } from "./refMedia";
-import { img_ocr_text } from "./ui/img_ocr_text";
-import { setting_view } from "./ui/setting_view";
-import { widget_btn } from "./ui/widget_btn";
+import { siyuan as siyuanUtil } from '@llej/js_util';
+import { Dialog, Menu, showMessage } from 'siyuan';
+import { createSignal } from 'solid-js';
+import type { JSX } from 'solid-js/jsx-runtime';
+import { render } from 'solid-js/web';
+import { sql } from '~/libs/api';
+import { SiyuanPlugin } from '~/libs/siyuanPlugin';
+import { ocr, ocr_enabled_Error, umiOcrEnabled } from '../libs/ocr/ocr';
+import { UTIF } from '../libs/UTIF';
+import { ICON, iconSVG, oceanpress_ui_flag } from './const';
+import './index.css';
+import { refMedia } from './refMedia';
+import { img_ocr_text } from './ui/img_ocr_text';
+import { setting_view } from './ui/setting_view';
+import { widget_btn } from './ui/widget_btn';
 
 // TODO 无效 ocr 资源清理
 // ocr 时 图标旋转
@@ -22,11 +22,11 @@ export default class OceanPress extends SiyuanPlugin {
   ocrConfig = siyuanUtil.bindData({
     that: this,
     initValue: {
-      type: "oceanpress" as "oceanpress" | "umi-ocr",
-      sk: "",
-      umiApi: "",
+      type: 'oceanpress' as 'oceanpress' | 'umi-ocr',
+      sk: '',
+      umiApi: '',
     },
-    storageName: "ocrConfig.json",
+    storageName: 'ocrConfig.json',
   });
   async onload() {
     // 移动端 debug
@@ -56,9 +56,9 @@ export default class OceanPress extends SiyuanPlugin {
         this.addUiComponent(img.parentElement!, () =>
           img_ocr_text({
             data: async () => {
-              const path = img.dataset.src!.replace("/", "_");
+              const path = img.dataset.src!.replace('/', '_');
               // TODO 对于在线图片暂时不处理
-              if (path.startsWith("http")) {
+              if (path.startsWith('http')) {
                 return [];
               }
               const storageName = `ocr_${path}.json`;
@@ -84,20 +84,20 @@ export default class OceanPress extends SiyuanPlugin {
                 data-src="${href}" alt="image"><span
                 class="protyle-action__drag"></span><span class="protyle-action__title"></span></span><span>
         </span></span>`;
-          var tempDiv = document.createElement("div");
+          var tempDiv = document.createElement('div');
           tempDiv.innerHTML = htmlString;
           var domElement = tempDiv.firstChild!;
 
           span.parentNode!.replaceChild(domElement, span);
-          console.log("替换tif为img", href, name, domElement);
+          console.log('替换tif为img', href, name, domElement);
           setTimeout(() => {}, 300);
         });
       const imgTifEl = [
         ...document.querySelectorAll<HTMLImageElement>('img[data-src$=".tif"]'),
-      ].filter((el) => !el.src.startsWith("data:"));
+      ].filter((el) => !el.src.startsWith('data:'));
 
       if (imgTifEl.length > 0) {
-        console.log("[imgTifEl]", imgTifEl);
+        console.log('[imgTifEl]', imgTifEl);
         // @ts-ignore
         UTIF.replaceIMG();
       }
@@ -105,9 +105,9 @@ export default class OceanPress extends SiyuanPlugin {
     this.addUnloadFn(() => clearInterval(id));
 
     // ocr 图片菜单按钮
-    this.eventBus.on("open-menu-image", (event) => {
+    this.eventBus.on('open-menu-image', (event) => {
       (globalThis.window.siyuan.menus.menu as Menu).addItem({
-        label: "OceanPress Ocr",
+        label: 'OceanPress Ocr',
         iconHTML: ICON,
         click: async () => {
           const spanImg = event.detail.element as HTMLElement;
@@ -117,7 +117,7 @@ export default class OceanPress extends SiyuanPlugin {
           if (ok) {
             showMessage(`OceanPress ocr 成功`);
             // 移除ui组件，定时循环就会自动添加一个新的，能够重新加载一遍 json 数据
-            spanImg.querySelector("." + oceanpress_ui_flag)?.remove();
+            spanImg.querySelector('.' + oceanpress_ui_flag)?.remove();
           } else {
             showMessage(`OceanPress ocr 失败`);
           }
@@ -126,7 +126,7 @@ export default class OceanPress extends SiyuanPlugin {
     });
   }
   async ocrAssetsUrl(imgSrc: string) {
-    const name = imgSrc.split("/").pop()!;
+    const name = imgSrc.split('/').pop()!;
     const base64 = await imageToBase64(imgSrc);
     const storageName = ocrStorageName(imgSrc);
 
@@ -135,7 +135,7 @@ export default class OceanPress extends SiyuanPlugin {
     if (!ok) return;
 
     const jobStatus = await ocr({
-      name: name || "test.png",
+      name: name || 'test.png',
       imgBase64: base64,
       ...this.ocrConfig.value(),
       // 防止下面的逻辑因为 throw 无法执行
@@ -147,12 +147,12 @@ export default class OceanPress extends SiyuanPlugin {
     });
     if (jobStatus?.words_result) {
       this.saveData(storageName, jobStatus);
-      fetch("/api/asset/setImageOCRText", {
+      fetch('/api/asset/setImageOCRText', {
         body: JSON.stringify({
           path: imgSrc,
-          text: jobStatus.words_result.map((el) => el.words).join(""),
+          text: jobStatus.words_result.map((el) => el.words).join(''),
         }),
-        method: "POST",
+        method: 'POST',
       });
       return true;
     } else {
@@ -160,10 +160,10 @@ export default class OceanPress extends SiyuanPlugin {
       return false;
     }
   }
-  async batchOcr(options: { type: "failing" | "all" }) {
+  async batchOcr(options: { type: 'failing' | 'all' }) {
     const ocrConfig = this.ocrConfig.value();
-    console.log("[ocrConfig]", ocrConfig);
-    if (ocrConfig.type === "umi-ocr") {
+    console.log('[ocrConfig]', ocrConfig);
+    if (ocrConfig.type === 'umi-ocr') {
       const umiEnable = await umiOcrEnabled(ocrConfig.umiApi);
       if (!umiEnable) {
         return;
@@ -191,17 +191,17 @@ LIMIT 99999`);
     let failing: string[] = [];
     let skip: string[] = [];
     showMessage(`可以打开开发者工具查看进度`);
-    let msg = "";
+    let msg = '';
     for (const img of assets) {
       i += 1;
       let ok = false;
       const imgSrc = img.path;
       const storageName = ocrStorageName(imgSrc);
       const r = await this.loadData(storageName);
-      if (options.type === "all" && r) {
+      if (options.type === 'all' && r) {
         // 识别所有无 ocr 的图片时，跳过具有本地 ocr 数据的图片
         skip.push(imgSrc);
-      } else if (options.type === "failing" && r.words_result) {
+      } else if (options.type === 'failing' && r.words_result) {
         // 跳过识别结果中有 words_result 的图片
         skip.push(imgSrc);
       } else {
@@ -214,13 +214,13 @@ LIMIT 99999`);
             showMessage(`已退出批量 ocr 识别`);
             return;
           }
-          console.log("[ocr error]", error);
+          console.log('[ocr error]', error);
         }
         if (ok) {
           successful.push(imgSrc);
         } else {
           failing.push(imgSrc);
-          console.log("失败", imgSrc);
+          console.log('失败', imgSrc);
         }
       }
       msg = `总计:${assets.length} 进度 ${((i / assets.length) * 100).toFixed(2)} 成功识别:${
@@ -232,14 +232,14 @@ LIMIT 99999`);
     if (failing.length) {
       console.log(`以下图片识别失败:`, failing);
     }
-    showMessage(msg, 999_000000, "info");
+    showMessage(msg, 999_000000, 'info');
   }
   async ocrConfIsOK() {
     const ocrConf = this.ocrConfig.value();
-    if (ocrConf.type === "oceanpress" && ocrConf.sk) {
-    } else if (ocrConf.type === "umi-ocr" && ocrConf.umiApi) {
+    if (ocrConf.type === 'oceanpress' && ocrConf.sk) {
+    } else if (ocrConf.type === 'umi-ocr' && ocrConf.umiApi) {
     } else {
-      showMessage("请先填写 ocr 配置");
+      showMessage('请先填写 ocr 配置');
       this.settingView();
       return false;
     }
@@ -249,7 +249,7 @@ LIMIT 99999`);
     const dialog = new Dialog({
       content: `<div class="b3-dialog__content"></div>`,
     });
-    const div = dialog.element.querySelector(".b3-dialog__content")!;
+    const div = dialog.element.querySelector('.b3-dialog__content')!;
     const dataSignal = createSignal(this.ocrConfig.value());
     render(
       () =>
@@ -263,48 +263,59 @@ LIMIT 99999`);
       div,
     );
   }
+  async showOceanPressUI() {
+    const dialog = new Dialog({
+      content: `<div class="b3-dialog__content"></div>`,
+    });
+    const div = dialog.element.querySelector('.b3-dialog__content')!;
+    const iframe = document.createElement('iframe');
+    iframe.src = '/plugins/oceanpress-siyuan-plugin/oceanpress_ui/index.html?model=siyuan_plugin';
+    iframe.style.borderWidth = '0';
+    iframe.style.width = '80vw';
+    iframe.style.maxWidth = '600px';
+    iframe.style.height = '80vh';
+
+    div.appendChild(iframe);
+  }
   async onLayoutReady() {
     this.addIcons(`<symbol id="oceanpress_preview">
     <text x="50%" y="50%" text-anchor="middle" alignment-baseline="middle" font-size="13px">👀</text>
   </symbol>`);
     this.addTopBar({
       icon: iconSVG,
-      title: "OceanPress",
+      title: 'OceanPress',
       callback: (event) => {
         const menu = new Menu(this.name);
         menu.addItem({
-          label: "预览当前页面",
+          label: '打开OceanPress界面',
           icon: `oceanpress_preview`,
-          click: () => {
-            menu.close();
-          },
+          click: () => this.showOceanPressUI(),
         });
         menu.addItem({
-          label: "修改 ocr 配置",
+          label: '修改 ocr 配置',
           icon: `oceanpress_preview`,
           click: () => this.settingView(),
         });
         menu.addItem({
-          label: "识别所有无 ocr 数据的图片",
+          label: '识别所有无 ocr 数据的图片',
           icon: `oceanpress_preview`,
-          click: () => this.batchOcr({ type: "all" }),
+          click: () => this.batchOcr({ type: 'all' }),
         });
         menu.addItem({
-          label: "再次识别所有识别失败的图片",
+          label: '再次识别所有识别失败的图片',
           icon: `oceanpress_preview`,
-          click: () => this.batchOcr({ type: "failing" }),
+          click: () => this.batchOcr({ type: 'failing' }),
         });
         menu.open(event);
       },
     });
   }
 
-
   previewCurrentPage() {}
 }
 
 function ocrStorageName(imgSrc: string) {
-  const path = imgSrc.replace(/[:\/?#\*|<>"%]+/g, "_");
+  const path = imgSrc.replace(/[:\/?#\*|<>"%]+/g, '_');
   return `ocr_${path}.json`;
 }
 
@@ -316,16 +327,16 @@ async function imageToBase64(url: string) {
     // 加载图像完成后执行回调
     img.onload = function () {
       // 创建一个canvas元素
-      var canvas = document.createElement("canvas");
+      var canvas = document.createElement('canvas');
       canvas.width = img.width;
       canvas.height = img.height;
 
       // 将图像绘制到canvas上
-      var ctx = canvas.getContext("2d")!;
+      var ctx = canvas.getContext('2d')!;
       ctx.drawImage(img, 0, 0);
 
       // 导出canvas为Base64编码的图像数据
-      var dataUrl = canvas.toDataURL("image/png"); // 你可以根据需要选择不同的MIME类型，例如'image/jpeg'
+      var dataUrl = canvas.toDataURL('image/png'); // 你可以根据需要选择不同的MIME类型，例如'image/jpeg'
       r(dataUrl);
     };
     img.onerror = rj;
