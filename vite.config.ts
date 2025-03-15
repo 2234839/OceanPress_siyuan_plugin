@@ -1,30 +1,43 @@
-import { resolve } from "path";
-import { defineConfig, type UserConfigExport, loadEnv } from "vite";
-import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
-import solidPlugin from "vite-plugin-solid";
-import { writeFile, copyFile } from "fs/promises";
-import { execSync } from "child_process";
-import vue from "@vitejs/plugin-vue";
+import { resolve } from 'path';
+import { defineConfig, type UserConfigExport, loadEnv } from 'vite';
+import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
+import solidPlugin from 'vite-plugin-solid';
+import { writeFile, copyFile } from 'fs/promises';
+import { execSync } from 'child_process';
+import vue from '@vitejs/plugin-vue';
 
-console.log("=============================");
+console.log('=============================');
 const viteConfig: UserConfigExport = (ctx) => {
   const env: {
     /** 存在此变量编译输出至此目录,例如 C:/Users/llej/Documents/SiYuan/data/plugins */
     VITE_dist_dir?: string;
   } = loadEnv(ctx.mode, process.cwd());
-  console.log("[env]", env);
-  const scriptFile = process.env?.fileName ?? "index.ts";
-  const format: "cjs" | "esm" = (process.env?.format as "esm") ?? "cjs";
+  console.log('[env]', env);
+  const scriptFile = process.env?.fileName ?? 'index.ts';
+  const format: 'cjs' | 'esm' = (process.env?.format as 'esm') ?? 'cjs';
   const emptyOutDir = process.env?.emptyOutDir ?? true;
-  const pluginName = process.env.plugin_name ?? "vite-plugin-siyuan";
-  console.log("[pluginName]", pluginName, ctx.mode);
-  if (ctx.mode === "production") {
+  const pluginName = process.env.plugin_name ?? 'vite-plugin-siyuan';
+  console.log('[pluginName]', pluginName, ctx.mode);
+  if (ctx.mode === 'production') {
+    console.log('自动提升插件版本号', pluginName);
+
     // 自动提升插件版本号
     import(`./src/${pluginName}/plugin.json`).then((r) => {
-      const res = execSync(`git status --porcelain ./src/${pluginName}/`).toString("utf-8");
-      if (res.length > 0) {
+      writeFile(
+        `./src/${pluginName}/plugin.json`,
+        JSON.stringify(
+          {
+            ...r.default,
+            version: r.default.version.replace(/(\d+)$/, (match) => parseInt(match, 10) + 1),
+          },
+          null,
+          2,
+        ),
+      );
+      // 特例
+      if (pluginName === 'oceanpress-siyuan-plugin') {
         writeFile(
-          `./src/${pluginName}/plugin.json`,
+          `./plugin.json`,
           JSON.stringify(
             {
               ...r.default,
@@ -34,21 +47,7 @@ const viteConfig: UserConfigExport = (ctx) => {
             2,
           ),
         );
-        // 特例
-        if (pluginName === "oceanpress-siyuan-plugin") {
-          writeFile(
-            `./plugin.json`,
-            JSON.stringify(
-              {
-                ...r.default,
-                version: r.default.version.replace(/(\d+)$/, (match) => parseInt(match, 10) + 1),
-              },
-              null,
-              2,
-            ),
-          );
-          copyFile("./README.md", `./src/${pluginName}/README.md`);
-        }
+        copyFile('./README.md', `./src/${pluginName}/README.md`);
       }
     });
   }
@@ -56,12 +55,12 @@ const viteConfig: UserConfigExport = (ctx) => {
     server: {
       // cors: true,
       cors: {
-        origin: "*",
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["*"],
+        origin: '*',
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['*'],
       },
     },
-    base: ctx.mode === "development" ? "/" : `/plugins/${pluginName}/`,
+    base: ctx.mode === 'development' ? '/' : `/plugins/${pluginName}/`,
     publicDir: `./src/${pluginName}`,
 
     // optimizeDeps: {
@@ -69,14 +68,14 @@ const viteConfig: UserConfigExport = (ctx) => {
     // },
     resolve: {
       alias: {
-        "~": resolve(__dirname, "src"),
-        siyuan: "test",
+        '~': resolve(__dirname, 'src'),
+        siyuan: 'test',
       },
     },
     // https://vitejs.dev/guide/env-and-mode.html#env-files
     // 在这里自定义变量
     define: {
-      "process.env.DEV_MODE": `"${ctx.mode}"`,
+      process: { env: { DEV_MODE: ctx.mode } },
     },
     plugins: [
       cssInjectedByJsPlugin(),
@@ -91,7 +90,7 @@ const viteConfig: UserConfigExport = (ctx) => {
       // 而 vite 使用 import 会无法加载到改包，这里做一个 hack 给改成 require
       // 这样配合 vite-plugin-siyuan 就可以在开发的时候直接引用了
       {
-        name: "siyuan shim",
+        name: 'siyuan shim',
         transform(code, id) {
           // 仅当代码包含 "siyuan" 包的 import 语句时进行处理
           if (/import \{(.*)\} from "siyuan"/.test(code)) {
@@ -113,7 +112,7 @@ const viteConfig: UserConfigExport = (ctx) => {
         name: pluginName,
       },
       // 输出路径
-      outDir: `${env.VITE_dist_dir ?? "dist"}/${pluginName}`,
+      outDir: `${env.VITE_dist_dir ?? 'dist'}/${pluginName}`,
       emptyOutDir: Boolean(Number(emptyOutDir)),
       // 构建后是否生成 source map 文件
       sourcemap: false,
@@ -122,13 +121,13 @@ const viteConfig: UserConfigExport = (ctx) => {
       rollupOptions: {
         output: [
           {
-            entryFileNames: (format === "esm" ? "es/" : "") + scriptFile.replace(".ts", ".js"),
+            entryFileNames: (format === 'esm' ? 'es/' : '') + scriptFile.replace('.ts', '.js'),
             format,
             assetFileNames: `asset/[name]-[hash][extname]`,
             manualChunks: undefined,
           },
         ],
-        external: ["siyuan", "process"],
+        external: ['siyuan', 'process'],
       },
     },
   });
