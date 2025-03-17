@@ -1,7 +1,5 @@
 import { siyuan as siyuanUtil } from '@llej/js_util';
 import { Dialog, Menu, showMessage } from 'siyuan';
-import { createSignal } from 'solid-js';
-import { render } from 'solid-js/web';
 import { sql } from '~/libs/api';
 import { SiyuanPlugin } from '~/libs/siyuanPlugin';
 import { ocr, ocr_enabled_Error, umiOcrEnabled } from '../libs/ocr/ocr';
@@ -9,13 +7,13 @@ import { UTIF } from '../libs/UTIF';
 import { ICON, iconSVG, oceanpress_ui_flag } from './const';
 import './index.css';
 import { refMedia } from './refMedia';
-import { img_ocr_text } from './ui/img_ocr_text';
-import { setting_view } from './ui/setting_view';
-import { widget_btn } from './ui/widget_btn';
+import Setting_view from './ui/setting_view.vue';
 
 /** 为了当 index.html 改变时触发 watch 编译 */
-import indexHTML from "./oceanpress_ui/index.html?raw";
-indexHTML
+import { ref } from 'vue';
+import indexHTML from './oceanpress_ui/index.html?raw';
+import Img_ocr_text from './ui/img_ocr_text.vue';
+indexHTML;
 // TODO 无效 ocr 资源清理
 // ocr 时 图标旋转
 // 识别失败的设置指定 ocr 文本
@@ -47,29 +45,28 @@ export default class OceanPress extends SiyuanPlugin {
     refMedia.load();
     this.addUnloadFn(() => refMedia.unLoad());
     const id = setInterval(() => {
-      // 为挂件添加 oceanpress 转化图标
-      document.body.querySelectorAll(`div[data-type="NodeWidget"]`).forEach((widget) => {
-        if (widget instanceof HTMLElement) {
-          this.addUiComponent(widget, () => widget_btn({ widget: widget }));
-        }
-      });
+      // 为挂件添加 oceanpress 转化图标  暂时取消此功能，之后优化为通用实现（支持挂件以及其他插件添加的元素等等）
+      // document.body.querySelectorAll(`div[data-type="NodeWidget"]`).forEach((widget) => {
+      //   if (widget instanceof HTMLElement) {
+      //     this.addVueUiComponent(widget, () => <Widget_btn widget={widget} />);
+      //   }
+      // });
+
       // ocr 文本显示
       document.body.querySelectorAll<HTMLImageElement>(`img[data-src]`).forEach(async (img) => {
-        this.addUiComponent(img.parentElement!, () =>
-          img_ocr_text({
-            data: async () => {
-              const path = img.dataset.src!.replace('/', '_');
-              // TODO 对于在线图片暂时不处理
-              if (path.startsWith('http')) {
-                return [];
-              }
-              const storageName = `ocr_${path}.json`;
-              const data = (await this.loadData(storageName))?.words_result;
-              return data;
-            },
-            imgEL: img || [],
-          }),
-        );
+        this.addVueUi(img.parentElement!, Img_ocr_text, {
+          data: async () => {
+            const path = img.dataset.src!.replace('/', '_');
+            // TODO 对于在线图片暂时不处理
+            if (path.startsWith('http')) {
+              return [];
+            }
+            const storageName = `ocr_${path}.json`;
+            const data = (await this.loadData(storageName))?.words_result;
+            return data;
+          },
+          imgEL: img || [],
+        });
       });
       // 替换 tif 资源链接为图片链接
       document
@@ -251,19 +248,15 @@ LIMIT 99999`);
     const dialog = new Dialog({
       content: `<div class="b3-dialog__content"></div>`,
     });
-    const div = dialog.element.querySelector('.b3-dialog__content')!;
-    const dataSignal = createSignal(this.ocrConfig.value());
-    render(
-      () =>
-        setting_view({
-          dialog,
-          dataSignal,
-          save: () => {
-            this.ocrConfig.set(dataSignal[0]());
-          },
-        }),
-      div,
-    );
+    const div = dialog.element.querySelector('.b3-dialog__content')! as HTMLElement;
+    const dataSignal = ref(this.ocrConfig.value());
+    this.addVueUi(div, Setting_view, {
+      dialog,
+      dataSignal,
+      save: () => {
+        this.ocrConfig.set(dataSignal.value);
+      },
+    });
   }
   async showOceanPressUI() {
     const dialog = new Dialog({

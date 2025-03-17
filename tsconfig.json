@@ -19,7 +19,7 @@
         "noEmit": true,
         // "jsx": "preserve",
         "jsx": "preserve",
-        "jsxImportSource": "solid-js",
+        "jsxImportSource": "vue",
         /* Linting */
         "strict": true,
         "noUnusedLocals": true,

@@ -14,6 +14,7 @@ const viteConfig: UserConfigExport = (ctx) => {
   } = loadEnv(ctx.mode, process.cwd());
   console.log('[env]', env);
   const scriptFile = process.env?.fileName ?? 'index.ts';
+  console.log('[scriptFile]', scriptFile, scriptFile.replace(/\.tsx?$/, '.js'));
   const format: 'cjs' | 'esm' = (process.env?.format as 'esm') ?? 'cjs';
   const emptyOutDir = process.env?.emptyOutDir ?? true;
   const pluginName = process.env.plugin_name ?? 'vite-plugin-siyuan';
@@ -117,11 +118,12 @@ const viteConfig: UserConfigExport = (ctx) => {
       // 构建后是否生成 source map 文件
       sourcemap: false,
 
-      minify: true,
+      minify: false,
       rollupOptions: {
         output: [
           {
-            entryFileNames: (format === 'esm' ? 'es/' : '') + scriptFile.replace('.ts', '.js'),
+            entryFileNames:
+              (format === 'esm' ? 'es/' : '') + scriptFile.replace(/\.tsx?$/, '.js'),
             format,
             assetFileNames: `asset/[name]-[hash][extname]`,
             manualChunks: undefined,
