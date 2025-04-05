@@ -28,42 +28,42 @@ type NotebookConf = {
   dailyNoteTemplatePath: string;
 };
 
-type BlockType = "d" | "s" | "h" | "t" | "i" | "p" | "f" | "audio" | "video" | "other";
+type BlockType = 'd' | 's' | 'h' | 't' | 'i' | 'p' | 'f' | 'audio' | 'video' | 'other';
 
 type BlockSubType =
-  | "d1"
-  | "d2"
-  | "s1"
-  | "s2"
-  | "s3"
-  | "t1"
-  | "t2"
-  | "h1"
-  | "h2"
-  | "h3"
-  | "h4"
-  | "h5"
-  | "h6"
-  | "table"
-  | "task"
-  | "toggle"
-  | "latex"
-  | "quote"
-  | "html"
-  | "code"
-  | "footnote"
-  | "cite"
-  | "collection"
-  | "bookmark"
-  | "attachment"
-  | "comment"
-  | "mindmap"
-  | "spreadsheet"
-  | "calendar"
-  | "image"
-  | "audio"
-  | "video"
-  | "other";
+  | 'd1'
+  | 'd2'
+  | 's1'
+  | 's2'
+  | 's3'
+  | 't1'
+  | 't2'
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'h4'
+  | 'h5'
+  | 'h6'
+  | 'table'
+  | 'task'
+  | 'toggle'
+  | 'latex'
+  | 'quote'
+  | 'html'
+  | 'code'
+  | 'footnote'
+  | 'cite'
+  | 'collection'
+  | 'bookmark'
+  | 'attachment'
+  | 'comment'
+  | 'mindmap'
+  | 'spreadsheet'
+  | 'calendar'
+  | 'image'
+  | 'audio'
+  | 'video'
+  | 'other';
 
 type Block = {
   id: BlockId;
@@ -92,14 +92,14 @@ type Block = {
   updated: string;
 };
 type attribute = {
-  block_id: "id";
-  box: "id";
-  id: "id";
-  name: "bookmark";
-  path: "/id/id.sy";
-  root_id: "id";
-  type: "b";
-  value: "expr";
+  block_id: 'id';
+  box: 'id';
+  id: 'id';
+  name: 'bookmark';
+  path: '/id/id.sy';
+  root_id: 'id';
+  type: 'b';
+  value: 'expr';
 };
 type doOperation = {
   action: string;
@@ -120,5 +120,22 @@ interface Window {
     user: any;
     ws: any;
     languages: any;
+    config: {
+      ai: {
+        openAI: {
+          apiBaseURL: string;
+          apiKey: string;
+          apiMaxContexts: 7;
+          apiMaxTokens: 0;
+          apiModel: string;
+          apiProvider: 'OpenAI';
+          apiProxy: '';
+          apiTemperature: 1;
+          apiTimeout: 30;
+          apiUserAgent: 'SiYuan/3.1.26 std/windows';
+          apiVersion: '';
+        };
+      };
+    };
   };
 }

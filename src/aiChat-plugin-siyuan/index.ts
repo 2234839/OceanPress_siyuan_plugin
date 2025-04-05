@@ -4,13 +4,13 @@ import.meta.hot;
 import { generateTimestamp, generateUniqueId } from '~/libs/js_util';
 import chatAIView from './ui.vue';
 import * as openaiAPI from '~/aiChat-plugin-siyuan/openai';
+import { watchDebounced } from '@vueuse/core';
 
 export default class VitePlugin extends SiyuanPlugin {
   openaiAPI = openaiAPI;
   async onload() {
     // @ts-expect-error
     window['aiChatPlugin'] = this;
-
     this.protyleSlash.push({
       id: 'ai:chat',
       filter: ['ai', 'chat', 'gpt'],
@@ -29,9 +29,28 @@ export default class VitePlugin extends SiyuanPlugin {
 
     const id = setInterval(() => {
       document.querySelectorAll<HTMLElement>(`[custom-ai-chat]`).forEach((el) => {
-        this.addVueUiComponent(el, chatAIView);
+        this.addVueUiComponent(el, chatAIView, { plugin: this });
       });
     }, 500);
-    this.addUnloadFn(() => clearInterval(id));
+    await this.loadConfig(); // Load the config when the plugin loads
+    const clear = watchDebounced(
+      openaiAPI.aiChatConfig,
+      () => {
+        console.log('Config changed:', openaiAPI.aiChatConfig);
+        this.saveConfig(); // Save the config when it changes
+      },
+      { deep: true, debounce: 1_000 },
+    );
+    this.addUnloadFn(() => {
+      clearInterval(id);
+      clear(); // Stop watching the config
+    });
+  }
+  async loadConfig() {
+    const saveConfig = await this.loadData('aiChatConfig');
+    Object.assign(openaiAPI.aiChatConfig, saveConfig);
+  }
+  async saveConfig() {
+    await this.saveData('aiChatConfig', openaiAPI.aiChatConfig);
   }
 }

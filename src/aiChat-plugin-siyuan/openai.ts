@@ -1,5 +1,13 @@
 import { Configuration, OpenAIApi, type ResponseTypes } from 'openai-edge';
 import { fetchSyncPost } from 'siyuan';
+import { computed, reactive } from 'vue';
+
+export const aiChatConfig = reactive({
+  apiBaseUrl: '',
+  apiKey: '',
+  model: '',
+  apiProvider: 'siyuan' as 'siyuan' | 'openai' | '崮生',
+});
 
 const configuration = new Configuration({
   apiKey:
@@ -7,7 +15,45 @@ const configuration = new Configuration({
   basePath: import.meta.env.VITE_OPENAI_BASE_PATH ?? 'https://open.bigmodel.cn/api/paas/v4',
 });
 export const openai = new OpenAIApi(configuration);
-
+export const openai$ = computed(() => {
+  if (aiChatConfig.apiProvider === 'siyuan') {
+    return new OpenAIApi(
+      new Configuration({
+        apiKey: window.siyuan.config.ai.openAI.apiKey,
+        basePath: window.siyuan.config.ai.openAI.apiBaseURL,
+      }),
+    );
+  } else if (aiChatConfig.apiProvider === '崮生') {
+    return new OpenAIApi(
+      new Configuration({
+        apiKey:
+          import.meta.env.VITE_OPENAI_API_KEY ??
+          '09bc63119e1f26d148cac77cda12e089.Rw7lnq1zkg3FcmYZ',
+        basePath: import.meta.env.VITE_OPENAI_BASE_PATH ?? 'https://open.bigmodel.cn/api/paas/v4',
+      }),
+    );
+  } else if (aiChatConfig.apiProvider === 'openai') {
+    return new OpenAIApi(
+      new Configuration({
+        apiKey: aiChatConfig.apiKey,
+        basePath: aiChatConfig.apiBaseUrl,
+      }),
+    );
+  } else {
+    throw new Error('Unsupported API provider');
+  }
+});
+const model$ = computed(() => {
+  if (aiChatConfig.apiProvider === 'openai') {
+    return aiChatConfig.model;
+  } else if (aiChatConfig.apiProvider === 'siyuan') {
+    return window.siyuan.config.ai.openAI.apiModel;
+  } else if (aiChatConfig.apiProvider === '崮生') {
+    return 'GLM-4-Flash';
+  } else {
+    throw new Error('Unsupported API provider');
+  }
+});
 type AI = {
   openai: OpenAIApi;
   model?: string;
@@ -16,10 +62,8 @@ type AI = {
 };
 const defaultConfig = {
   //   model: "gpt-3.5-turbo",
-  /** 智谱清言 免费模型 */
-  model: 'GLM-4-Flash',
   //   max_tokens: undefined,
-  max_tokens: 9999,
+  max_tokens: 8192,
   temperature: 0.3,
 };
 export async function ai搜索关键词提取(ai: AI, userInput: string) {
@@ -33,7 +77,7 @@ export async function ai搜索关键词提取(ai: AI, userInput: string) {
   // 1. 搜索程序支持使用空格连接多个关键词
   // 2. 有时候单个关键词可以搜索到相关内容，多个关键词连接反而搜索不到，所以你不仅要返回空格连接的多个关键词，还应该返回需要搜索的单个关键词之类的，但是太多的单个关键词又可能搜索到无关紧要的内容，这个就是需要你取舍的地方了
   const completion = await ai.openai.createChatCompletion({
-    model: ai.model ?? defaultConfig.model,
+    model: ai.model ?? model$.value,
     messages: [
       {
         role: 'system',
@@ -81,7 +125,7 @@ export async function ai搜索关键词提取(ai: AI, userInput: string) {
 }
 export async function ai回答(ai: AI, userInput: string, searchMd: string) {
   const completion = await ai.openai.createChatCompletion({
-    model: ai.model ?? defaultConfig.model,
+    model: ai.model ?? model$.value,
     messages: [
       {
         role: 'system',
@@ -118,7 +162,7 @@ export async function ai回答(ai: AI, userInput: string, searchMd: string) {
 }
 export async function ai翻译为英文(ai: AI, userInput: string) {
   const completion = await ai.openai.createChatCompletion({
-    model: ai.model ?? defaultConfig.model,
+    model: ai.model ?? model$.value,
     messages: [
       {
         role: 'system',
@@ -199,11 +243,11 @@ ${JSON.stringify(
 }
 
 export async function 执行ai问答(userInput: string) {
-  const keywords = (await ai搜索关键词提取({ openai }, userInput)).res;
+  const keywords = (await ai搜索关键词提取({ openai: openai$.value }, userInput)).res;
   console.log('keywords', keywords);
   const searchMd = await batchSearchParse(keywords);
   console.log('searchMd', searchMd);
-  const aiRes = await ai回答({ openai }, userInput, searchMd);
+  const aiRes = await ai回答({ openai: openai$.value }, userInput, searchMd);
   console.log('aiRes', aiRes);
   return aiRes;
 }

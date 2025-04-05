@@ -24,11 +24,11 @@
     "build:feed": "cross-env plugin_name=feed vite build"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue": "^5.2.3",
     "cross-env": "^7.0.3",
     "siyuan": "^1.0.8",
-    "typescript": "^5.7.2",
-    "vite": "^6.2.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.2.5",
     "vite-plugin-solid": "^2.11.0"
   },
   "dependencies": {
@@ -51,6 +51,7 @@
     "@vueuse/core": "^13.0.0",
     "locomotive-scroll": "^4.1.4",
     "marked": "^15.0.4",
+    "mcp_agent_ts": "^1.0.2",
     "modern-screenshot": "^4.5.5",
     "openai-edge": "^1.2.2",
     "recast": "^0.23.9",
@@ -59,5 +60,5 @@
     "vite-plugin-css-injected-by-js": "^3.5.2",
     "vue": "^3.5.13"
   },
-  "packageManager": "pnpm@10.6.1+sha512.40ee09af407fa9fbb5fbfb8e1cb40fbb74c0af0c3e10e9224d7b53c7658528615b2c92450e74cfad91e3a2dcafe3ce4050d80bda71d757756d2ce2b66213e9a3"
+  "packageManager": "pnpm@10.6.5+sha512.cdf928fca20832cd59ec53826492b7dc25dc524d4370b6b4adbf65803d32efaa6c1c88147c0ae4e8d579a6c9eec715757b50d4fa35eea179d868eada4ed043af"
 }
