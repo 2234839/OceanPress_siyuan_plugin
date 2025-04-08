@@ -10,7 +10,6 @@ export default class UniverPlugin extends SiyuanPlugin {
   onload(): void {
     this.eventBus.on("click-blockicon", (e) => {
       const menu = window.siyuan.menus.menu as Menu;
-      menu.addSeparator();
       menu.addItem({
         label: "univer:插入 sheet ",
         icon: ``,

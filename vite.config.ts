@@ -118,7 +118,8 @@ const viteConfig: UserConfigExport = (ctx) => {
       // 构建后是否生成 source map 文件
       sourcemap: false,
 
-      minify: false,
+      // minify: false,
+      minify: true,
       rollupOptions: {
         output: [
           {
