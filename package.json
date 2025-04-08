@@ -26,14 +26,14 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",
     "cross-env": "^7.0.3",
-    "siyuan": "^1.0.8",
+    "siyuan": "^1.1.1",
     "typescript": "^5.8.3",
     "vite": "^6.2.5",
-    "vite-plugin-solid": "^2.11.0"
+    "vite-plugin-solid": "^2.11.6"
   },
   "dependencies": {
     "@llej/js_util": "^1.0.10",
-    "@sinclair/typebox": "^0.34.28",
+    "@sinclair/typebox": "^0.34.33",
     "@univerjs/core": "^0.2.15",
     "@univerjs/design": "^0.2.15",
     "@univerjs/docs": "^0.2.15",
@@ -48,14 +48,14 @@
     "@univerjs/sheets-numfmt": "^0.2.15",
     "@univerjs/sheets-ui": "^0.2.15",
     "@univerjs/ui": "^0.2.15",
-    "@vueuse/core": "^13.0.0",
+    "@vueuse/core": "^13.1.0",
     "locomotive-scroll": "^4.1.4",
-    "marked": "^15.0.4",
+    "marked": "^15.0.8",
     "mcp_agent_ts": "^1.0.2",
-    "modern-screenshot": "^4.5.5",
+    "modern-screenshot": "^4.6.0",
     "openai-edge": "^1.2.2",
-    "recast": "^0.23.9",
-    "solid-js": "^1.9.3",
+    "recast": "^0.23.11",
+    "solid-js": "^1.9.5",
     "superjson": "^2.2.2",
     "vite-plugin-css-injected-by-js": "^3.5.2",
     "vue": "^3.5.13"
