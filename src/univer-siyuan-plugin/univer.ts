@@ -1,4 +1,4 @@
-// 引入这个变量后 vite 会自动注入 hot
+// 参考 https://docs.univer.ai/zh-CN/guides/sheets/getting-started/installation#usage 配置
 import '@univerjs/design/lib/index.css';
 import '@univerjs/docs-ui/lib/index.css';
 import '@univerjs/sheets-filter-ui/lib/index.css';
@@ -21,8 +21,12 @@ import { UniverSheetsFilterUIPlugin } from '@univerjs/sheets-filter-ui';
 
 import { UniverSheetsPlugin } from '@univerjs/sheets';
 import { UniverSheetsFormulaPlugin, CalculationMode } from '@univerjs/sheets-formula';
-import { UniverSheetsNumfmtPlugin } from '@univerjs/sheets-numfmt';
 import { UniverSheetsUIPlugin } from '@univerjs/sheets-ui';
+//#region 数字格式
+import { UniverSheetsNumfmtPlugin } from '@univerjs/sheets-numfmt';
+import { UniverSheetsNumfmtUIPlugin } from "@univerjs/sheets-numfmt-ui";
+import SheetsNumfmtUIZhCN from '@univerjs/sheets-numfmt-ui/locale/zh-CN';
+//#endregion 数字格式
 
 //#region 排序功能
 import { UniverSheetsSortPlugin } from '@univerjs/sheets-sort';
@@ -54,7 +58,7 @@ const univer = new Univer({
       DocsUIZhCN,
       SheetsUIZhCN,
       SheetsFormulaZhCN,
-      // SheetsNumfmtZhCN,
+      SheetsNumfmtUIZhCN,
       DesignZhCN,
       UIZhCN,
       DesignZhCN,
@@ -67,7 +71,7 @@ const univer = new Univer({
 
 univer.registerPlugin(UniverRenderEnginePlugin);
 univer.registerPlugin(UniverFormulaEnginePlugin, {
-  function: functionUser,
+  // function: functionUser,
 });
 
 univer.registerPlugin(UniverUIPlugin, {
@@ -82,6 +86,7 @@ univer.registerPlugin(UniverDocsUIPlugin);
 univer.registerPlugin(UniverSheetsPlugin);
 univer.registerPlugin(UniverSheetsUIPlugin);
 univer.registerPlugin(UniverSheetsNumfmtPlugin);
+univer.registerPlugin(UniverSheetsNumfmtUIPlugin);
 univer.registerPlugin(UniverSheetsFormulaPlugin, {
   notExecuteFormula: false,
   description: [],

@@ -47,6 +47,9 @@ importers:
       '@univerjs/sheets-numfmt':
         specifier: ^0.6.9
         version: 0.6.9(@grpc/grpc-js@1.9.14)(@wendellhu/redi@0.17.1)(rxjs@7.8.2)
+      '@univerjs/sheets-numfmt-ui':
+        specifier: ^0.6.9
+        version: 0.6.9(@grpc/grpc-js@1.9.14)(@types/react@19.1.0)(@wendellhu/redi@0.17.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)(typescript@5.8.3)
       '@univerjs/sheets-sort':
         specifier: ^0.6.9
         version: 0.6.9(@grpc/grpc-js@1.9.14)(@wendellhu/redi@0.17.1)(rxjs@7.8.2)
@@ -967,6 +970,12 @@ packages:
   '@univerjs/sheets-formula@0.6.9':
     resolution: {integrity: sha512-VHiJehvUAt4NHbsn/0yoZHI85Xsb3e6FpJLUgCv67+ycpiRozMF/Xp8zxIl1R20CKvA1MmYlATjm6bvAoUxc7A==}
     peerDependencies:
+      rxjs: '>=7.0.0'
+
+  '@univerjs/sheets-numfmt-ui@0.6.9':
+    resolution: {integrity: sha512-h81FtQJBHe0hddLUULkRjOzqBmo1RVOLcgmuiLPtKEydAoSHxj0ZzgcClqXMlCb78NM6ogSdrCwo2Atg+v5gkA==}
+    peerDependencies:
+      react: ^16.9.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
       rxjs: '>=7.0.0'
 
   '@univerjs/sheets-numfmt@0.6.9':
@@ -3038,6 +3047,31 @@ snapshots:
     transitivePeerDependencies:
       - '@grpc/grpc-js'
       - '@wendellhu/redi'
+
+  '@univerjs/sheets-numfmt-ui@0.6.9(@grpc/grpc-js@1.9.14)(@types/react@19.1.0)(@wendellhu/redi@0.17.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)(typescript@5.8.3)':
+    dependencies:
+      '@univerjs/core': 0.6.9(@grpc/grpc-js@1.9.14)(@wendellhu/redi@0.17.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.6.9(@types/react@19.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/engine-formula': 0.6.9(@grpc/grpc-js@1.9.14)(@wendellhu/redi@0.17.1)(rxjs@7.8.2)
+      '@univerjs/engine-numfmt': 0.6.9
+      '@univerjs/engine-render': 0.6.9(@grpc/grpc-js@1.9.14)(@wendellhu/redi@0.17.1)(rxjs@7.8.2)
+      '@univerjs/icons': 0.2.34(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.6.9(@grpc/grpc-js@1.9.14)(@wendellhu/redi@0.17.1)(rxjs@7.8.2)
+      '@univerjs/sheets-numfmt': 0.6.9(@grpc/grpc-js@1.9.14)(@wendellhu/redi@0.17.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.6.9(@grpc/grpc-js@1.9.14)(@types/react@19.1.0)(@wendellhu/redi@0.17.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)(typescript@5.8.3)
+      '@univerjs/ui': 0.6.9(@grpc/grpc-js@1.9.14)(@types/react@19.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)(typescript@5.8.3)
+      react: 18.3.1
+      rxjs: 7.8.2
+    transitivePeerDependencies:
+      - '@grpc/grpc-js'
+      - '@types/react'
+      - '@types/react-dom'
+      - '@wendellhu/redi'
+      - date-fns
+      - luxon
+      - moment
+      - react-dom
+      - typescript
 
   '@univerjs/sheets-numfmt@0.6.9(@grpc/grpc-js@1.9.14)(@wendellhu/redi@0.17.1)(rxjs@7.8.2)':
     dependencies:

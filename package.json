@@ -45,6 +45,7 @@
     "@univerjs/sheets-filter-ui": "^0.6.9",
     "@univerjs/sheets-formula": "^0.6.9",
     "@univerjs/sheets-numfmt": "^0.6.9",
+    "@univerjs/sheets-numfmt-ui": "^0.6.9",
     "@univerjs/sheets-sort": "^0.6.9",
     "@univerjs/sheets-sort-ui": "^0.6.9",
     "@univerjs/sheets-ui": "^0.6.9",
