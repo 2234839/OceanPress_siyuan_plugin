@@ -20,11 +20,15 @@ import { UniverSheetsFilterPlugin } from '@univerjs/sheets-filter';
 import { UniverSheetsFilterUIPlugin } from '@univerjs/sheets-filter-ui';
 
 import { UniverSheetsPlugin } from '@univerjs/sheets';
-import { UniverSheetsFormulaPlugin, CalculationMode } from '@univerjs/sheets-formula';
 import { UniverSheetsUIPlugin } from '@univerjs/sheets-ui';
+//#region 数学公式
+import { UniverSheetsFormulaPlugin, CalculationMode } from '@univerjs/sheets-formula';
+import { UniverSheetsFormulaUIPlugin } from '@univerjs/sheets-formula-ui'; // 新增
+import SheetsFormulaUIZhCN from '@univerjs/sheets-formula-ui/locale/zh-CN';
+//#endregion 数学公式
 //#region 数字格式
 import { UniverSheetsNumfmtPlugin } from '@univerjs/sheets-numfmt';
-import { UniverSheetsNumfmtUIPlugin } from "@univerjs/sheets-numfmt-ui";
+import { UniverSheetsNumfmtUIPlugin } from '@univerjs/sheets-numfmt-ui';
 import SheetsNumfmtUIZhCN from '@univerjs/sheets-numfmt-ui/locale/zh-CN';
 //#endregion 数字格式
 
@@ -61,10 +65,10 @@ const univer = new Univer({
       SheetsNumfmtUIZhCN,
       DesignZhCN,
       UIZhCN,
-      DesignZhCN,
       functionZhCN,
       SheetsFilterUIZhCN,
       SheetsSortUIZhCN,
+      SheetsFormulaUIZhCN,
     ),
   },
 });
@@ -93,6 +97,7 @@ univer.registerPlugin(UniverSheetsFormulaPlugin, {
   function: [],
   initialFormulaComputing: CalculationMode.WHEN_EMPTY,
 });
+univer.registerPlugin(UniverSheetsFormulaUIPlugin);
 univer.registerPlugin(UniverSheetsFilterPlugin);
 univer.registerPlugin(UniverSheetsFilterUIPlugin);
 univer.registerPlugin(UniverSheetsSortPlugin);
