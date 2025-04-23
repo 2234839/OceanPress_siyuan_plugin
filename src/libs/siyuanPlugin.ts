@@ -70,11 +70,16 @@ export class SiyuanPlugin extends Plugin {
     return instance;
   }
 
-  async addVueUi(parentEL: HTMLElement, VueComponent: Component, props?: any) {
-    if (parentEL.querySelector(`.${oceanpress_ui_flag}`)) return;
+  async addVueUi(
+    parentEL: HTMLElement,
+    VueComponent: Component,
+    props?: any,
+    uiFlag = oceanpress_ui_flag,
+  ) {
+    if (parentEL.querySelector(`.${uiFlag}`)) return;
     const mountEl = document.createElement('div');
     parentEL.appendChild(mountEl);
-    mountEl.classList.add(oceanpress_ui_flag);
+    mountEl.classList.add(uiFlag);
 
     /** 防止事件和思源的编辑器相互影响 */
     const stopPropagation = (e: Event) => {

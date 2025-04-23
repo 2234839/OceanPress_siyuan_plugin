@@ -10,3 +10,7 @@ body.sy2video-plugin-siyuan > * {
   visibility: visible;
   overflow: visible;
 }
+
+[data-type='NodeSuperBlock'] {
+  border: solid #33333393 1px;
+}
