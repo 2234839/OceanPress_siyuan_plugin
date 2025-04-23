@@ -21,7 +21,7 @@
     "build:aiChat-plugin-siyuan": "cross-env plugin_name=aiChat-plugin-siyuan vite build",
     "build:tts-plugin-siyuan": "cross-env plugin_name=tts-plugin-siyuan vite build",
     "build:expr": "cross-env plugin_name=expr vite build",
-    "build:feed": "cross-env plugin_name=feed vite build"
+    "build:feed": "cross-env plugin_name=feed_siyuan_plugin vite build"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",

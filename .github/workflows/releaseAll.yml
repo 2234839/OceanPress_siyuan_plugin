@@ -225,7 +225,7 @@ jobs:
         run: |
           git clone --quiet --branch=main https://x-access-token:${DEPLOY_KEY}@github.com/2234839/feed_siyuan_plugin.git main
           cd main
-          rm -rf ./* && cp -R ../dist/feed/. .
+          rm -rf ./* && cp -R ../dist/feed_siyuan_plugin/. .
           mkdir -p ./.github/workflows/
           cp ../releaseRepo.yml ./.github/workflows/release.yml
           cp ../LICENSE ./LICENSE
