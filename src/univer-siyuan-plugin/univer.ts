@@ -40,6 +40,52 @@ import SheetsSortUIZhCN from '@univerjs/sheets-sort-ui/locale/zh-CN';
 import '@univerjs/sheets-sort/facade';
 //#endregion 排序功能
 
+//#region hyperlink
+// https://docs.univer.ai/zh-CN/guides/sheets/features/hyperlink#%E6%89%8B%E5%8A%A8%E7%BB%84%E5%90%88%E5%AE%89%E8%A3%85
+import { UniverSheetsHyperLinkPlugin } from '@univerjs/sheets-hyper-link';
+import { UniverSheetsHyperLinkUIPlugin } from '@univerjs/sheets-hyper-link-ui';
+import SheetsHyperLinkUIZhCN from '@univerjs/sheets-hyper-link-ui/locale/zh-CN';
+import '@univerjs/sheets-hyper-link-ui/lib/index.css';
+import '@univerjs/sheets-hyper-link/facade';
+import '@univerjs/sheets-hyper-link-ui/facade';
+//#endregion hyperlink
+
+//crosshair
+// https://docs.univer.ai/zh-CN/guides/sheets/features/crosshair#%E6%89%8B%E5%8A%A8%E7%BB%84%E5%90%88%E5%AE%89%E8%A3%85
+// import { UniverSheetsCrosshairHighlightPlugin } from '@univerjs/sheets-crosshair-highlight'
+// import SheetsCrosshairHighlightZhCN from '@univerjs/sheets-crosshair-highlight/locale/zh-CN'
+// import '@univerjs/sheets-crosshair-highlight/lib/index.css'
+// import '@univerjs/sheets-crosshair-highlight/facade'
+
+// find-replace
+// https://docs.univer.ai/zh-CN/guides/sheets/features/find-replace#%E6%89%8B%E5%8A%A8%E7%BB%84%E5%90%88%E5%AE%89%E8%A3%85
+import { UniverFindReplacePlugin } from '@univerjs/find-replace';
+import { UniverSheetsFindReplacePlugin } from '@univerjs/sheets-find-replace';
+import FindReplaceZhCN from '@univerjs/find-replace/locale/zh-CN';
+import SheetsFindReplaceZhCN from '@univerjs/sheets-find-replace/locale/zh-CN';
+import '@univerjs/find-replace/lib/index.css';
+import '@univerjs/sheets-find-replace/facade';
+
+// notes
+// https://docs.univer.ai/zh-CN/guides/sheets/features/note#%E6%89%8B%E5%8A%A8%E7%BB%84%E5%90%88%E5%AE%89%E8%A3%85
+// import { UniverSheetsNotePlugin } from '@univerjs/sheets-note';
+// import { UniverSheetsNoteUIPlugin } from '@univerjs/sheets-note-ui';
+// import SheetsNoteUIZhCN from '@univerjs/sheets-note-ui/locale/zh-CN';
+// import '@univerjs/sheets-note-ui/lib/index.css';
+// import '@univerjs/sheets-note/facade';
+
+// thread-comment
+// https://docs.univer.ai/zh-CN/guides/sheets/features/thread-comment#%E6%89%8B%E5%8A%A8%E7%BB%84%E5%90%88%E5%AE%89%E8%A3%85
+// import { UniverThreadCommentPlugin } from '@univerjs/thread-comment';
+// import { UniverThreadCommentUIPlugin } from '@univerjs/thread-comment-ui';
+// import { UniverSheetsThreadCommentPlugin } from '@univerjs/sheets-thread-comment';
+// import { UniverSheetsThreadCommentUIPlugin } from '@univerjs/sheets-thread-comment-ui';
+// import ThreadCommentUIZhCN from '@univerjs/thread-comment-ui/locale/zh-CN';
+// import SheetsThreadCommentUIZhCN from '@univerjs/sheets-thread-comment-ui/locale/zh-CN';
+// import '@univerjs/thread-comment-ui/lib/index.css';
+// import '@univerjs/sheets-thread-comment/facade';
+
+
 import DesignZhCN from '@univerjs/design/locale/zh-CN';
 import DocsUIZhCN from '@univerjs/docs-ui/locale/zh-CN';
 import SheetsFilterUIZhCN from '@univerjs/sheets-filter-ui/locale/zh-CN';
@@ -69,6 +115,18 @@ const univer = new Univer({
       SheetsFilterUIZhCN,
       SheetsSortUIZhCN,
       SheetsFormulaUIZhCN,
+
+      SheetsHyperLinkUIZhCN,
+
+      // SheetsCrosshairHighlightZhCN,
+
+      FindReplaceZhCN,
+      SheetsFindReplaceZhCN,
+
+      // SheetsNoteUIZhCN,
+
+      // ThreadCommentUIZhCN,
+      // SheetsThreadCommentUIZhCN,
     ),
   },
 });
@@ -102,7 +160,28 @@ univer.registerPlugin(UniverSheetsFilterPlugin);
 univer.registerPlugin(UniverSheetsFilterUIPlugin);
 univer.registerPlugin(UniverSheetsSortPlugin);
 univer.registerPlugin(UniverSheetsSortUIPlugin);
+
+univer.registerPlugin(UniverSheetsHyperLinkPlugin);
+univer.registerPlugin(UniverSheetsHyperLinkUIPlugin);
+
+// univer.registerPlugin(UniverSheetsCrosshairHighlightPlugin);
+
 const univerAPI = FUniver.newAPI(univer);
+
+// univerAPI.setCrosshairHighlightEnabled(true);
+
+univer.registerPlugin(UniverFindReplacePlugin);
+univer.registerPlugin(UniverSheetsFindReplacePlugin);
+
+// TODO(vector090): data are not saved yet. so hide for now
+// univer.registerPlugin(UniverSheetsNotePlugin);
+// univer.registerPlugin(UniverSheetsNoteUIPlugin);
+
+// TODO(vector090): data are not saved yet. so hide for now
+// univer.registerPlugin(UniverThreadCommentPlugin);
+// univer.registerPlugin(UniverThreadCommentUIPlugin);
+// univer.registerPlugin(UniverSheetsThreadCommentPlugin);
+// univer.registerPlugin(UniverSheetsThreadCommentUIPlugin);
 
 const urlParams = new URLSearchParams(window.location.search);
 const id = urlParams.get('id')!;
