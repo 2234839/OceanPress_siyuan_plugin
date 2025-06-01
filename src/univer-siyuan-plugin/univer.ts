@@ -68,22 +68,22 @@ import '@univerjs/sheets-find-replace/facade';
 
 // notes
 // https://docs.univer.ai/zh-CN/guides/sheets/features/note#%E6%89%8B%E5%8A%A8%E7%BB%84%E5%90%88%E5%AE%89%E8%A3%85
-// import { UniverSheetsNotePlugin } from '@univerjs/sheets-note';
-// import { UniverSheetsNoteUIPlugin } from '@univerjs/sheets-note-ui';
-// import SheetsNoteUIZhCN from '@univerjs/sheets-note-ui/locale/zh-CN';
-// import '@univerjs/sheets-note-ui/lib/index.css';
-// import '@univerjs/sheets-note/facade';
+import { UniverSheetsNotePlugin } from '@univerjs/sheets-note';
+import { UniverSheetsNoteUIPlugin } from '@univerjs/sheets-note-ui';
+import SheetsNoteUIZhCN from '@univerjs/sheets-note-ui/locale/zh-CN';
+import '@univerjs/sheets-note-ui/lib/index.css';
+import '@univerjs/sheets-note/facade';
 
 // thread-comment
 // https://docs.univer.ai/zh-CN/guides/sheets/features/thread-comment#%E6%89%8B%E5%8A%A8%E7%BB%84%E5%90%88%E5%AE%89%E8%A3%85
-// import { UniverThreadCommentPlugin } from '@univerjs/thread-comment';
-// import { UniverThreadCommentUIPlugin } from '@univerjs/thread-comment-ui';
-// import { UniverSheetsThreadCommentPlugin } from '@univerjs/sheets-thread-comment';
-// import { UniverSheetsThreadCommentUIPlugin } from '@univerjs/sheets-thread-comment-ui';
-// import ThreadCommentUIZhCN from '@univerjs/thread-comment-ui/locale/zh-CN';
-// import SheetsThreadCommentUIZhCN from '@univerjs/sheets-thread-comment-ui/locale/zh-CN';
-// import '@univerjs/thread-comment-ui/lib/index.css';
-// import '@univerjs/sheets-thread-comment/facade';
+import { UniverThreadCommentPlugin } from '@univerjs/thread-comment';
+import { UniverThreadCommentUIPlugin } from '@univerjs/thread-comment-ui';
+import { UniverSheetsThreadCommentPlugin } from '@univerjs/sheets-thread-comment';
+import { UniverSheetsThreadCommentUIPlugin } from '@univerjs/sheets-thread-comment-ui';
+import ThreadCommentUIZhCN from '@univerjs/thread-comment-ui/locale/zh-CN';
+import SheetsThreadCommentUIZhCN from '@univerjs/sheets-thread-comment-ui/locale/zh-CN';
+import '@univerjs/thread-comment-ui/lib/index.css';
+import '@univerjs/sheets-thread-comment/facade';
 
 
 import DesignZhCN from '@univerjs/design/locale/zh-CN';
@@ -123,10 +123,10 @@ const univer = new Univer({
       FindReplaceZhCN,
       SheetsFindReplaceZhCN,
 
-      // SheetsNoteUIZhCN,
+      SheetsNoteUIZhCN,
 
-      // ThreadCommentUIZhCN,
-      // SheetsThreadCommentUIZhCN,
+      ThreadCommentUIZhCN,
+      SheetsThreadCommentUIZhCN,
     ),
   },
 });
@@ -173,15 +173,13 @@ const univerAPI = FUniver.newAPI(univer);
 univer.registerPlugin(UniverFindReplacePlugin);
 univer.registerPlugin(UniverSheetsFindReplacePlugin);
 
-// TODO(vector090): data are not saved yet. so hide for now
-// univer.registerPlugin(UniverSheetsNotePlugin);
-// univer.registerPlugin(UniverSheetsNoteUIPlugin);
+univer.registerPlugin(UniverSheetsNotePlugin);
+univer.registerPlugin(UniverSheetsNoteUIPlugin);
 
-// TODO(vector090): data are not saved yet. so hide for now
-// univer.registerPlugin(UniverThreadCommentPlugin);
-// univer.registerPlugin(UniverThreadCommentUIPlugin);
-// univer.registerPlugin(UniverSheetsThreadCommentPlugin);
-// univer.registerPlugin(UniverSheetsThreadCommentUIPlugin);
+univer.registerPlugin(UniverThreadCommentPlugin);
+univer.registerPlugin(UniverThreadCommentUIPlugin);
+univer.registerPlugin(UniverSheetsThreadCommentPlugin);
+univer.registerPlugin(UniverSheetsThreadCommentUIPlugin);
 
 const urlParams = new URLSearchParams(window.location.search);
 const id = urlParams.get('id')!;
@@ -212,7 +210,11 @@ async function main() {
   );
 
   const save = throttle(async () => {
-    const snapshot = unit.getSnapshot();
+    // const snapshot = unit.getSnapshot();
+    
+    const fWorkbook = univerAPI.getActiveWorkbook();
+    const snapshot = fWorkbook.save();
+
     const res = await api.putFile(
       dataPath,
       false,
