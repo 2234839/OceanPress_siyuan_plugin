@@ -64,7 +64,6 @@ import type {
   ArrayValueObject,
   BaseValueObject,
   IFunctionInfo,
-  IFunctionNames,
 } from "@univerjs/engine-formula";
 import {
   AsyncObject,

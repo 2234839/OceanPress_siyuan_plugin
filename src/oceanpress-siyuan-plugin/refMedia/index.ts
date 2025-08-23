@@ -44,7 +44,7 @@ setInterval(() => {
     iframeContent.appendChild(controlsEL);
     const props = JSON.parse(embedBlock.getAttribute("custom-sy2video") ?? "{}");
     video.controls = false;
-    const dispose = render(() => videoControls({ video, props }), controlsEL);
+    const dispose = render(() => videoControls({ video, props }) as any, controlsEL);
     video.addEventListener("", () => {
       controlsEL.style.display = "block";
     });

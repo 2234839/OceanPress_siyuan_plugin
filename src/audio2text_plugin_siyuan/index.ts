@@ -109,7 +109,7 @@ async function audioBlockAddText(audioBlock: Block) {
   }
 }
 
-async function audioFile2Text(audio: ArrayBuffer): Promise<string> {
+async function audioFile2Text(_audio: ArrayBuffer): Promise<string> {
   // 此处实现识别音频为文本的功能
 
   return "识别结果测试" + new Date().toLocaleString();

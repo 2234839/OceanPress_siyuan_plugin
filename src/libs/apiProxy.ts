@@ -33,7 +33,7 @@ window.addEventListener("message", fn);
 
 export const apiProxy = (blockId: string) =>
   new Proxy(target, {
-    get(target, property, receiver) {
+    get(_target, property, _receiver) {
       // 拦截方法调用
       return function (...args: any) {
         const data: apiRpcData = {

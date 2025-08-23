@@ -1,4 +1,4 @@
-import { IWebSocketData, fetchPost, fetchSyncPost } from "siyuan";
+import { IWebSocketData, fetchSyncPost } from "siyuan";
 
 export function insertBlock(par: {
   dataType: "markdown" | "dom";

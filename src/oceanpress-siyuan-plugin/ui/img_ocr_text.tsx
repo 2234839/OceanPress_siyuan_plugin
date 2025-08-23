@@ -1,5 +1,4 @@
-import { ref, onMounted, onUnmounted } from 'vue';
-import { debounce } from '~/libs/js_util';
+import { ref } from 'vue';
 import type { words_result } from '~/libs/ocr/ocr';
 import styles from './img_ocr_text.module.css';
 import { oceanpress_ui_flag } from '~/oceanpress-siyuan-plugin/const';
@@ -18,11 +17,6 @@ export default function ImgOcrText(props: {
       data.value = d;
     });
   }
-
-  const resizeFn = debounce(() => {
-    widthRate.value = img.width / img.naturalWidth;
-    heightRate.value = img.height / img.naturalHeight;
-  }, 500);
 
   return (
     <div

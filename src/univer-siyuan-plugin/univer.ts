@@ -95,7 +95,7 @@ import SheetsUIZhCN from '@univerjs/sheets-ui/locale/zh-CN';
 import SheetsZhCN from '@univerjs/sheets/locale/zh-CN';
 import UIZhCN from '@univerjs/ui/locale/zh-CN';
 import { apiProxy, sendMsg } from '~/libs/apiProxy';
-import { FUNCTION_LIST_USER, functionUser, functionZhCN } from './custom-function';
+import { functionZhCN } from './custom-function';
 import type { checkId } from './msg';
 import pkg from './plugin.json';
 import { FUniver } from '@univerjs/core/facade';
@@ -203,25 +203,25 @@ async function main() {
     data = oldData;
   }
 
-  const unit = univer.createUnit(UniverInstanceType.UNIVER_SHEET, data);
+  univer.createUnit(UniverInstanceType.UNIVER_SHEET, data);
   console.log(
     '[document.querySelector(".univer-toolbar-container")?.children]',
     document.querySelector('.univer-toolbar-container')?.children,
   );
 
   const save = throttle(async () => {
-    // const snapshot = unit.getSnapshot();
-    
     const fWorkbook = univerAPI.getActiveWorkbook();
+    if (!fWorkbook) return;
     const snapshot = fWorkbook.save();
 
-    const res = await api.putFile(
+    await api.putFile(
       dataPath,
       false,
       new Blob([JSON.stringify(snapshot)], { type: 'text/plain' }),
     );
   }, 500);
 
+  // @ts-ignore - Deprecated API but still functional
   univerAPI.onCommandExecuted((command) => {
     if (command.type !== CommandType.MUTATION) return;
     save();

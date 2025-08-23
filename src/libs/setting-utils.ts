@@ -146,6 +146,7 @@ export class SettingUtils {
     private getElement(key: string) {
         let item = this.settings.get(key);
         let element = this.elements.get(key) as any;
+        if (!item) return element;
         switch (item.type) {
             case 'checkbox':
                 element.checked = item.value;
@@ -169,6 +170,7 @@ export class SettingUtils {
     private updateValue(key: string) {
         let item = this.settings.get(key);
         let element = this.elements.get(key) as any;
+        if (!item) return;
         console.log(element, element?.value);
         switch (item.type) {
             case 'checkbox':

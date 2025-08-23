@@ -84,7 +84,7 @@ export async function ocr(
 }
 export async function umiOcrEnabled(umiApi: string) {
   if (Date.now() - umiEnabled.time > 3_000) {
-    const _: { code: 300 } = await fetch(umiApi, {
+    await fetch(umiApi, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -95,7 +95,7 @@ export async function umiOcrEnabled(umiApi: string) {
       }),
     })
       .then((r) => r.json())
-      .catch((e) => {
+      .catch((_e) => {
         showMessage(`umi-ocr 似乎未启动，请启动`, 10_000, "error");
         throw new ocr_enabled_Error("umi-ocr 未启动");
       });

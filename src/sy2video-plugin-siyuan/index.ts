@@ -2,7 +2,7 @@ import { appendBlock, upload } from '~/libs/api';
 import { chatTTS } from '~/libs/chat_tts';
 import './view_block.css';
 import { SiyuanPlugin } from '~/libs/siyuanPlugin';
-import VideoOverride from '~/sy2video-plugin-siyuan/components/VideoOverride.vue';
+import VideoOverride from './components/VideoOverride.vue';
 // 引入这个变量后 vite 会自动注入 hot
 import.meta.hot;
 
