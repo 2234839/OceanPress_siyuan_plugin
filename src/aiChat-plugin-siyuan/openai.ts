@@ -12,12 +12,14 @@ export const aiChatConfig = reactive({
 export const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY ?? '09bc63119e1f26d148cac77cda12e089.Rw7lnq1zkg3FcmYZ',
   baseURL: import.meta.env.VITE_OPENAI_BASE_PATH ?? 'https://open.bigmodel.cn/api/paas/v4',
+  dangerouslyAllowBrowser: true,
 });
 export const openai$ = computed(() => {
   if (aiChatConfig.apiProvider === 'siyuan') {
     return new OpenAI({
       apiKey: window.siyuan.config.ai.openAI.apiKey,
       baseURL: window.siyuan.config.ai.openAI.apiBaseURL,
+      dangerouslyAllowBrowser: true,
     });
   } else if (aiChatConfig.apiProvider === '崮生') {
     return new OpenAI({
@@ -25,11 +27,13 @@ export const openai$ = computed(() => {
         import.meta.env.VITE_OPENAI_API_KEY ??
         '09bc63119e1f26d148cac77cda12e089.Rw7lnq1zkg3FcmYZ',
       baseURL: import.meta.env.VITE_OPENAI_BASE_PATH ?? 'https://open.bigmodel.cn/api/paas/v4',
+      dangerouslyAllowBrowser: true,
     });
   } else if (aiChatConfig.apiProvider === 'openai') {
     return new OpenAI({
       apiKey: aiChatConfig.apiKey,
       baseURL: aiChatConfig.apiBaseUrl,
+      dangerouslyAllowBrowser: true,
     });
   } else {
     throw new Error('Unsupported API provider');

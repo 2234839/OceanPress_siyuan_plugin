@@ -9,12 +9,11 @@
         </div>
       </div>
       <div class="header-right">
-        <button 
-          class="config-toggle-btn" 
+        <button
+          class="config-toggle-btn"
           @click.stop="showConfig = !showConfig"
           :class="{ active: showConfig }"
-          title="设置"
-        >
+          title="设置">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
@@ -25,43 +24,33 @@
 
     <!-- 配置面板 -->
     <transition name="slide-down">
-      <ConfigPanel 
-        v-if="showConfig" 
-        v-model="aiChatConfig" 
-        @change="handleConfigChange"
-      />
+      <ConfigPanel v-if="showConfig" v-model="aiChatConfig" @change="handleConfigChange" />
     </transition>
 
     <!-- 输入区域 -->
     <div class="input-section">
       <div class="input-wrapper">
-        <textarea 
-          v-model="data.searchText" 
+        <textarea
+          v-model="data.searchText"
           class="chat-input"
           placeholder="请输入您的问题..."
           :disabled="data.run"
           @keydown.enter.prevent="handleEnterKey"
-          ref="textInput"
-        ></textarea>
-        <button 
-          @click.stop="run" 
-          class="submit-button" 
+          ref="textInput"></textarea>
+        <button
+          @click.stop="run"
+          class="submit-button"
           :disabled="data.run || !data.searchText.trim()"
-          :class="{ loading: data.run }"
-        >
+          :class="{ loading: data.run }">
           <span v-if="!data.run" class="button-text">发送</span>
           <div v-else class="loading-spinner"></div>
         </button>
       </div>
-      
+
       <!-- 搜索选项 -->
       <div class="search-options">
         <label class="option-label">
-          <input 
-            type="checkbox" 
-            v-model="data.useMultiRoundSearch" 
-            :disabled="data.run"
-          />
+          <input type="checkbox" v-model="data.useMultiRoundSearch" :disabled="data.run" />
           <span class="option-text">启用智能多轮搜索</span>
           <span class="option-description">AI 将自动分析并多次搜索以获得更全面的答案</span>
         </label>
@@ -69,35 +58,33 @@
     </div>
     <!-- 搜索进度显示 -->
     <transition name="fade-in">
-      <SearchProgress 
-        v-if="data.showSearchProgress" 
-        :search-state="searchState" 
-      />
+      <SearchProgress v-if="data.showSearchProgress" :search-state="searchState" />
     </transition>
-    
+
     <!-- 错误提示 -->
     <transition name="slide-up">
-      <ErrorMessage 
-        v-if="data.errorMessage" 
-        :message="data.errorMessage" 
-        @close="data.errorMessage = ''"
-      />
+      <ErrorMessage
+        v-if="data.errorMessage"
+        :message="data.errorMessage"
+        @close="data.errorMessage = ''" />
     </transition>
-    
+
     <!-- 结果显示区域 -->
     <transition name="fade-in">
-      <ResultDisplay 
-        v-if="data.html" 
-        :content="data.html" 
-        @copy="handleCopySuccess"
-      />
+      <ResultDisplay v-if="data.html" :content="data.html" @copy="handleCopySuccess" />
     </transition>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { onMounted, reactive, ref, useTemplateRef, watchEffect, nextTick } from 'vue';
-  import { aiChatConfig, 执行ai问答, 执行自主多轮搜索, searchState, SearchState } from '~/aiChat-plugin-siyuan/openai';
+  import { onMounted, reactive, ref, useTemplateRef, nextTick } from 'vue';
+  import {
+    aiChatConfig,
+    执行ai问答,
+    执行自主多轮搜索,
+    searchState,
+    SearchState,
+  } from '~/aiChat-plugin-siyuan/openai';
   import { getBlockAttrs, setBlockAttrs } from '~/libs/api';
   import { SiyuanPlugin } from '~/libs/siyuanPlugin';
   import { oceanpress_ui_flag } from '~/oceanpress-siyuan-plugin/const';
@@ -158,17 +145,6 @@
     searchState.thinkingProcess = state.thinkingProcess;
   }
   //#endregion 数据存储
-
-  // 移除 resultDiv$ 引用，因为现在在子组件中处理
-  /** 禁止编辑这些元素 */
-  watchEffect(() => {
-    data.html;
-    setTimeout(() => {
-      resultDiv$.value?.querySelectorAll('[contenteditable]').forEach((el) => {
-        el.setAttribute('contenteditable', 'false');
-      });
-    }, 100);
-  });
   // 处理回车键发送
   function handleEnterKey(event: KeyboardEvent) {
     if (event.shiftKey) return; // Shift+Enter 换行
@@ -182,7 +158,7 @@
     // 配置变更时的处理逻辑
     console.log('配置已更新:', aiChatConfig);
   }
-  
+
   // 处理复制成功
   function handleCopySuccess() {
     // 可以添加复制成功的提示
@@ -199,7 +175,7 @@
       data.run = true;
       data.showSearchProgress = true;
       data.errorMessage = '';
-      
+
       // 重置搜索状态
       searchState.isSearching = false;
       searchState.currentStep = '';
@@ -207,7 +183,7 @@
       searchState.keywords = [];
       searchState.searchResults = [];
       searchState.thinkingProcess = [];
-      
+
       if (data.useMultiRoundSearch) {
         // 使用自主多轮搜索
         const result = await 执行自主多轮搜索(data.searchText, 3, updateSearchState);
@@ -386,8 +362,12 @@
   }
 
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 
   /* 搜索选项 */

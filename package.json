@@ -21,7 +21,8 @@
     "build:aiChat-plugin-siyuan": "cross-env plugin_name=aiChat-plugin-siyuan vite build",
     "build:tts-plugin-siyuan": "cross-env plugin_name=tts-plugin-siyuan vite build",
     "build:expr": "cross-env plugin_name=expr vite build",
-    "build:feed": "cross-env plugin_name=feed_siyuan_plugin vite build"
+    "build:feed": "cross-env plugin_name=feed_siyuan_plugin vite build",
+    "tsc": "vue-tsc --noEmit"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",
@@ -29,7 +30,8 @@
     "siyuan": "1.1.1",
     "typescript": "^5.9.2",
     "vite": "^7.1.3",
-    "vite-plugin-solid": "^2.11.8"
+    "vite-plugin-solid": "^2.11.8",
+    "vue-tsc": "^3.0.6"
   },
   "dependencies": {
     "@llej/js_util": "^1.0.10",
