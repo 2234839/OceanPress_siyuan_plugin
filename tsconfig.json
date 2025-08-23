@@ -1,43 +1,26 @@
 {
     "compilerOptions": {
-        "target": "ES2023",
-        "useDefineForClassFields": true,
+        "target": "esnext",
         "module": "ESNext",
-        "lib": [
-            "ESNext",
-            "DOM",
-            "DOM.AsyncIterable",
-            "DOM.Iterable",
-        ],
-        "skipLibCheck": true,
-        // "allowImportingTsExtensions": true,
-        "allowSyntheticDefaultImports": true,
         "moduleResolution": "Bundler",
+        "useDefineForClassFields": true,
+        "allowSyntheticDefaultImports": true,
         "resolveJsonModule": true,
         "isolatedModules": true,
         "esModuleInterop": true,
         "noEmit": true,
-        // "jsx": "preserve",
+        // // "jsx": "preserve",
         "jsx": "preserve",
         "jsxImportSource": "vue",
-        /* Linting */
+        // /* Linting */
         "strict": true,
+        "skipLibCheck": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
-        /* Svelte */
-        /**
-         * Typecheck JS in `.svelte` and `.js` files by default.
-         * Disable checkJs if you'd like to use dynamic types in JS.
-         * Note that setting allowJs false does not prevent the use
-         * of JS in `.svelte` files.
-        */
         "allowJs": true,
         "checkJs": true,
-        "types": [
-            "vite/client",
-        ],
-        // "baseUrl": "./src",
+        "types": [],
         "paths": {
             "~/*": [
                 "./src/*"
@@ -54,5 +37,10 @@
         "src/**/*.tsx",
         "src/**/*.vue"
     ],
-    "root": "."
+    "root": ".",
+    "exclude": [
+        "node_modules",
+        "dist",
+        "build"
+    ]
 }

@@ -215,7 +215,7 @@ async function batchSearch(keywords: string[]) {
       page: 1,
       reqId: Date.now(),
     }).then((r) => ({
-      blocks: r.data.blocks as Block[],
+      blocks: r.data.blocks as any[],
       query,
     }));
   }
@@ -239,6 +239,210 @@ ${JSON.stringify(
   }),
 )}}`;
 
+  return s;
+}
+
+export interface SearchState {
+  isSearching: boolean;
+  currentStep: string;
+  round: number;
+  keywords: string[];
+  searchResults: any[];
+  thinkingProcess: string[];
+}
+
+export const searchState = reactive<SearchState>({
+  isSearching: false,
+  currentStep: '',
+  round: 0,
+  keywords: [],
+  searchResults: [],
+  thinkingProcess: []
+});
+
+export interface SearchRoundResult {
+  round: number;
+  keywords: string[];
+  searchResults: any[];
+  analysis: string;
+  needMoreSearch: boolean;
+  nextKeywords?: string[];
+}
+
+export async function ai分析搜索结果(ai: AI, userInput: string, searchResults: any[], round: number): Promise<{
+  analysis: string;
+  needMoreSearch: boolean;
+  nextKeywords?: string[];
+}> {
+  const completion = await ai.openai.createChatCompletion({
+    model: ai.model ?? model$.value,
+    messages: [
+      {
+        role: 'system',
+        content: `你是一个智能搜索分析助手。你需要分析当前的搜索结果，判断是否需要进一步搜索来更好地回答用户的问题。
+
+你的任务是：
+1. 分析当前搜索结果的质量和相关性
+2. 判断是否需要更多搜索来获取更全面的信息
+3. 如果需要更多搜索，提供新的搜索关键词
+
+回答格式必须是有效的 JSON 对象：
+{
+  "analysis": "对当前搜索结果的分析...",
+  "needMoreSearch": true/false,
+  "nextKeywords": ["关键词1", "关键词2"] (仅在 needMoreSearch 为 true 时提供)
+}
+
+如果信息已经足够，needMoreSearch 设为 false，不需要提供 nextKeywords。`
+      },
+      {
+        role: 'user',
+        content: `用户问题：${userInput}
+
+当前搜索轮次：${round + 1}
+
+搜索结果：
+${JSON.stringify(searchResults, null, 2)}
+
+请分析这些搜索结果，判断是否需要进一步搜索。`
+      }
+    ],
+    max_tokens: ai.max_tokens ?? defaultConfig.max_tokens,
+    temperature: ai.temperature ?? defaultConfig.temperature,
+    stream: false,
+  });
+  
+  const data = (await completion.json()) as ResponseTypes['createChatCompletion'];
+  const response = data.choices[0].message!.content!;
+  
+  try {
+    return JSON.parse(response);
+  } catch (error) {
+    // 如果返回的不是有效 JSON，尝试提取
+    return {
+      analysis: response,
+      needMoreSearch: false
+    };
+  }
+}
+
+export async function 执行自主多轮搜索(userInput: string, maxRounds: number = 3, onStateUpdate?: (state: SearchState) => void): Promise<{
+  finalAnswer: string;
+  searchRounds: SearchRoundResult[];
+}> {
+  searchState.isSearching = true;
+  searchState.round = 0;
+  searchState.thinkingProcess = [];
+  searchState.searchResults = [];
+  
+  try {
+    const searchRounds: SearchRoundResult[] = [];
+    
+    for (let round = 0; round < maxRounds; round++) {
+      searchState.round = round;
+      searchState.currentStep = `第 ${round + 1} 轮搜索`;
+      
+      if (onStateUpdate) {
+        onStateUpdate({ ...searchState });
+      }
+      
+      // 第1轮：提取关键词并搜索
+      if (round === 0) {
+        searchState.currentStep = '分析问题并提取搜索关键词';
+        if (onStateUpdate) onStateUpdate({ ...searchState });
+        
+        const keywords = (await ai搜索关键词提取({ openai: openai$.value }, userInput)).res;
+        searchState.keywords = keywords;
+        searchState.thinkingProcess.push(`提取到关键词：${keywords.join(', ')}`);
+        
+        searchState.currentStep = `搜索关键词：${keywords.join(', ')}`;
+        if (onStateUpdate) onStateUpdate({ ...searchState });
+        
+        const searchResults = await batchSearch(keywords);
+        searchState.searchResults = searchResults;
+        
+        const roundResult: SearchRoundResult = {
+          round,
+          keywords,
+          searchResults,
+          analysis: '',
+          needMoreSearch: true
+        };
+        
+        searchRounds.push(roundResult);
+      } 
+      // 后续轮次：分析结果并决定是否继续搜索
+      else {
+        searchState.currentStep = '分析搜索结果';
+        if (onStateUpdate) onStateUpdate({ ...searchState });
+        
+        const analysis = await ai分析搜索结果(
+          { openai: openai$.value }, 
+          userInput, 
+          searchState.searchResults, 
+          round
+        );
+        
+        searchState.thinkingProcess.push(`分析结果：${analysis.analysis}`);
+        
+        if (!analysis.needMoreSearch || !analysis.nextKeywords || analysis.nextKeywords.length === 0) {
+          searchState.currentStep = '搜索完成，生成最终答案';
+          if (onStateUpdate) onStateUpdate({ ...searchState });
+          break;
+        }
+        
+        searchState.currentStep = `进行第 ${round + 1} 轮搜索：${analysis.nextKeywords.join(', ')}`;
+        if (onStateUpdate) onStateUpdate({ ...searchState });
+        
+        const newSearchResults = await batchSearch(analysis.nextKeywords);
+        searchState.searchResults = [...searchState.searchResults, ...newSearchResults];
+        searchState.thinkingProcess.push(`新增搜索结果：${newSearchResults.length} 条`);
+        
+        const roundResult: SearchRoundResult = {
+          round,
+          keywords: analysis.nextKeywords,
+          searchResults: newSearchResults,
+          analysis: analysis.analysis,
+          needMoreSearch: analysis.needMoreSearch,
+          nextKeywords: analysis.nextKeywords
+        };
+        
+        searchRounds.push(roundResult);
+      }
+    }
+    
+    searchState.currentStep = '整合所有搜索结果并生成最终答案';
+    if (onStateUpdate) onStateUpdate({ ...searchState });
+    
+    // 生成最终答案
+    const searchMd = batchSearchParseFormat(searchState.searchResults);
+    const finalAnswer = (await ai回答({ openai: openai$.value }, userInput, searchMd)).res;
+    
+    return {
+      finalAnswer,
+      searchRounds
+    };
+    
+  } finally {
+    searchState.isSearching = false;
+    searchState.currentStep = '搜索完成';
+    if (onStateUpdate) onStateUpdate({ ...searchState });
+  }
+}
+
+function batchSearchParseFormat(searchResults: any[]): string {
+  let s = `# 搜索结果json：\n
+${JSON.stringify(
+  searchResults.map((el) => {
+    return {
+      query: el.query,
+      blocks: el.blocks.map((block: any) => ({
+        id: block.id,
+        md: block.markdown,
+      })),
+    };
+  }),
+)}`;
   return s;
 }
 
