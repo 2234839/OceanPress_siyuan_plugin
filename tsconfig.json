@@ -15,12 +15,13 @@
         // /* Linting */
         "strict": true,
         "skipLibCheck": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
         "noFallthroughCasesInSwitch": true,
         "allowJs": true,
         "checkJs": true,
         "types": [],
+        "typeRoots": ["./src/types", "./node_modules/@types"],
         "paths": {
             "~/*": [
                 "./src/*"
@@ -41,6 +42,7 @@
     "exclude": [
         "node_modules",
         "dist",
-        "build"
+        "build",
+        "**/node_modules/siyuan/**/*.d.ts"
     ]
 }

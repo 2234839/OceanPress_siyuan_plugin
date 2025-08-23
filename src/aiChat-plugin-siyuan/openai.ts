@@ -1,4 +1,4 @@
-import { Configuration, OpenAIApi, type ResponseTypes } from 'openai-edge';
+import OpenAI from 'openai';
 import { fetchSyncPost } from 'siyuan';
 import { computed, reactive } from 'vue';
 
@@ -9,36 +9,28 @@ export const aiChatConfig = reactive({
   apiProvider: 'siyuan' as 'siyuan' | 'openai' | '崮生',
 });
 
-const configuration = new Configuration({
-  apiKey:
-    import.meta.env.VITE_OPENAI_API_KEY ?? '09bc63119e1f26d148cac77cda12e089.Rw7lnq1zkg3FcmYZ',
-  basePath: import.meta.env.VITE_OPENAI_BASE_PATH ?? 'https://open.bigmodel.cn/api/paas/v4',
+export const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY ?? '09bc63119e1f26d148cac77cda12e089.Rw7lnq1zkg3FcmYZ',
+  baseURL: import.meta.env.VITE_OPENAI_BASE_PATH ?? 'https://open.bigmodel.cn/api/paas/v4',
 });
-export const openai = new OpenAIApi(configuration);
 export const openai$ = computed(() => {
   if (aiChatConfig.apiProvider === 'siyuan') {
-    return new OpenAIApi(
-      new Configuration({
-        apiKey: window.siyuan.config.ai.openAI.apiKey,
-        basePath: window.siyuan.config.ai.openAI.apiBaseURL,
-      }),
-    );
+    return new OpenAI({
+      apiKey: window.siyuan.config.ai.openAI.apiKey,
+      baseURL: window.siyuan.config.ai.openAI.apiBaseURL,
+    });
   } else if (aiChatConfig.apiProvider === '崮生') {
-    return new OpenAIApi(
-      new Configuration({
-        apiKey:
-          import.meta.env.VITE_OPENAI_API_KEY ??
-          '09bc63119e1f26d148cac77cda12e089.Rw7lnq1zkg3FcmYZ',
-        basePath: import.meta.env.VITE_OPENAI_BASE_PATH ?? 'https://open.bigmodel.cn/api/paas/v4',
-      }),
-    );
+    return new OpenAI({
+      apiKey:
+        import.meta.env.VITE_OPENAI_API_KEY ??
+        '09bc63119e1f26d148cac77cda12e089.Rw7lnq1zkg3FcmYZ',
+      baseURL: import.meta.env.VITE_OPENAI_BASE_PATH ?? 'https://open.bigmodel.cn/api/paas/v4',
+    });
   } else if (aiChatConfig.apiProvider === 'openai') {
-    return new OpenAIApi(
-      new Configuration({
-        apiKey: aiChatConfig.apiKey,
-        basePath: aiChatConfig.apiBaseUrl,
-      }),
-    );
+    return new OpenAI({
+      apiKey: aiChatConfig.apiKey,
+      baseURL: aiChatConfig.apiBaseUrl,
+    });
   } else {
     throw new Error('Unsupported API provider');
   }
@@ -55,7 +47,7 @@ const model$ = computed(() => {
   }
 });
 type AI = {
-  openai: OpenAIApi;
+  openai: OpenAI;
   model?: string;
   max_tokens?: number;
   temperature?: number;
@@ -76,7 +68,7 @@ export async function ai搜索关键词提取(ai: AI, userInput: string) {
   // ## 搜索引擎的特性
   // 1. 搜索程序支持使用空格连接多个关键词
   // 2. 有时候单个关键词可以搜索到相关内容，多个关键词连接反而搜索不到，所以你不仅要返回空格连接的多个关键词，还应该返回需要搜索的单个关键词之类的，但是太多的单个关键词又可能搜索到无关紧要的内容，这个就是需要你取舍的地方了
-  const completion = await ai.openai.createChatCompletion({
+  const completion = await ai.openai.chat.completions.create({
     model: ai.model ?? model$.value,
     messages: [
       {
@@ -92,7 +84,7 @@ export async function ai搜索关键词提取(ai: AI, userInput: string) {
    - 选择合适的关键词，以避免返回过多无关的结果。
 
 示例：
-用户: “有哪些关键词”
+用户: "有哪些关键词"
 你: ["关键词1", "关键词2"]
 `,
       },
@@ -102,7 +94,7 @@ export async function ai搜索关键词提取(ai: AI, userInput: string) {
     temperature: ai.temperature ?? defaultConfig.temperature,
     stream: false,
   });
-  const data = (await completion.json()) as ResponseTypes['createChatCompletion'];
+  const data = completion;
   const resStr = data.choices[0].message!.content!;
   let queryArr;
   try {
@@ -124,7 +116,7 @@ export async function ai搜索关键词提取(ai: AI, userInput: string) {
   };
 }
 export async function ai回答(ai: AI, userInput: string, searchMd: string) {
-  const completion = await ai.openai.createChatCompletion({
+  const completion = await ai.openai.chat.completions.create({
     model: ai.model ?? model$.value,
     messages: [
       {
@@ -154,14 +146,14 @@ export async function ai回答(ai: AI, userInput: string, searchMd: string) {
     temperature: ai.temperature ?? defaultConfig.temperature,
     stream: false,
   });
-  const data = (await completion.json()) as ResponseTypes['createChatCompletion'];
+  const data = completion;
   return {
     res: data.choices[0].message!.content!,
     raw: data,
   };
 }
 export async function ai翻译为英文(ai: AI, userInput: string) {
-  const completion = await ai.openai.createChatCompletion({
+  const completion = await ai.openai.chat.completions.create({
     model: ai.model ?? model$.value,
     messages: [
       {
@@ -178,7 +170,7 @@ export async function ai翻译为英文(ai: AI, userInput: string) {
     temperature: ai.temperature ?? defaultConfig.temperature,
     stream: false,
   });
-  const data = (await completion.json()) as ResponseTypes['createChatCompletion'];
+  const data = completion;
   return {
     res: data.choices[0].message!.content!,
     raw: data,
@@ -274,7 +266,7 @@ export async function ai分析搜索结果(ai: AI, userInput: string, searchResu
   needMoreSearch: boolean;
   nextKeywords?: string[];
 }> {
-  const completion = await ai.openai.createChatCompletion({
+  const completion = await ai.openai.chat.completions.create({
     model: ai.model ?? model$.value,
     messages: [
       {
@@ -312,7 +304,7 @@ ${JSON.stringify(searchResults, null, 2)}
     stream: false,
   });
   
-  const data = (await completion.json()) as ResponseTypes['createChatCompletion'];
+  const data = completion;
   const response = data.choices[0].message!.content!;
   
   try {
