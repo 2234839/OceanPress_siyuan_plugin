@@ -61,6 +61,16 @@
       <SearchProgress v-if="data.showSearchProgress" :search-state="searchState" />
     </transition>
 
+    <!-- 复制成功提示 -->
+    <transition name="fade-in">
+      <div v-if="data.copySuccess" class="copy-success-toast">
+        <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>已复制到剪贴板</span>
+      </div>
+    </transition>
+
     <!-- 错误提示 -->
     <transition name="slide-up">
       <ErrorMessage
@@ -119,6 +129,7 @@
     useMultiRoundSearch: true,
     showSearchProgress: false,
     errorMessage: '',
+    copySuccess: false,
   });
   async function saveData() {
     return await setBlockAttrs(props.blockId, { 'custom-ai-config': JSON.stringify(data) });
@@ -161,8 +172,11 @@
 
   // 处理复制成功
   function handleCopySuccess() {
-    // 可以添加复制成功的提示
-    console.log('复制成功');
+    // 显示复制成功提示
+    data.copySuccess = true;
+    setTimeout(() => {
+      data.copySuccess = false;
+    }, 2000);
   }
 
   async function run() {
@@ -489,5 +503,41 @@
   .fade-in-enter-from,
   .fade-in-leave-to {
     opacity: 0;
+  }
+
+  /* 复制成功提示 */
+  .copy-success-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--b3-theme-primary, #4a90e2);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 1000;
+    animation: slideInRight 0.3s ease;
+  }
+
+  .toast-icon {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
   }
 </style>

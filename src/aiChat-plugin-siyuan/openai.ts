@@ -314,15 +314,21 @@ async function 原始查询搜索(userInput: string, method: number = 1): Promis
 async function 生成混合搜索策略(用户问题: string, method: number = 1): Promise<搜索策略[]> {
   if (method === 1) {
     // 使用 Full-text Query Syntax - 直接生成高级查询
-    const 高级查询Promise = ai生成高级搜索查询({ openai: openai$.value }, 用户问题);
-    
-    const 高级查询 = await 高级查询Promise;
+    let 高级查询 = '';
+    try {
+      const 高级查询Promise = ai生成高级搜索查询({ openai: openai$.value }, 用户问题);
+      高级查询 = (await 高级查询Promise).res;
+    } catch (error) {
+      console.error('高级查询生成失败，使用回退策略', error);
+      // 如果高级查询生成失败，使用简单查询
+      高级查询 = 用户问题.split(/\s+/).slice(0, 3).join(' OR '); // 取前3个关键词用OR连接
+    }
 
     return [
       {
         类型: '高级FTS查询',
         权重: 0.7,
-        查询: 高级查询.res
+        查询: 高级查询
       },
       {
         类型: '原始查询',
@@ -332,15 +338,25 @@ async function 生成混合搜索策略(用户问题: string, method: number = 1
     ];
   } else {
     // 使用传统查询方式 - 保留向后兼容
-    const 关键词提取Promise = ai搜索关键词提取({ openai: openai$.value }, 用户问题);
-    const 语义扩展Promise = ai语义扩展({ openai: openai$.value }, 用户问题);
-    const 同义词扩展Promise = ai同义词扩展({ openai: openai$.value }, 用户问题);
+    let 关键词提取 = { res: [用户问题] };
+    let 语义扩展 = { res: '' };
+    let 同义词扩展 = { res: '' };
+    
+    try {
+      const 关键词提取Promise = ai搜索关键词提取({ openai: openai$.value }, 用户问题);
+      const 语义扩展Promise = ai语义扩展({ openai: openai$.value }, 用户问题);
+      const 同义词扩展Promise = ai同义词扩展({ openai: openai$.value }, 用户问题);
 
-    const [关键词提取, 语义扩展, 同义词扩展] = await Promise.all([
-      关键词提取Promise,
-      语义扩展Promise,
-      同义词扩展Promise
-    ]);
+      [关键词提取, 语义扩展, 同义词扩展] = await Promise.all([
+        关键词提取Promise,
+        语义扩展Promise,
+        同义词扩展Promise
+      ]);
+    } catch (error) {
+      console.error('关键词提取失败，使用回退策略', error);
+      // 如果提取失败，使用简单的关键词分割
+      关键词提取.res = 用户问题.split(/\s+/).filter(word => word.length > 1);
+    }
 
     return [
       {
@@ -351,7 +367,7 @@ async function 生成混合搜索策略(用户问题: string, method: number = 1
       {
         类型: '关键词提取',
         权重: 0.3,
-        查询: 关键词提取.res.join(' ')
+        查询: Array.isArray(关键词提取.res) ? 关键词提取.res.join(' ') : 关键词提取.res
       },
       {
         类型: '语义扩展',
@@ -364,6 +380,110 @@ async function 生成混合搜索策略(用户问题: string, method: number = 1
         查询: 同义词扩展.res
       }
     ];
+  }
+}
+
+async function AI选择搜索策略(ai: AI, 用户问题: string, 当前结果: 搜索结果项[], 有效性评估: any): Promise<{
+  优化查询: string;
+  策略说明: string;
+  预期改进: string;
+}> {
+  try {
+    const completion = await ai.openai.chat.completions.create({
+      model: ai.model ?? model$.value,
+      messages: [
+        {
+          role: 'system',
+          content: `你是一个搜索策略优化专家。根据当前搜索结果的AI评估，选择最适合的下一步搜索策略。
+
+## 当前状况
+- 用户问题: ${用户问题}
+- 搜索结果数量: ${当前结果.length}
+- AI有效性评分: ${有效性评估.有效性评分.toFixed(2)}
+- 高质量结果数: ${有效性评估.高质量结果数}
+- 质量分布: ${有效性评估.质量分布}
+- AI建议策略: ${有效性评估.建议策略}
+
+## 策略选择原则
+
+### 质量差（评分 < 0.3）
+- 扩大搜索范围，使用更宽松的条件
+- 移除复杂语法，采用基本关键词OR连接
+- 添加更多同义词和相关词汇
+
+### 质量一般（评分 0.3-0.6）
+- 调整关键词，使用更准确的术语
+- 优化搜索精度，针对缺失概念搜索
+- 改变搜索角度，尝试不同表述
+
+### 质量较好但不够全面（评分 0.6-0.8）
+- 针对性补充搜索，覆盖缺失方面
+- 搜索更具体的技术细节或案例
+- 从不同角度深化相关内容
+
+### 质量优秀（评分 > 0.8）
+- 仅在建议继续搜索时进行补充搜索
+- 搜索相关的扩展信息或最新内容
+
+## 搜索语法优化技巧
+1. 避免过度使用AND，容易导致零结果
+2. 优先使用OR连接同义词
+3. NEAR距离设置在10-15之间比较合适
+4. 对核心概念使用权重提升^
+5. 适当使用-排除明显无关内容
+
+## 输出要求
+返回JSON格式：
+{
+  "优化查询": "新的搜索查询字符串",
+  "策略说明": "选择此策略的详细原因",
+  "预期改进": "预期达到的搜索效果"
+}
+
+最重要原则：确保能找到相关结果，宁可结果多一些也不要零结果`,
+        },
+        {
+          role: 'user',
+          content: `用户问题：${用户问题}
+
+当前使用的查询：${当前结果[0]?.查询词 || '未知'}
+
+AI评估结果：
+- 有效性评分：${有效性评估.有效性评分.toFixed(2)}/1.0
+- 高质量结果数：${有效性评估.高质量结果数}个
+- 结果总数：${当前结果.length}个
+- 质量分布：${有效性评估.质量分布}
+- 相关性分析：${有效性评估.相关性分析}
+- 建议继续搜索：${有效性评估.建议继续搜索}
+- AI建议策略：${有效性评估.建议策略}
+
+请基于AI的专业评估，选择最适合的搜索策略并提供优化后的查询字符串。`,
+        },
+      ],
+      max_tokens: 1024,
+      temperature: 0.3,
+      stream: false,
+    });
+
+    const response = completion.choices[0].message!.content!;
+    
+    try {
+      return JSON.parse(response);
+    } catch (error) {
+      // 如果JSON解析失败，返回默认策略
+      return {
+        优化查询: 用户问题.split(/\s+/).filter(word => word.length > 1).slice(0, 3).join(' OR '),
+        策略说明: "AI分析失败，使用默认简化策略",
+        预期改进: "扩大搜索范围以获得更多结果"
+      };
+    }
+  } catch (error) {
+    console.error('搜索策略选择失败:', error);
+    return {
+      优化查询: 用户问题.split(/\s+/).filter(word => word.length > 1).slice(0, 3).join(' OR '),
+      策略说明: "策略选择失败，使用回退策略",
+      预期改进: "使用简化查询确保有搜索结果"
+    };
   }
 }
 
@@ -588,26 +708,196 @@ async function 执行混合搜索(搜索策略列表: 搜索策略[], method: nu
   });
 
   const 所有结果 = await Promise.all(搜索Promise);
-  return 所有结果.flat();
-}
-
-function 计算相关性得分(结果: 搜索结果项, 用户问题: string): number {
-  const 内容 = 结果.markdown.toLowerCase();
-  const 问题关键词 = 用户问题.toLowerCase().split(/\s+/);
+  const 合并结果 = 所有结果.flat();
   
-  let 得分 = 0;
-  问题关键词.forEach(关键词 => {
-    if (内容.includes(关键词)) {
-      得分 += 1;
-    }
-  });
-  
-  // 标题匹配加分
-  if (结果.markdown.includes('#') && 结果.markdown.toLowerCase().includes(问题关键词[0])) {
-    得分 += 2;
+  // 如果没有任何结果，尝试回退搜索策略
+  if (合并结果.length === 0) {
+    console.log('高级搜索策略无结果，尝试回退到简单搜索');
+    const 回退结果 = await 执行回退搜索(搜索策略列表[0]?.查询 || '', method);
+    return 回退结果;
   }
   
-  return Math.min(得分 / 问题关键词.length, 1);
+  return 合并结果;
+}
+
+async function 执行回退搜索(原始查询: string, method: number = 1): Promise<搜索结果项[]> {
+  try {
+    // 提取简单的关键词
+    const 简化查询 = 原始查询
+      .replace(/NEAR\([^)]+\)/g, '') // 移除NEAR查询
+      .replace(/\^/g, '') // 移除权重符号
+      .replace(/-/g, '') // 移除排除符号
+      .replace(/AND/g, 'OR') // 将AND改为OR
+      .replace(/\([^)]+\)/g, '') // 移除括号分组
+      .replace(/\s+/g, ' ') // 合并空格
+      .trim();
+
+    console.log(`执行回退搜索：${简化查询}`);
+
+    const 结果 = await fetchSyncPost('/api/search/fullTextSearchBlock', {
+      query: 简化查询,
+      method: method,
+      types: {
+        audioBlock: true,
+        blockquote: true,
+        codeBlock: true,
+        databaseBlock: true,
+        document: true,
+        embedBlock: true,
+        heading: true,
+        htmlBlock: true,
+        iframeBlock: true,
+        list: false,
+        listItem: false,
+        mathBlock: true,
+        paragraph: true,
+        superBlock: true,
+        table: false,
+        videoBlock: true,
+        widgetBlock: true,
+      },
+      paths: [],
+      groupBy: 0,
+      orderBy: 0,
+      page: 1,
+      reqId: Date.now(),
+    });
+
+    const 搜索响应 = 结果 as 思源搜索响应;
+
+    return 搜索响应.data.blocks.map((block: 思源搜索块) => ({
+      id: block.id,
+      markdown: block.markdown,
+      相关性得分: 0,
+      内容质量得分: 0,
+      时效性得分: 0,
+      最终得分: 0,
+      搜索类型: '回退搜索',
+      查询词: 简化查询,
+      策略权重: 0.5
+    }));
+  } catch (error) {
+    console.error('回退搜索失败:', error);
+    return [] as 搜索结果项[];
+  }
+}
+
+
+// AI评估搜索结果的有效性
+async function AI评估搜索结果有效性(ai: AI, 搜索结果: 搜索结果项[], 用户问题: string): Promise<{
+  有效性评分: number; // 0-1分
+  高质量结果数: number;
+  相关性分析: string;
+  建议继续搜索: boolean;
+  建议策略: string;
+  质量分布: string; // 质量分布描述
+}> {
+  if (搜索结果.length === 0) {
+    return {
+      有效性评分: 0,
+      高质量结果数: 0,
+      相关性分析: "没有搜索结果",
+      建议继续搜索: true,
+      建议策略: "需要尝试更宽松的搜索条件",
+      质量分布: "无结果"
+    };
+  }
+
+  try {
+    const completion = await ai.openai.chat.completions.create({
+      model: ai.model ?? model$.value,
+      messages: [
+        {
+          role: 'system',
+          content: `你是一个搜索结果质量评估专家。请仔细分析搜索结果与用户问题的相关性，并给出专业的评估。
+
+## 评估维度
+
+### 1. 相关性评分 (0-1分)
+- **完全相关(0.9-1.0)**: 直接回答用户问题，内容精准匹配
+- **高度相关(0.7-0.8)**: 核心内容相关，能提供有价值信息
+- **中等相关(0.5-0.6)**: 部分相关，有一定参考价值
+- **低度相关(0.3-0.4)**: 间接相关，参考价值有限
+- **基本无关(0.0-0.2)**: 几乎不相关，无实质帮助
+
+### 2. 内容质量评估
+- **信息深度**: 内容是否详细、深入
+- **准确性**: 信息是否准确、专业
+- **时效性**: 信息是否过时
+- **实用性**: 是否对用户有实际帮助
+
+### 3. 覆盖度评估
+- **问题覆盖**: 是否覆盖了用户问题的各个方面
+- **角度多样性**: 是否提供了不同角度的信息
+- **完整性**: 信息是否完整
+
+## 输出要求
+必须返回有效的JSON格式：
+{
+  "有效性评分": 0.75,
+  "高质量结果数": 3,
+  "相关性分析": "详细的分析说明...",
+  "建议继续搜索": true,
+  "建议策略": "具体的改进建议...",
+  "质量分布": "高质量:2个, 中等:3个, 低质量:1个"
+}
+
+## 评估原则
+1. 严格根据内容与问题的实际相关性评分
+2. 宁可评分保守，也不要过于乐观
+3. 如果结果质量一般，建议继续搜索
+4. 优先考虑结果的质量而非数量`,
+        },
+        {
+          role: 'user',
+          content: `用户问题：${用户问题}
+
+搜索结果数量：${搜索结果.length}
+
+搜索结果内容：
+${搜索结果.map((结果, index) => `
+结果${index + 1}:
+ID: ${结果.id}
+内容: ${结果.markdown.substring(0, 300)}${结果.markdown.length > 300 ? '...' : ''}
+搜索类型: ${结果.搜索类型}
+查询词: ${结果.查询词}
+`).join('\n')}
+
+请对这些搜索结果进行全面的质效评估。`,
+        },
+      ],
+      max_tokens: 1024,
+      temperature: 0.2,
+      stream: false,
+    });
+
+    const response = completion.choices[0].message!.content!;
+    
+    try {
+      return JSON.parse(response);
+    } catch (error) {
+      console.error('AI评估解析失败:', error);
+      // 如果解析失败，返回保守的默认评估
+      return {
+        有效性评分: 0.3,
+        高质量结果数: 0,
+        相关性分析: "AI评估失败，采用保守评估",
+        建议继续搜索: true,
+        建议策略: "需要尝试不同的搜索策略",
+        质量分布: "未知"
+      };
+    }
+  } catch (error) {
+    console.error('AI评估失败:', error);
+    return {
+      有效性评分: 0.2,
+      高质量结果数: 0,
+      相关性分析: "评估过程失败",
+      建议继续搜索: true,
+      建议策略: "需要重新尝试搜索",
+      质量分布: "评估失败"
+    };
+  }
 }
 
 function 计算内容质量得分(结果: 搜索结果项): number {
@@ -645,11 +935,11 @@ function 计算时效性得分(结果: 搜索结果项): number {
 async function 智能排序结果(结果列表: 搜索结果项[], 用户问题: string): Promise<搜索结果项[]> {
   return 结果列表.map(结果 => ({
     ...结果,
-    相关性得分: 计算相关性得分(结果, 用户问题),
+    相关性得分: 0.5, // 简化处理，让AI评估来决定质量
     内容质量得分: 计算内容质量得分(结果),
     时效性得分: 计算时效性得分(结果),
     最终得分: (
-      计算相关性得分(结果, 用户问题) * 0.5 +
+      0.5 + // 基础相关性得分
       计算内容质量得分(结果) * 0.3 +
       计算时效性得分(结果) * 0.2 +
       (结果.策略权重 || 0) * 0.1
@@ -816,7 +1106,7 @@ async function 执行自适应搜索(用户问题: string, method: number = 1, o
   let 最终结果: 搜索结果项[] = [];
   let 收敛度 = 0;
   
-  while (轮次 < 5 && 收敛度 < 0.8) {
+  while (轮次 < 8 && 收敛度 < 0.8) {
     if (onStateUpdate) {
       onStateUpdate({
         isSearching: true,
@@ -916,8 +1206,45 @@ async function 执行自适应搜索(用户问题: string, method: number = 1, o
     
     轮次++;
     
-    // 如果信息增益过低，停止搜索
-    if (信息增益 < 0.1) break;
+    // 使用AI评估当前搜索结果的有效性
+    let 有效性评估;
+    try {
+      有效性评估 = await AI评估搜索结果有效性({ openai: openai$.value }, 最终结果, 用户问题);
+    } catch (error) {
+      console.error('AI评估失败，使用默认评估', error);
+      有效性评估 = {
+        有效性评分: 0.2,
+        高质量结果数: 0,
+        相关性分析: "评估失败",
+        建议继续搜索: true,
+        建议策略: "需要重新搜索",
+        质量分布: "未知"
+      };
+    }
+    
+    // 如果信息增益过低，但结果质量很高，可以停止
+    if (信息增益 < 0.1 && 有效性评估.有效性评分 >= 0.6) {
+      console.log(`信息增益低但结果质量优秀(${有效性评估.有效性评分.toFixed(2)})，停止搜索`);
+      break;
+    }
+    
+    // 如果信息增益过低且结果质量一般，但结果数量足够，也可以停止
+    if (信息增益 < 0.1 && 有效性评估.有效性评分 >= 0.4 && 最终结果.length >= 5) {
+      console.log(`信息增益低但结果质量良好(${有效性评估.有效性评分.toFixed(2)})，停止搜索`);
+      break;
+    }
+    
+    // 如果结果质量很高，即使信息增益较低，也可以考虑停止
+    if (有效性评估.有效性评分 >= 0.7 && 最终结果.length >= 4) {
+      console.log(`结果质量优秀(${有效性评估.有效性评分.toFixed(2)})，停止搜索`);
+      break;
+    }
+    
+    // 如果结果仍然很少或质量差，继续搜索
+    if (最终结果.length < 3 || 有效性评估.有效性评分 < 0.3) {
+      console.log(`结果数量不足或质量较差(${有效性评估.有效性评分.toFixed(2)})，继续搜索`);
+      continue;
+    }
   }
   
   return {
@@ -1028,24 +1355,6 @@ async function batchSearch(keywords: string[], method: number = 1): Promise<{
   return searchRes;
 }
 
-async function batchSearchParse(keywords: string[], method: number = 1): Promise<string> {
-  const searchRes = await batchSearch(keywords, method);
-  let s = `# 搜索结果json：\n
-${JSON.stringify(
-  searchRes.map((el) => {
-    return {
-      query: el.query,
-      blocks: el.blocks.map((block: 思源搜索块) => ({
-        id: block.id,
-        md: block.markdown,
-      })),
-    };
-  }),
-)}}`;
-
-  return s;
-}
-
 export interface SearchState {
   isSearching: boolean;
   currentStep: string;
@@ -1136,7 +1445,7 @@ ${JSON.stringify(searchResults, null, 2)}
   }
 }
 
-export async function 执行自主多轮搜索(userInput: string, maxRounds: number = 3, method: number = 1, onStateUpdate?: (state: SearchState) => void): Promise<{
+export async function 执行自主多轮搜索(userInput: string, maxRounds: number = 5, method: number = 1, onStateUpdate?: (state: SearchState) => void): Promise<{
   finalAnswer: string;
   searchRounds: SearchRoundResult[];
 }> {
@@ -1254,7 +1563,17 @@ export async function 执行自主多轮搜索(userInput: string, maxRounds: num
     if (onStateUpdate) onStateUpdate({ ...searchState });
     
     // 生成最终答案
-    const searchMd = batchSearchParseFormat(searchState.searchResults);
+    const searchMd = `# 搜索结果json：
+${JSON.stringify(searchState.searchResults.map((el: any) => ({
+      query: el.query || el.查询词,
+      blocks: el.blocks ? el.blocks.map((block: any) => ({
+        id: block.id,
+        md: block.markdown || block.md
+      })) : [{
+        id: el.id,
+        md: el.markdown
+      }]
+    })), null, 2)}`;
     const finalAnswer = (await ai回答({ openai: openai$.value }, userInput, searchMd)).res;
     
     return {
@@ -1269,26 +1588,11 @@ export async function 执行自主多轮搜索(userInput: string, maxRounds: num
   }
 }
 
-function batchSearchParseFormat(searchResults: any[]): string {
-  let s = `# 搜索结果json：\n
-${JSON.stringify(
-  searchResults.map((el) => {
-    return {
-      query: el.query,
-      blocks: el.blocks.map((block: any) => ({
-        id: block.id,
-        md: block.markdown,
-      })),
-    };
-  }),
-)}`;
-  return s;
-}
 
 export async function 执行ai问答(userInput: string, method: number = 1) {
   let 所有搜索结果: 搜索结果项[] = [];
   let 搜索轮次 = 0;
-  const 最大轮次 = 3;
+  const 最大轮次 = 6;
   let 当前查询: string = '';
   
   while (搜索轮次 < 最大轮次) {
@@ -1296,31 +1600,87 @@ export async function 执行ai问答(userInput: string, method: number = 1) {
     
     if (搜索轮次 === 1) {
       // 第一轮：生成初始查询
-      if (method === 1) {
-        const 高级查询结果 = await ai生成高级搜索查询({ openai: openai$.value }, userInput);
-        当前查询 = 高级查询结果.res;
-      } else {
-        const keywords = (await ai搜索关键词提取({ openai: openai$.value }, userInput)).res;
-        当前查询 = keywords[0] || userInput;
+      try {
+        if (method === 1) {
+          const 高级查询结果 = await ai生成高级搜索查询({ openai: openai$.value }, userInput);
+          当前查询 = 高级查询结果.res;
+        } else {
+          const keywords = (await ai搜索关键词提取({ openai: openai$.value }, userInput)).res;
+          当前查询 = Array.isArray(keywords) ? keywords[0] || userInput : keywords;
+        }
+      } catch (error) {
+        console.error('查询生成失败，使用原始查询', error);
+        当前查询 = userInput;
       }
       console.log(`第${搜索轮次}轮查询：`, 当前查询);
     } else {
-      // 后续轮次：分析结果并优化查询
-      const 优化结果 = await ai分析搜索结果并优化查询(
-        { openai: openai$.value },
-        当前查询,
-        所有搜索结果,
-        userInput
-      );
-      
-      console.log(`第${搜索轮次}轮分析：`, 优化结果.分析报告);
-      
-      if (!优化结果.需要再次搜索) {
-        break;
+      // 后续轮次：基于上一轮的AI评估选择搜索策略
+      // 注意：这里使用的是上一轮的评估结果，这一轮的搜索还没执行
+      try {
+        // 获取上一轮的评估结果（如果有的话）
+        let 上一轮评估;
+        if (搜索轮次 > 1) {
+          try {
+            上一轮评估 = await AI评估搜索结果有效性({ openai: openai$.value }, 所有搜索结果, userInput);
+          } catch (error) {
+            console.error('获取上一轮评估失败', error);
+            上一轮评估 = {
+              有效性评分: 0.3,
+              高质量结果数: 0,
+              相关性分析: "评估失败",
+              建议继续搜索: true,
+              建议策略: "需要继续搜索",
+              质量分布: "未知"
+            };
+          }
+        } else {
+          上一轮评估 = {
+            有效性评分: 0.3,
+            高质量结果数: 0,
+            相关性分析: "首轮搜索",
+            建议继续搜索: true,
+            建议策略: "需要继续搜索",
+            质量分布: "未知"
+          };
+        }
+
+        const 策略选择 = await AI选择搜索策略(
+          { openai: openai$.value },
+          userInput,
+          所有搜索结果,
+          上一轮评估
+        );
+        
+        console.log(`第${搜索轮次}轮AI策略选择：${策略选择.策略说明}`);
+        console.log(`预期改进：${策略选择.预期改进}`);
+        
+        // 如果AI不建议继续搜索，停止
+        if (!上一轮评估.建议继续搜索) {
+          console.log(`AI评估不建议继续搜索，停止搜索`);
+          break;
+        }
+        
+        当前查询 = 策略选择.优化查询;
+        console.log(`第${搜索轮次}轮AI优化查询：${当前查询}`);
+      } catch (error) {
+        console.error('AI策略选择失败，使用回退策略', error);
+        // 如果AI策略选择失败，使用更简单的查询
+        当前查询 = 当前查询
+          .replace(/NEAR\([^)]+\)/g, '')
+          .replace(/\^/g, '')
+          .replace(/-/g, '')
+          .replace(/AND/g, 'OR')
+          .replace(/\([^)]+\)/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        // 如果仍然没有结果，尝试最简单的关键词
+        if (所有搜索结果.length === 0) {
+          当前查询 = userInput.split(/\s+/).filter(word => word.length > 1).slice(0, 3).join(' OR ');
+        }
+        
+        console.log(`第${搜索轮次}轮回退查询：${当前查询}`);
       }
-      
-      当前查询 = 优化结果.优化查询;
-      console.log(`第${搜索轮次}轮优化查询：`, 当前查询);
     }
     
     // 执行搜索
@@ -1341,16 +1701,70 @@ export async function 执行ai问答(userInput: string, method: number = 1) {
     
     所有搜索结果 = [...所有搜索结果, ...转换结果];
     
-    // 如果第一轮结果数量适中，可以提前结束
-    if (搜索轮次 === 1 && 所有搜索结果.length >= 4 && 所有搜索结果.length <= 15) {
-      console.log('第一轮搜索结果数量适中，停止进一步搜索');
+    // 使用AI评估当前搜索结果的有效性
+    let 有效性评估;
+    try {
+      有效性评估 = await AI评估搜索结果有效性({ openai: openai$.value }, 所有搜索结果, userInput);
+      console.log(`第${搜索轮次}轮AI评估：${有效性评估.相关性分析}，评分：${有效性评估.有效性评分.toFixed(2)}`);
+    } catch (error) {
+      console.error('AI评估失败，使用默认评估', error);
+      有效性评估 = {
+        有效性评分: 0.2,
+        高质量结果数: 0,
+        相关性分析: "评估失败",
+        建议继续搜索: true,
+        建议策略: "需要重新搜索",
+        质量分布: "未知"
+      };
+    }
+    
+    // 如果结果质量很高且数量适中，可以提前结束
+    if (搜索轮次 >= 3 && 
+        有效性评估.有效性评分 >= 0.6 && 
+        有效性评估.高质量结果数 >= 3 && 
+        所有搜索结果.length >= 4 && 
+        所有搜索结果.length <= 15) {
+      console.log(`第${搜索轮次}轮搜索结果质量优秀(${有效性评估.有效性评分.toFixed(2)})，停止进一步搜索`);
       break;
     }
     
-    // 如果第一轮结果过多或过少，强制进行第二轮优化
-    if (搜索轮次 === 1 && (所有搜索结果.length === 0 || 所有搜索结果.length <= 3 || 所有搜索结果.length > 20)) {
-      console.log(`第一轮结果${所有搜索结果.length === 0 ? '为零' : 所有搜索结果.length <= 3 ? '过少' : '过多'}，需要进行优化搜索`);
+    // 如果结果质量较好且数量适中，也可以提前结束
+    if (搜索轮次 >= 4 && 
+        有效性评估.有效性评分 >= 0.4 && 
+        有效性评估.高质量结果数 >= 2 && 
+        所有搜索结果.length >= 3) {
+      console.log(`第${搜索轮次}轮搜索结果质量良好(${有效性评估.有效性评分.toFixed(2)})，停止进一步搜索`);
+      break;
+    }
+    
+    // 如果结果过少或质量差，强制继续搜索（至少5轮）
+    if (搜索轮次 < 5 && 
+        (所有搜索结果.length === 0 || 
+         所有搜索结果.length <= 2 || 
+         有效性评估.有效性评分 < 0.3 || 
+         有效性评估.高质量结果数 === 0)) {
+      console.log(`第${搜索轮次}轮结果${有效性评估.建议继续搜索 ? '质量较差' : '过少'}，继续搜索`);
       continue;
+    }
+    
+    // 如果完全没有结果，尝试紧急回退策略
+    if (所有搜索结果.length === 0 && 搜索轮次 >= 2) {
+      console.log(`第${搜索轮次}轮仍然无结果，尝试紧急回退策略`);
+      // 尝试最简单的关键词搜索
+      const 紧急查询 = userInput.split(/\s+/).filter(word => word.length > 1).slice(0, 3).join(' OR ');
+      if (紧急查询 !== 当前查询) {
+        当前查询 = 紧急查询;
+        console.log(`使用紧急查询：${当前查询}`);
+        搜索轮次--; // 重试这一轮
+        continue;
+      }
+    }
+    
+    // 如果结果过多，可以考虑停止或优化
+    if (所有搜索结果.length > 25) {
+      console.log(`第${搜索轮次}轮结果过多(${所有搜索结果.length}条)，可以考虑停止`);
+      // 可以选择在这里停止或优化查询
+      if (搜索轮次 >= 3) break;
     }
   }
   

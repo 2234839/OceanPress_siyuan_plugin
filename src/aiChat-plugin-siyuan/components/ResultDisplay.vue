@@ -3,7 +3,7 @@
     <div class="result-header">
       <div class="result-title">AI 回答</div>
       <button class="copy-button" @click="copyResult" title="复制回答">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
         </svg>
@@ -20,7 +20,7 @@
     content: string;
   }>();
 
-  defineEmits<{
+  const emit = defineEmits<{
     copy: [];
   }>();
 
@@ -32,9 +32,11 @@
 
   const copyResult = async () => {
     try {
-      if (contentRef.value) {
-        const text = contentRef.value.innerText || contentRef.value.textContent;
+      if (resultDiv$.value) {
+        const text = resultDiv$.value.innerText || resultDiv$.value.textContent;
         await navigator.clipboard.writeText(text);
+        // 发送复制成功事件
+        emit('copy');
       }
     } catch (error) {
       console.error('复制失败:', error);
@@ -79,27 +81,37 @@
   }
 
   .copy-button {
-    width: 28px;
-    height: 28px;
-    border: none;
-    background: transparent;
-    color: var(--b3-theme-on-background-light, #6c757d);
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--b3-border-color, #e4e7ed);
+    background: var(--b3-theme-background, #ffffff);
+    color: var(--b3-theme-on-background, #495057);
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
 
   .copy-button:hover {
-    background: var(--b3-theme-background-hover, #e9ecef);
-    color: var(--b3-theme-on-background, #495057);
+    background: var(--b3-theme-primary, #4a90e2);
+    color: white;
+    border-color: var(--b3-theme-primary, #4a90e2);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .copy-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
 
   .copy-button .icon {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
   }
 
   .result-content {
