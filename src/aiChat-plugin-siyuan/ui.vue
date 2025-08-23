@@ -81,7 +81,7 @@
   import {
     aiChatConfig,
     执行ai问答,
-    执行自主多轮搜索,
+    执行优化版ai问答,
     searchState,
     SearchState,
   } from '~/aiChat-plugin-siyuan/openai';
@@ -185,8 +185,8 @@
       searchState.thinkingProcess = [];
 
       if (data.useMultiRoundSearch) {
-        // 使用自主多轮搜索
-        const result = await 执行自主多轮搜索(data.searchText, 3, updateSearchState);
+        // 使用优化版自适应搜索
+        const result = await 执行优化版ai问答(data.searchText, 1, updateSearchState);
         data.html = Md2BlockDOM(result.finalAnswer);
       } else {
         // 使用传统单轮搜索
@@ -216,10 +216,13 @@
   .ai-chat-container {
     padding: 16px;
     border-radius: 12px;
-    background: #ffffff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e4e7ed;
+    border: 1px solid var(--b3-border-color, #e4e7ed);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  /* 暗色主题适配 */
+  html[data-theme-mode="dark"] .ai-chat-container {
+    border-color: var(--b3-border-color, #4a5568);
   }
 
   /* 头部区域 */
@@ -229,7 +232,7 @@
     align-items: center;
     margin-bottom: 16px;
     padding-bottom: 12px;
-    border-bottom: 1px solid #e4e7ed;
+    border-bottom: 1px solid var(--b3-border-color, #e4e7ed);
   }
 
   .title-section {
@@ -242,13 +245,13 @@
     font-size: 18px;
     font-weight: 600;
     margin: 0;
-    color: #2c3e50;
+    color: var(--b3-theme-on-background, #2c3e50);
   }
 
   .version-badge {
     padding: 2px 8px;
-    background: #e3f2fd;
-    color: #1976d2;
+    background: var(--b3-theme-primary-lighter, #e3f2fd);
+    color: var(--b3-theme-primary, #1976d2);
     border-radius: 12px;
     font-size: 12px;
     font-weight: 500;
@@ -258,22 +261,23 @@
     width: 32px;
     height: 32px;
     border: none;
-    background: #f5f5f5;
+    background: var(--b3-theme-background-light, #f5f5f5);
     border-radius: 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    color: var(--b3-theme-on-background, #2c3e50);
   }
 
   .config-toggle-btn:hover {
-    background: #e8e8e8;
+    background: var(--b3-theme-background-hover, #e8e8e8);
   }
 
   .config-toggle-btn.active {
-    background: #e3f2fd;
-    color: #1976d2;
+    background: var(--b3-theme-primary-lighter, #e3f2fd);
+    color: var(--b3-theme-primary, #1976d2);
   }
 
   .icon {
@@ -298,31 +302,34 @@
     min-height: 60px;
     max-height: 120px;
     padding: 12px;
-    border: 1px solid #ced4da;
+    border: 1px solid var(--b3-border-color, #ced4da);
     border-radius: 8px;
     font-size: 14px;
     line-height: 1.5;
     resize: vertical;
     transition: border-color 0.2s ease;
     font-family: inherit;
+    background: var(--b3-theme-background, #ffffff);
+    color: var(--b3-theme-on-background, #2c3e50);
   }
 
   .chat-input:focus {
     outline: none;
-    border-color: #4a90e2;
+    border-color: var(--b3-theme-primary, #4a90e2);
     box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
   }
 
   .chat-input:disabled {
-    background: #f8f9fa;
+    background: var(--b3-theme-background-light, #f8f9fa);
     cursor: not-allowed;
+    color: var(--b3-theme-on-background-light, #6c757d);
   }
 
   .submit-button {
     width: 48px;
     height: 48px;
     border: none;
-    background: #4a90e2;
+    background: var(--b3-theme-primary, #4a90e2);
     color: white;
     border-radius: 8px;
     cursor: pointer;
@@ -334,12 +341,12 @@
   }
 
   .submit-button:hover:not(:disabled) {
-    background: #357abd;
+    background: var(--b3-theme-primary-dark, #357abd);
     transform: translateY(-1px);
   }
 
   .submit-button:disabled {
-    background: #ced4da;
+    background: var(--b3-border-color, #ced4da);
     cursor: not-allowed;
   }
 
@@ -374,9 +381,9 @@
   .search-options {
     margin-top: 8px;
     padding: 8px;
-    background: #f8f9fa;
+    background: var(--b3-theme-background-light, #f8f9fa);
     border-radius: 6px;
-    border: 1px solid #e4e7ed;
+    border: 1px solid var(--b3-border-color, #e4e7ed);
   }
 
   .option-label {
@@ -384,16 +391,17 @@
     align-items: flex-start;
     gap: 8px;
     cursor: pointer;
+    color: var(--b3-theme-on-background, #2c3e50);
   }
 
   .option-text {
     font-weight: 500;
-    color: #495057;
+    color: var(--b3-theme-on-background, #495057);
   }
 
   .option-description {
     font-size: 12px;
-    color: #6c757d;
+    color: var(--b3-theme-on-background-light, #6c757d);
     margin-top: 2px;
   }
 

@@ -121,9 +121,9 @@ const handleProviderChange = () => {
 .config-panel {
   margin-bottom: 16px;
   padding: 16px;
-  background: #f8f9fa;
+  background: var(--b3-theme-background-light, #f8f9fa);
   border-radius: 8px;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--b3-border-color, #e4e7ed);
 }
 
 .config-section {
@@ -138,7 +138,7 @@ const handleProviderChange = () => {
   font-size: 14px;
   font-weight: 600;
   margin: 0 0 12px 0;
-  color: #495057;
+  color: var(--b3-theme-on-background, #495057);
 }
 
 .config-options {
@@ -155,10 +155,11 @@ const handleProviderChange = () => {
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.2s ease;
+  color: var(--b3-theme-on-background, #2c3e50);
 }
 
 .radio-option:hover {
-  background: #e8e8e8;
+  background: var(--b3-theme-background-hover, #e8e8e8);
 }
 
 .radio-option input[type="radio"] {
@@ -167,12 +168,12 @@ const handleProviderChange = () => {
 
 .radio-label {
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--b3-theme-on-background, #2c3e50);
 }
 
 .radio-description {
   font-size: 12px;
-  color: #6c757d;
+  color: var(--b3-theme-on-background-light, #6c757d);
   margin-top: 2px;
 }
 
@@ -191,20 +192,26 @@ const handleProviderChange = () => {
 .field-label {
   font-size: 13px;
   font-weight: 500;
-  color: #495057;
+  color: var(--b3-theme-on-background, #495057);
 }
 
 .field-input {
   padding: 8px 12px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--b3-border-color, #ced4da);
   border-radius: 6px;
   font-size: 14px;
   transition: border-color 0.2s ease;
+  background: var(--b3-theme-background, white);
+  color: var(--b3-theme-on-background, #2c3e50);
 }
 
 .field-input:focus {
   outline: none;
-  border-color: #4a90e2;
+  border-color: var(--b3-theme-primary, #4a90e2);
   box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.field-input::placeholder {
+  color: var(--b3-theme-on-background-light, #6c757d);
 }
 </style>

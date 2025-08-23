@@ -75,9 +75,9 @@ const thinkingProcess = computed(() => props.searchState.thinkingProcess);
 .search-progress {
   margin: 16px 0;
   padding: 16px;
-  background: #f8f9fa;
+  background: var(--b3-theme-background-light, #f8f9fa);
   border-radius: 8px;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--b3-border-color, #e4e7ed);
 }
 
 .progress-header {
@@ -99,13 +99,13 @@ const thinkingProcess = computed(() => props.searchState.thinkingProcess);
 
 .progress-title {
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--b3-theme-on-background, #2c3e50);
 }
 
 .progress-step {
-  color: #6c757d;
+  color: var(--b3-theme-on-background-light, #6c757d);
   font-size: 13px;
-  background: #e9ecef;
+  background: var(--b3-theme-background-light, #e9ecef);
   padding: 2px 8px;
   border-radius: 12px;
 }
@@ -124,20 +124,20 @@ const thinkingProcess = computed(() => props.searchState.thinkingProcess);
 .info-item {
   text-align: center;
   padding: 8px;
-  background: white;
+  background: var(--b3-theme-background, white);
   border-radius: 6px;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--b3-border-color, #e4e7ed);
 }
 
 .info-label {
   font-size: 12px;
-  color: #6c757d;
+  color: var(--b3-theme-on-background-light, #6c757d);
   margin-bottom: 4px;
 }
 
 .info-value {
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--b3-theme-on-background, #2c3e50);
 }
 
 .keywords-section {
@@ -147,7 +147,7 @@ const thinkingProcess = computed(() => props.searchState.thinkingProcess);
 .section-title {
   font-size: 13px;
   font-weight: 600;
-  color: #495057;
+  color: var(--b3-theme-on-background, #495057);
   margin-bottom: 8px;
 }
 
@@ -159,8 +159,8 @@ const thinkingProcess = computed(() => props.searchState.thinkingProcess);
 
 .keyword-tag {
   display: inline-block;
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--b3-theme-primary-lighter, #e3f2fd);
+  color: var(--b3-theme-primary, #1976d2);
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
@@ -172,9 +172,9 @@ const thinkingProcess = computed(() => props.searchState.thinkingProcess);
 }
 
 .thinking-list {
-  background: white;
+  background: var(--b3-theme-background, white);
   border-radius: 6px;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--b3-border-color, #e4e7ed);
   padding: 8px;
 }
 
@@ -190,7 +190,7 @@ const thinkingProcess = computed(() => props.searchState.thinkingProcess);
 }
 
 .thinking-bullet {
-  color: #6c757d;
+  color: var(--b3-theme-on-background-light, #6c757d);
   font-size: 14px;
   margin-top: 2px;
 }
@@ -198,7 +198,7 @@ const thinkingProcess = computed(() => props.searchState.thinkingProcess);
 .thinking-text {
   flex: 1;
   font-size: 13px;
-  color: #495057;
+  color: var(--b3-theme-on-background, #495057);
   line-height: 1.4;
 }
 
@@ -208,14 +208,14 @@ const thinkingProcess = computed(() => props.searchState.thinkingProcess);
 
 .loader-container {
   height: 4px;
-  background: #e9ecef;
+  background: var(--b3-theme-background-light, #e9ecef);
   border-radius: 2px;
   overflow: hidden;
 }
 
 .loader-bar {
   height: 100%;
-  background: linear-gradient(90deg, #4a90e2, #357abd);
+  background: linear-gradient(90deg, var(--b3-theme-primary, #4a90e2), var(--b3-theme-primary-dark, #357abd));
   border-radius: 2px;
   animation: loading 1.5s ease-in-out infinite;
 }

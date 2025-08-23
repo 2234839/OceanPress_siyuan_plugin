@@ -90,3 +90,8 @@ src/[plugin-name]/
 ## 包管理器
 
 此项目使用 pnpm 作为包管理器。所有命令应使用 `pnpm` 而不是 `npm`。
+
+## 夜间主题
+
+所有色彩设计应当考虑夜间模式
+可以通过检测 html 的 data-theme-mode="dark" 属性来实现响应式的变化

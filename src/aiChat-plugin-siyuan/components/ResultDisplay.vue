@@ -58,7 +58,7 @@
 <style scoped>
   .result-section {
     margin-top: 16px;
-    border: 1px solid #e4e7ed;
+    border: 1px solid var(--b3-border-color, #e4e7ed);
     border-radius: 8px;
     overflow: hidden;
   }
@@ -68,14 +68,14 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e4e7ed;
+    background: var(--b3-theme-background-light, #f8f9fa);
+    border-bottom: 1px solid var(--b3-border-color, #e4e7ed);
   }
 
   .result-title {
     font-size: 14px;
     font-weight: 600;
-    color: #495057;
+    color: var(--b3-theme-on-background, #495057);
   }
 
   .copy-button {
@@ -83,7 +83,7 @@
     height: 28px;
     border: none;
     background: transparent;
-    color: #6c757d;
+    color: var(--b3-theme-on-background-light, #6c757d);
     cursor: pointer;
     border-radius: 4px;
     display: flex;
@@ -93,8 +93,8 @@
   }
 
   .copy-button:hover {
-    background: #e9ecef;
-    color: #495057;
+    background: var(--b3-theme-background-hover, #e9ecef);
+    color: var(--b3-theme-on-background, #495057);
   }
 
   .copy-button .icon {
@@ -104,6 +104,76 @@
 
   .result-content {
     padding: 16px;
-    background: white;
+    background: var(--b3-theme-background, white);
+    color: var(--b3-theme-on-background, #2c3e50);
+  }
+
+  /* 暗色模式下的内容样式适配 */
+  .result-content :deep(a) {
+    color: var(--b3-theme-primary, #4a90e2);
+  }
+
+  .result-content :deep(code) {
+    background: var(--b3-theme-background-light, #f1f3f4);
+    color: var(--b3-theme-on-background, #2c3e50);
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+
+  .result-content :deep(pre) {
+    background: var(--b3-theme-background-light, #f1f3f4);
+    border: 1px solid var(--b3-border-color, #e4e7ed);
+    border-radius: 4px;
+    padding: 12px;
+    overflow-x: auto;
+  }
+
+  .result-content :deep(pre code) {
+    background: transparent;
+    padding: 0;
+    border: none;
+  }
+
+  .result-content :deep(blockquote) {
+    border-left: 4px solid var(--b3-theme-primary, #4a90e2);
+    background: var(--b3-theme-background-light, #f8f9fa);
+    margin: 16px 0;
+    padding: 8px 16px;
+    color: var(--b3-theme-on-background-light, #6c757d);
+  }
+
+  .result-content :deep(h1),
+  .result-content :deep(h2),
+  .result-content :deep(h3),
+  .result-content :deep(h4),
+  .result-content :deep(h5),
+  .result-content :deep(h6) {
+    color: var(--b3-theme-on-background, #2c3e50);
+    margin-top: 16px;
+    margin-bottom: 8px;
+  }
+
+  .result-content :deep(table) {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+  }
+
+  .result-content :deep(th),
+  .result-content :deep(td) {
+    border: 1px solid var(--b3-border-color, #e4e7ed);
+    padding: 8px 12px;
+    text-align: left;
+  }
+
+  .result-content :deep(th) {
+    background: var(--b3-theme-background-light, #f8f9fa);
+    font-weight: 600;
+    color: var(--b3-theme-on-background, #495057);
+  }
+
+  .result-content :deep(tr:nth-child(even)) {
+    background: var(--b3-theme-background-light, #f8f9fa);
   }
 </style>
