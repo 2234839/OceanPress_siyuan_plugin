@@ -11,6 +11,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      CI: true
+      SKIP_VERSION_BUMP: true
     steps:
       # Checkout
       - name: Checkout

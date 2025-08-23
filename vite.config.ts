@@ -19,7 +19,7 @@ const viteConfig: UserConfigExport = (ctx) => {
   const emptyOutDir = process.env?.emptyOutDir ?? true;
   const pluginName = process.env.plugin_name ?? 'vite-plugin-siyuan';
   console.log('[pluginName]', pluginName, ctx.mode);
-  if (ctx.mode === 'production') {
+  if (ctx.mode === 'production' && !process.env.CI && !process.env.SKIP_VERSION_BUMP) {
     console.log('自动提升插件版本号', pluginName);
 
     // 自动提升插件版本号
