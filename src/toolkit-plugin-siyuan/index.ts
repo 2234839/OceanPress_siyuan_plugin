@@ -40,7 +40,11 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       },
     });
     this.addTopBar({
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>`,
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M8 12h8M8 16h8M8 8h4"/>
+        <path d="M17 21v-6l2 2M17 15l2-2"/>
+      </svg>`,
       title: '压缩笔记图片为WebP',
       callback: () => {
         this.fn_compressImagesToWebP();
@@ -145,13 +149,13 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       }
 
       const kramdown = kramdownRes.kramdown;
-      console.log('笔记内容:', kramdown);
 
       // 匹配所有图片（排除 webp 格式），并使用工具提取块ID
       const imageRegex = /!\[([^\]]*)\]\(([^)]+\.(png|jpg|jpeg|gif|bmp|svg))\)/gi;
       const lines = kramdown.split('\n');
 
       let processedCount = 0;
+      let skippedCount = 0;
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -185,7 +189,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
                 const imgUrl = match[2];
                 const response = await fetch(imgUrl);
                 if (!response || !response.ok) {
-                  console.warn(`无法获取图片文件: ${imgUrl}`);
+                  skippedCount++;
                   continue;
                 }
 
@@ -195,18 +199,16 @@ export default class ToolKitPlugin extends SiyuanPlugin {
                 const compressedImage = await this.compressImageToWebP(imageData);
                 if (compressedImage) {
                   const res = await upload(undefined, [compressedImage]);
-                  console.log('[res]', res);
                   const webpPath = Object.values(res.succMap)[0];
                   const oldImageMarkdown = `![${match[1]}](${match[2]})`;
                   const newImageMarkdown = `![${match[1]}](${webpPath})`;
-                  console.log(`更新链接: ${oldImageMarkdown} -> ${newImageMarkdown}`);
                   updatedLine = updatedLine.replace(oldImageMarkdown, newImageMarkdown);
                   lineHasChanges = true;
                 } else {
-                  console.warn(`图片压缩失败: ${imgUrl}`);
+                  skippedCount++;
                 }
               } catch (error) {
-                console.error(`处理图片 ${match[2]} 时出错:`, error);
+                skippedCount++;
               }
             }
 
@@ -218,7 +220,6 @@ export default class ToolKitPlugin extends SiyuanPlugin {
                 const blockContent = blockKramdownRes.kramdown;
                 const updatedBlockContent = blockContent.replace(line, updatedLine);
                 await updateBlock('markdown', updatedBlockContent, blockIdForLine);
-                console.log(`更新块 ${blockIdForLine}:`, updatedBlockContent);
                 processedCount++;
               }
             }
@@ -227,9 +228,17 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       }
 
       if (processedCount > 0) {
-        pushMsg(`成功压缩 ${processedCount} 个包含图片的块`);
+        let message = `成功压缩 ${processedCount} 个包含图片的块`;
+        if (skippedCount > 0) {
+          message += `，跳过 ${skippedCount} 个图片（可能是 WebP 格式或压缩失败）`;
+        }
+        pushMsg(message);
       } else {
-        pushMsg('没有成功压缩任何图片');
+        if (skippedCount > 0) {
+          pushMsg(`没有成功压缩任何图片，跳过 ${skippedCount} 个图片（可能是 WebP 格式或压缩失败）`);
+        } else {
+          pushMsg('当前笔记中没有找到可压缩的图片');
+        }
       }
     } catch (error) {
       console.error('压缩图片时出错:', error);
@@ -266,7 +275,6 @@ export default class ToolKitPlugin extends SiyuanPlugin {
             const ctx = canvas.getContext('2d');
 
             if (!ctx) {
-              console.error('无法获取 canvas context');
               resolve(null);
               return;
             }
@@ -279,7 +287,6 @@ export default class ToolKitPlugin extends SiyuanPlugin {
             canvas.toBlob(
               (blob) => {
                 if (!blob) {
-                  console.error('无法生成 blob');
                   resolve(null);
                   return;
                 }
@@ -291,33 +298,28 @@ export default class ToolKitPlugin extends SiyuanPlugin {
             );
           };
 
-          img.onerror = (error) => {
-            console.error('图片加载失败:', error);
+          img.onerror = () => {
             resolve(null);
           };
 
           img.src = result;
         };
         reader.onerror = () => {
-          console.error('FileReader 读取失败');
           resolve(null);
         };
         reader.readAsDataURL(imageData);
         return;
       } else {
-        console.error('不支持的图片数据类型:', typeof imageData);
         resolve(null);
         return;
       }
 
       const img = new Image();
       img.onload = () => {
-        console.log('图片加载成功，尺寸:', img.width, 'x', img.height);
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
         if (!ctx) {
-          console.error('无法获取 canvas context');
           resolve(null);
           return;
         }
@@ -330,7 +332,6 @@ export default class ToolKitPlugin extends SiyuanPlugin {
         canvas.toBlob(
           (blob) => {
             if (!blob) {
-              console.error('无法生成 blob');
               resolve(null);
               return;
             }
@@ -342,8 +343,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
         );
       };
 
-      img.onerror = (error) => {
-        console.error('图片加载失败:', error);
+      img.onerror = () => {
         resolve(null);
       };
 
