@@ -1,6 +1,7 @@
 import { siyuan } from '@llej/js_util';
 import { SiyuanPlugin } from '~/libs/siyuanPlugin';
 import { getBlockKramdown, updateBlock, pushMsg, pushErrMsg, upload } from '~/libs/api';
+import { ialToJson } from '~/libs/siyuan_util';
 // 引入这个变量后 vite 会自动注入 hot
 import.meta.hot;
 type searchTagRes = {
@@ -146,67 +147,87 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       const kramdown = kramdownRes.kramdown;
       console.log('笔记内容:', kramdown);
 
-      // 精确匹配 assets 目录下的图片
-      const imageRegex = /!\[([^\]]*)\]\((assets\/[^)]+\.(png|jpg|jpeg|gif|bmp|svg|webp))\)/gi;
-      const images: Array<{ alt: string; path: string; line: number }> = [];
+      // 匹配所有图片（排除 webp 格式），并使用工具提取块ID
+      const imageRegex = /!\[([^\]]*)\]\(([^)]+\.(png|jpg|jpeg|gif|bmp|svg))\)/gi;
       const lines = kramdown.split('\n');
 
-      lines.forEach((line, index) => {
-        const matches = [...line.matchAll(imageRegex)];
-        matches.forEach((match) => {
-          images.push({
-            alt: match[1],
-            path: match[2],
-            line: index,
-          });
-        });
-      });
-
-      console.log('图片列表:', images);
-
-      if (images.length === 0) {
-        pushMsg('当前笔记中没有找到图片，请检查图片是否在 assets 目录下');
-        return;
-      }
-
       let processedCount = 0;
-      let updatedKramdown = kramdown;
 
-      for (const image of images) {
-        try {
-          const imgUrl = image.path;
-          const response = await fetch(imgUrl);
-          if (!response || !response.ok) {
-            console.warn(`无法获取图片文件: ${image.path}`);
-            continue;
-          }
-
-          // 获取图片数据
-          const imageData = await response.arrayBuffer();
-
-          const compressedImage = await this.compressImageToWebP(imageData);
-          if (compressedImage) {
-            const res = await upload(undefined, [compressedImage]);
-            console.log('[res]', res);
-            const webpPath = Object.values(res.succMap)[0];
-            const oldImageMarkdown = `![${image.alt}](${image.path})`;
-            const newImageMarkdown = `![${image.alt}](${webpPath})`;
-            console.log(`更新链接: ${oldImageMarkdown} -> ${newImageMarkdown}`);
-            updatedKramdown = updatedKramdown.replace(oldImageMarkdown, newImageMarkdown);
-
-            processedCount++;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const matches = [...line.matchAll(imageRegex)];
+        
+        if (matches.length > 0) {
+          // 查找当前行或下一行的块ID
+          let blockIdForLine = null;
+          
+          // 检查当前行是否有块ID
+          const currentLineIal = ialToJson(line);
+          if (currentLineIal.id) {
+            blockIdForLine = currentLineIal.id;
           } else {
-            console.warn(`图片压缩失败: ${image.path}`);
+            // 检查下一行是否有块ID
+            if (i + 1 < lines.length) {
+              const nextLineIal = ialToJson(lines[i + 1]);
+              if (nextLineIal.id) {
+                blockIdForLine = nextLineIal.id;
+              }
+            }
           }
-        } catch (error) {
-          console.error(`处理图片 ${image.path} 时出错:`, error);
+
+          if (blockIdForLine) {
+            let lineHasChanges = false;
+            let updatedLine = line;
+
+            // 处理这一行的所有图片
+            for (const match of matches) {
+              try {
+                const imgUrl = match[2];
+                const response = await fetch(imgUrl);
+                if (!response || !response.ok) {
+                  console.warn(`无法获取图片文件: ${imgUrl}`);
+                  continue;
+                }
+
+                // 获取图片数据
+                const imageData = await response.arrayBuffer();
+
+                const compressedImage = await this.compressImageToWebP(imageData);
+                if (compressedImage) {
+                  const res = await upload(undefined, [compressedImage]);
+                  console.log('[res]', res);
+                  const webpPath = Object.values(res.succMap)[0];
+                  const oldImageMarkdown = `![${match[1]}](${match[2]})`;
+                  const newImageMarkdown = `![${match[1]}](${webpPath})`;
+                  console.log(`更新链接: ${oldImageMarkdown} -> ${newImageMarkdown}`);
+                  updatedLine = updatedLine.replace(oldImageMarkdown, newImageMarkdown);
+                  lineHasChanges = true;
+                } else {
+                  console.warn(`图片压缩失败: ${imgUrl}`);
+                }
+              } catch (error) {
+                console.error(`处理图片 ${match[2]} 时出错:`, error);
+              }
+            }
+
+            // 如果这一行有变化，更新对应的块
+            if (lineHasChanges) {
+              // 获取块的完整内容
+              const blockKramdownRes = await getBlockKramdown(blockIdForLine);
+              if (blockKramdownRes && blockKramdownRes.kramdown) {
+                const blockContent = blockKramdownRes.kramdown;
+                const updatedBlockContent = blockContent.replace(line, updatedLine);
+                await updateBlock('markdown', updatedBlockContent, blockIdForLine);
+                console.log(`更新块 ${blockIdForLine}:`, updatedBlockContent);
+                processedCount++;
+              }
+            }
+          }
         }
       }
 
       if (processedCount > 0) {
-        await updateBlock('markdown', updatedKramdown, blockId);
-        console.log('[updatedKramdown]', updatedKramdown);
-        pushMsg(`成功压缩 ${processedCount} 张图片为 WebP 格式`);
+        pushMsg(`成功压缩 ${processedCount} 个包含图片的块`);
       } else {
         pushMsg('没有成功压缩任何图片');
       }
@@ -216,6 +237,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     }
   }
 
+  
   async compressImageToWebP(imageData: any): Promise<Blob | null> {
     return new Promise((resolve) => {
       // 处理不同类型的图片数据
