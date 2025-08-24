@@ -422,8 +422,15 @@ export default class ToolKitPlugin extends SiyuanPlugin {
           }
 
           if (blockIdForLine) {
-            let lineHasChanges = false;
-            let updatedLine = line;
+            // 先获取块的完整内容
+            const blockKramdownRes = await getBlockKramdown(blockIdForLine);
+            if (!blockKramdownRes || !blockKramdownRes.kramdown) {
+              continue;
+            }
+
+            const blockContent = blockKramdownRes.kramdown;
+            let updatedBlockContent = blockContent;
+            let blockHasChanges = false;
 
             // 处理这一行的所有图片
             for (const match of matches) {
@@ -434,7 +441,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
                   skippedCount++;
                   continue;
                 }
-
+                console.log('[imgUrl]', imgUrl);
                 // 获取图片数据
                 const imageData = await response.arrayBuffer();
 
@@ -444,26 +451,28 @@ export default class ToolKitPlugin extends SiyuanPlugin {
                   const webpPath = Object.values(res.succMap)[0];
                   const oldImageMarkdown = `![${match[1]}](${match[2]})`;
                   const newImageMarkdown = `![${match[1]}](${webpPath})`;
-                  updatedLine = updatedLine.replace(oldImageMarkdown, newImageMarkdown);
-                  lineHasChanges = true;
+                  updatedBlockContent = updatedBlockContent.replace(
+                    oldImageMarkdown,
+                    newImageMarkdown,
+                  );
+                  blockHasChanges = true;
                 } else {
                   skippedCount++;
                 }
               } catch (error) {
                 skippedCount++;
+                console.log('[error]', error);
               }
             }
 
-            // 如果这一行有变化，更新对应的块
-            if (lineHasChanges) {
-              // 获取块的完整内容
-              const blockKramdownRes = await getBlockKramdown(blockIdForLine);
-              if (blockKramdownRes && blockKramdownRes.kramdown) {
-                const blockContent = blockKramdownRes.kramdown;
-                const updatedBlockContent = blockContent.replace(line, updatedLine);
-                await updateBlock('markdown', updatedBlockContent, blockIdForLine);
-                processedCount++;
-              }
+            // 如果块有变化，更新块
+            if (blockHasChanges) {
+              console.log('[updatedBlockContent]', {
+                originalContent: blockContent,
+                updatedBlockContent,
+              });
+              await updateBlock('markdown', updatedBlockContent, blockIdForLine);
+              processedCount++;
             }
           }
         }
