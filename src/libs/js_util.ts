@@ -42,6 +42,7 @@ export function encodeHTML(str: string) {
   });
 }
 
+/** 生成思源使用的唯一id */
 export function generateUniqueId() {
   // 生成随机字符串
   const randomString = Math.random().toString(36).substring(2, 9);
