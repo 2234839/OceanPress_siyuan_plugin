@@ -92,7 +92,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     </symbol>`);
 
     this.addTopBar({
-      icon: `<svg><use href="#toolkit_settings"></use></svg>`,
+      icon: `<svg><text x="50%" y="50%" text-anchor="middle" alignment-baseline="middle" font-size="13px">⚙️</text></svg>`,
       title: '工具箱设置',
       callback: (event) => {
         const menu = new Menu(this.name);
