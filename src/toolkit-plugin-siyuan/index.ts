@@ -123,6 +123,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
   }
 
   setupImageCompressInterceptor() {
+    // Fetch 拦截器
     const imageCompressInterceptor = async (
       ...args: Parameters<typeof fetch>
     ): Promise<Response | undefined> => {
@@ -206,9 +207,95 @@ export default class ToolKitPlugin extends SiyuanPlugin {
 
     this.addFetchInterceptor(imageCompressInterceptor);
 
+    // XHR 拦截器
+    const { unProxy: unProxyXhr } = xhrProxy({
+      onRequest: (config, handler) => {
+        // 检查是否启用了自动压缩
+        if (!this.imageCompressConfig.value().autoCompress) {
+          handler.next(config);
+          return;
+        }
+
+        // 检查是否是 upload 请求
+        if (!config.url?.includes('/upload')) {
+          handler.next(config);
+          return;
+        }
+
+        // 检查是否是 POST 请求且有文件数据
+        if (config.method?.toUpperCase() !== 'POST' || !config.body) {
+          handler.next(config);
+          return;
+        }
+
+        // 检查是否是 FormData
+        if (config.body instanceof FormData) {
+          const formData = config.body;
+          const newFormData = new FormData();
+          let compressionPromises: Promise<void>[] = [];
+          let hasCompressed = false;
+
+          // 遍历所有表单数据
+          for (const [key, value] of formData.entries()) {
+            if (value instanceof File) {
+              // 检查是否为图片文件且不是 webp
+              const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg'];
+              const isImage = imageExtensions.some((ext) => value.name.toLowerCase().endsWith(ext));
+              const isWebp =
+                value.name.toLowerCase().endsWith('.webp') || value.type.includes('webp');
+
+              if (isImage && !isWebp) {
+                // 创建压缩 Promise
+                const compressionPromise = this.compressImageToWebP(value).then((compressedBlob) => {
+                  if (compressedBlob) {
+                    const compressedFile = new File(
+                      [compressedBlob],
+                      value.name.replace(/\.[^/.]+$/, '.webp'),
+                      { type: 'image/webp' },
+                    );
+                    newFormData.append(key, compressedFile);
+                    hasCompressed = true;
+                    console.log(`已压缩图片 (XHR): ${value.name} -> ${compressedFile.name}`);
+                  } else {
+                    // 压缩失败，使用原文件
+                    newFormData.append(key, value);
+                  }
+                }).catch((error) => {
+                  console.error(`压缩图片失败 (XHR) ${value.name}:`, error);
+                  // 压缩失败，使用原文件
+                  newFormData.append(key, value);
+                });
+                compressionPromises.push(compressionPromise);
+              } else {
+                // 不需要压缩的文件，直接添加
+                newFormData.append(key, value);
+              }
+            } else {
+              // 非文件数据，直接添加
+              newFormData.append(key, value);
+            }
+          }
+
+          // 等待所有压缩完成后继续请求
+          Promise.all(compressionPromises).then(() => {
+            if (hasCompressed) {
+              config.body = newFormData;
+            }
+            handler.next(config);
+          }).catch((error) => {
+            console.error('处理 XHR 图片压缩时出错:', error);
+            handler.next(config);
+          });
+        } else {
+          handler.next(config);
+        }
+      },
+    });
+
     // 清理函数
     this.addUnloadFn(() => {
       this.removeFetchInterceptor(imageCompressInterceptor);
+      unProxyXhr();
     });
   }
 
