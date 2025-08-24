@@ -2,7 +2,7 @@
   "name": "toolkit-plugin-siyuan",
   "author": "崮生",
   "url": "https://github.com/2234839/toolkit-plugin-siyuan",
-  "version": "0.0.63",
+  "version": "0.0.64",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
@@ -16,7 +16,7 @@
   },
   "description": {
     "en_US": "",
-    "zh_CN": ""
+    "zh_CN": "标签排序 差异对比 图片压缩"
   },
   "readme": {
     "en_US": "README.md",
