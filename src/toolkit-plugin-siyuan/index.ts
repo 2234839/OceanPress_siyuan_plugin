@@ -1,11 +1,11 @@
 import { siyuan } from '@llej/js_util';
-import { Dialog } from 'siyuan';
+import { Dialog, Menu } from 'siyuan';
 import { ref } from 'vue';
 import { getBlockKramdown, pushErrMsg, pushMsg, updateBlock, upload } from '~/libs/api';
 import { ialToJson } from '~/libs/siyuan_util';
 import { SiyuanPlugin } from '~/libs/siyuanPlugin';
 import Setting_view from './setting_view.vue';
-import { hook as xhrHook, proxy as xhrProxy } from 'ajax-hook';
+import { proxy as xhrProxy } from 'ajax-hook';
 // @ts-ignore
 // 引入这个变量后 vite 会自动注入 hot
 import.meta.hot;
@@ -27,14 +27,17 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     storageName: 'tagSort.json',
   });
   toolkit_setting = siyuan.bindData({
-    initValue: { tag_sort_reverse: false },
+    initValue: {
+      autoCompress: false,
+      tag_sort_reverse: false,
+      image_compression_quality: 0.8,
+      image_skip_webp: true,
+      image_skip_small: true,
+      image_min_size: 102400, // 100KB
+      image_max_dimension: 4096,
+    },
     that: this,
     storageName: 'toolkit_setting.json',
-  });
-  imageCompressConfig = siyuan.bindData({
-    initValue: { autoCompress: false },
-    that: this,
-    storageName: 'imageCompressConfig.json',
   });
   private fetchInterceptors: Array<
     (...args: Parameters<typeof fetch>) => Promise<Response | undefined>
@@ -74,11 +77,41 @@ export default class ToolKitPlugin extends SiyuanPlugin {
         this.showSettings();
       },
     });
+    // 添加图标
+    this.addIcons(`<symbol id="toolkit_settings" viewBox="0 0 24 24">
+      <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"/>
+    </symbol>
+    <symbol id="toolkit_compress" viewBox="0 0 24 24">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2m-2 15l-5-5l1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9Z"/>
+    </symbol>
+    <symbol id="toolkit_tag" viewBox="0 0 24 24">
+      <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.22-1.06-.59-1.42M5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4S7 4.67 7 5.5S6.33 7 5.5 7Z"/>
+    </symbol>
+    <symbol id="toolkit_compare" viewBox="0 0 24 24">
+      <path d="M10 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h5v2h2V1h-2v2zm0 15H5V5h5v13zm9-15h-5v2h5v13h-5v2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+    </symbol>`);
+
     this.addTopBar({
-      icon: `<svg><text x="50%" y="50%" text-anchor="middle" alignment-baseline="middle" font-size="13px">🗜️</text></svg>`,
-      title: '压缩笔记图片为WebP',
-      callback: () => {
-        this.fn_compressImagesToWebP();
+      icon: `<svg><use href="#toolkit_settings"></use></svg>`,
+      title: '工具箱设置',
+      callback: (event) => {
+        const menu = new Menu(this.name);
+        menu.addItem({
+          label: '打开设置界面',
+          icon: `toolkit_settings`,
+          click: () => this.showSettings(),
+        });
+        menu.addItem({
+          label: '压缩当前笔记图片',
+          icon: `toolkit_compress`,
+          click: () => this.fn_compressImagesToWebP(),
+        });
+        menu.addItem({
+          label: '冲突对比',
+          icon: `toolkit_compare`,
+          click: () => this.fn_conflictedComparison(),
+        });
+        menu.open(event);
       },
     });
   }
@@ -120,7 +153,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     const { unProxy: unProxyXhr } = xhrProxy({
       onRequest: (config, handler) => {
         // 检查是否启用了自动压缩
-        if (!this.imageCompressConfig.value().autoCompress) {
+        if (!this.toolkit_setting.value().autoCompress) {
           handler.next(config);
           return;
         }
@@ -147,15 +180,32 @@ export default class ToolKitPlugin extends SiyuanPlugin {
           // 遍历所有表单数据
           for (const [key, value] of formData.entries()) {
             if (value instanceof File) {
-              // 检查是否为图片文件且不是 webp
+              // 检查是否为图片文件
               const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg'];
               const isImage = imageExtensions.some((ext) => value.name.toLowerCase().endsWith(ext));
               const isWebp =
                 value.name.toLowerCase().endsWith('.webp') || value.type.includes('webp');
 
-              if (isImage && !isWebp) {
+              if (isImage) {
+                // 检查是否跳过 WebP
+                if (this.toolkit_setting.value().image_skip_webp && isWebp) {
+                  newFormData.append(key, value);
+                  continue;
+                }
+
+                // 检查是否跳过小文件
+                if (
+                  this.toolkit_setting.value().image_skip_small &&
+                  value.size < this.toolkit_setting.value().image_min_size
+                ) {
+                  newFormData.append(key, value);
+                  continue;
+                }
                 // 创建压缩 Promise
-                const compressionPromise = this.compressImageToWebP(value)
+                const compressionPromise = this.compressImageToWebP(
+                  value,
+                  this.toolkit_setting.value().image_compression_quality,
+                )
                   .then((compressedBlob) => {
                     if (compressedBlob) {
                       const compressedFile = new File(
@@ -213,16 +263,16 @@ export default class ToolKitPlugin extends SiyuanPlugin {
 
   showSettings() {
     const dialog = new Dialog({
-      title: '图片压缩设置',
+      title: '工具箱设置',
       content: `<div class="b3-dialog__content"></div>`,
     });
     const div = dialog.element.querySelector('.b3-dialog__content')! as HTMLElement;
-    const dataSignal = ref(this.imageCompressConfig.value());
+    const dataSignal = ref(this.toolkit_setting.value());
     this.addVueUi(div, Setting_view, {
       dialog,
       dataSignal,
       save: () => {
-        this.imageCompressConfig.set(dataSignal.value);
+        this.toolkit_setting.set(dataSignal.value);
       },
     });
   }
@@ -248,9 +298,9 @@ export default class ToolKitPlugin extends SiyuanPlugin {
           // todo 在搜索高亮的情况下等于 \u003cmark\u003eto\u003c/mark\u003edo
           const a_key = a.replace(/<mark>(.*?)<\/mark>/g, '$1');
           const b_key = b.replace(/<mark>(.*?)<\/mark>/g, '$1');
-          return (this.tagSort.value()[a_key] ?? 0) - (this.tagSort.value()[b_key] ?? 0);
+          return (this.tagSort.value()[b_key] ?? 0) - (this.tagSort.value()[a_key] ?? 0);
         });
-        if (!this.toolkit_setting.value().tag_sort_reverse) {
+        if (this.toolkit_setting.value().tag_sort_reverse) {
           json.data.tags.reverse();
         }
         const newRes = new Response(JSON.stringify(json), {
@@ -440,7 +490,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     }
   }
 
-  async compressImageToWebP(imageData: any): Promise<Blob | null> {
+  async compressImageToWebP(imageData: any, quality: number = 0.8): Promise<Blob | null> {
     return new Promise((resolve) => {
       // 处理不同类型的图片数据
       let dataUrl: string;
@@ -487,7 +537,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
                 resolve(new File([blob], 'test.webp', { type: 'image/webp' }));
               },
               'image/webp',
-              0.8,
+              quality,
             );
           };
 
@@ -532,7 +582,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
             resolve(new File([blob], 'test.webp', { type: 'image/webp' }));
           },
           'image/webp',
-          0.8,
+          quality,
         );
       };
 
