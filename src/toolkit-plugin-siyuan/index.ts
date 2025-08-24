@@ -6,6 +6,7 @@ import { ialToJson } from '~/libs/siyuan_util';
 import { SiyuanPlugin } from '~/libs/siyuanPlugin';
 import Setting_view from './setting_view.vue';
 import { proxy as xhrProxy } from 'ajax-hook';
+import imageCompression from 'browser-image-compression';
 // @ts-ignore
 // 引入这个变量后 vite 会自动注入 hot
 import.meta.hot;
@@ -445,7 +446,8 @@ export default class ToolKitPlugin extends SiyuanPlugin {
                 // 获取图片数据
                 const imageData = await response.arrayBuffer();
 
-                const compressedImage = await this.compressImageToWebP(imageData);
+                const compressedImage = await this.compressImageToWebP(imageData, 0.8, imgUrl);
+                console.log('[compressedImage]', compressedImage);
                 if (compressedImage) {
                   const res = await upload(undefined, [compressedImage]);
                   const webpPath = Object.values(res.succMap)[0];
@@ -499,107 +501,83 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     }
   }
 
-  async compressImageToWebP(imageData: any, quality: number = 0.8): Promise<Blob | null> {
-    return new Promise((resolve) => {
+  async compressImageToWebP(
+    imageData: any,
+    quality: number = 0.8,
+    originalFileName?: string,
+  ): Promise<File | null> {
+    try {
       // 处理不同类型的图片数据
-      let dataUrl: string;
+      let file: File;
+      let fileName: string;
 
       if (typeof imageData === 'string') {
         if (imageData.startsWith('data:')) {
-          dataUrl = imageData;
+          // 将 dataURL 转换为 File
+          const response = await fetch(imageData);
+          const blob = await response.blob();
+          fileName = originalFileName || 'image.webp';
+          file = new File([blob], fileName, { type: blob.type });
         } else {
           // 假设是 base64 数据，添加适当的前缀
-          dataUrl = 'data:image/png;base64,' + imageData;
+          const dataUrl = 'data:image/png;base64,' + imageData;
+          const response = await fetch(dataUrl);
+          const blob = await response.blob();
+          fileName = originalFileName || 'image.png';
+          file = new File([blob], fileName, { type: blob.type });
         }
       } else if (imageData instanceof ArrayBuffer) {
-        // 如果是 ArrayBuffer，转换为 base64
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(imageData)));
-        dataUrl = 'data:image/png;base64,' + base64;
+        // 如果是 ArrayBuffer，转换为 File
+        fileName = originalFileName || 'image.png';
+        file = new File([imageData], fileName, { type: 'image/png' });
       } else if (imageData instanceof Blob) {
-        // 如果是 Blob，转换为 dataURL
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          // 直接处理 dataURL，不再递归调用
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            if (!ctx) {
-              resolve(null);
-              return;
-            }
-
-            canvas.width = img.width;
-            canvas.height = img.height;
-
-            ctx.drawImage(img, 0, 0);
-
-            canvas.toBlob(
-              (blob) => {
-                if (!blob) {
-                  resolve(null);
-                  return;
-                }
-
-                resolve(new File([blob], 'test.webp', { type: 'image/webp' }));
-              },
-              'image/webp',
-              quality,
-            );
-          };
-
-          img.onerror = () => {
-            resolve(null);
-          };
-
-          img.src = result;
-        };
-        reader.onerror = () => {
-          resolve(null);
-        };
-        reader.readAsDataURL(imageData);
-        return;
+        // 如果是 Blob，转换为 File
+        fileName = originalFileName || 'image';
+        file = new File([imageData], fileName, { type: imageData.type });
+      } else if (imageData instanceof File) {
+        // 如果已经是 File，直接使用，但会重新创建文件以保持正确的文件名
+        file = imageData;
       } else {
-        resolve(null);
-        return;
+        return null;
       }
 
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+      // 从原始文件名获取基础名称（不含扩展名）
+      const getBaseFileName = (fullName: string): string => {
+        if (!fullName) return 'image';
 
-        if (!ctx) {
-          resolve(null);
-          return;
+        // 如果是URL，提取文件名部分
+        if (fullName.startsWith('http://') || fullName.startsWith('https://')) {
+          try {
+            const url = new URL(fullName);
+            const pathname = url.pathname;
+            const filename = pathname.split('/').pop() || 'image';
+            return filename.split('.')[0];
+          } catch {
+            return 'image';
+          }
         }
 
-        canvas.width = img.width;
-        canvas.height = img.height;
-
-        ctx.drawImage(img, 0, 0);
-
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              resolve(null);
-              return;
-            }
-
-            resolve(new File([blob], 'test.webp', { type: 'image/webp' }));
-          },
-          'image/webp',
-          quality,
-        );
+        // 如果是普通文件名，去除扩展名
+        return fullName.split('.')[0];
       };
 
-      img.onerror = () => {
-        resolve(null);
+      const baseName = getBaseFileName(originalFileName || file.name);
+      const finalFileName = `${baseName}.webp`;
+      console.log('[finalFileName]', finalFileName);
+      // 使用 browser-image-compression 压缩图片
+      const options = {
+        useWebWorker: true,
+        fileType: 'image/webp',
+        quality: quality,
       };
 
-      img.src = dataUrl;
-    });
+      const compressedFile = await imageCompression(file, options);
+
+      // 创建新文件，保持原始文件名（但改为webp扩展名）
+      return new File([compressedFile], finalFileName, { type: 'image/webp' });
+    } catch (error) {
+      console.error('Image compression error:', error);
+      return null;
+    }
   }
 }
