@@ -2,6 +2,9 @@ import { siyuan } from '@llej/js_util';
 import { SiyuanPlugin } from '~/libs/siyuanPlugin';
 import { getBlockKramdown, updateBlock, pushMsg, pushErrMsg, upload } from '~/libs/api';
 import { ialToJson } from '~/libs/siyuan_util';
+import Setting_view from './setting_view.vue';
+// @ts-ignore
+import imageCompression from 'browser-image-compression';
 // 引入这个变量后 vite 会自动注入 hot
 import.meta.hot;
 type searchTagRes = {
@@ -12,6 +15,9 @@ type searchTagRes = {
     tags: string[];
   };
 };
+
+// 重写全局 fetch 函数来使用拦截器系统
+const originalFetch = globalThis.fetch;
 export default class ToolKitPlugin extends SiyuanPlugin {
   tagSort = siyuan.bindData({
     initValue: {} as { [key: string]: number },
@@ -23,6 +29,14 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     that: this,
     storageName: 'toolkit_setting.json',
   });
+  imageCompressConfig = siyuan.bindData({
+    initValue: { autoCompress: false },
+    that: this,
+    storageName: 'imageCompressConfig.json',
+  });
+  private fetchInterceptors: Array<
+    (...args: Parameters<typeof fetch>) => Promise<Response | undefined>
+  > = [];
   onload(): void {
     // @ts-ignore
     globalThis['ToolKitPlugin'] = this;
@@ -30,13 +44,31 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       // @ts-ignore
       globalThis['ToolKitPlugin'] = undefined;
     });
+
+    globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      return this.applyFetchInterceptors(input, init);
+    };
+
+    this.addUnloadFn(() => {
+      globalThis.fetch = originalFetch;
+    });
+
     this.fn_tagSort();
+    this.setupImageCompressInterceptor();
     this.addCommand({
       hotkey: '',
       langKey: `conflicted Comparison`,
       langText: `conflicted Comparison`,
       callback: () => {
         this.fn_conflictedComparison();
+      },
+    });
+    this.addCommand({
+      hotkey: '',
+      langKey: `Image Compress Settings`,
+      langText: `Image Compress Settings`,
+      callback: () => {
+        this.showSettings();
       },
     });
     this.addTopBar({
@@ -47,13 +79,167 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       },
     });
   }
+
+  addFetchInterceptor(
+    interceptor: (...args: Parameters<typeof fetch>) => Promise<Response | undefined>,
+  ) {
+    this.fetchInterceptors.push(interceptor);
+  }
+
+  removeFetchInterceptor(
+    interceptor: (...args: Parameters<typeof fetch>) => Promise<Response | undefined>,
+  ) {
+    const index = this.fetchInterceptors.indexOf(interceptor);
+    if (index > -1) {
+      this.fetchInterceptors.splice(index, 1);
+    }
+  }
+
+  async applyFetchInterceptors(...args: Parameters<typeof fetch>): Promise<Response> {
+    // 保存当前拦截器数组
+    const interceptors = [...this.fetchInterceptors];
+
+    // 第一阶段：请求拦截
+    for (const interceptor of interceptors) {
+      const result = await interceptor(...args);
+      if (result) {
+        // 拦截器处理了请求，直接返回结果
+        return result;
+      }
+    }
+
+    // 没有拦截器处理，使用原始 fetch
+    return await originalFetch(...args);
+  }
+
+  setupImageCompressInterceptor() {
+    const imageCompressInterceptor = async (
+      ...args: Parameters<typeof fetch>
+    ): Promise<Response | undefined> => {
+      const [input, init] = args;
+
+      // 检查是否启用了自动压缩
+      if (!this.imageCompressConfig.value().autoCompress) {
+        return undefined; // 继续原始请求
+      }
+
+      // 检查是否是 upload 请求
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (!url.includes('/upload')) {
+        return undefined; // 继续原始请求
+      }
+
+      // 检查是否是 POST 请求且有文件数据
+      if (!init || !init.body) {
+        return undefined; // 继续原始请求
+      }
+
+      try {
+        // 如果是 FormData，我们需要处理它
+        if (init.body instanceof FormData) {
+          const formData = init.body;
+          const newFormData = new FormData();
+          let hasCompressed = false;
+
+          // 遍历所有表单数据
+          for (const [key, value] of formData.entries()) {
+            if (value instanceof File) {
+              // 检查是否为图片文件且不是 webp
+              const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg'];
+              const isImage = imageExtensions.some((ext) => value.name.toLowerCase().endsWith(ext));
+              const isWebp =
+                value.name.toLowerCase().endsWith('.webp') || value.type.includes('webp');
+
+              if (isImage && !isWebp) {
+                try {
+                  // 压缩图片
+                  const compressedBlob = await this.compressImageToWebP(value);
+                  if (compressedBlob) {
+                    const compressedFile = new File(
+                      [compressedBlob],
+                      value.name.replace(/\.[^/.]+$/, '.webp'),
+                      { type: 'image/webp' },
+                    );
+                    newFormData.append(key, compressedFile);
+                    hasCompressed = true;
+                    console.log(`已压缩图片: ${value.name} -> ${compressedFile.name}`);
+                  } else {
+                    // 压缩失败，使用原文件
+                    newFormData.append(key, value);
+                  }
+                } catch (error) {
+                  console.error(`压缩图片失败 ${value.name}:`, error);
+                  // 压缩失败，使用原文件
+                  newFormData.append(key, value);
+                }
+              } else {
+                // 不需要压缩的文件，直接添加
+                newFormData.append(key, value);
+              }
+            } else {
+              // 非文件数据，直接添加
+              newFormData.append(key, value);
+            }
+          }
+
+          // 如果有压缩的文件，使用新的 FormData 发送请求
+          if (hasCompressed) {
+            const newInit = { ...init };
+            newInit.body = newFormData;
+            return await originalFetch(input, newInit);
+          }
+        }
+      } catch (error) {
+        console.error('处理图片压缩拦截器时出错:', error);
+      }
+
+      return undefined; // 继续原始请求
+    };
+
+    this.addFetchInterceptor(imageCompressInterceptor);
+
+    // 清理函数
+    this.addUnloadFn(() => {
+      this.removeFetchInterceptor(imageCompressInterceptor);
+    });
+  }
+
+  showSettings() {
+    const { Dialog } = require('siyuan');
+    const { ref } = require('vue');
+
+    const dialog = new Dialog({
+      title: '图片压缩设置',
+      content: `<div class="b3-dialog__content"></div>`,
+    });
+    const div = dialog.element.querySelector('.b3-dialog__content')! as HTMLElement;
+    const dataSignal = ref(this.imageCompressConfig.value());
+    this.addVueUi(div, Setting_view, {
+      dialog,
+      dataSignal,
+      save: () => {
+        this.imageCompressConfig.set(dataSignal.value);
+      },
+    });
+  }
+
   async fn_tagSort() {
     // 标签排序功能
-    const oldFetch = globalThis.fetch;
-    globalThis.fetch = async (input, init) => {
-      const res = await oldFetch(input, init);
-      if (input === '/api/search/searchTag') {
-        const json = (await res.clone().json()) as searchTagRes;
+    const tagSortInterceptor = async (
+      ...args: Parameters<typeof fetch>
+    ): Promise<Response | undefined> => {
+      const [input] = args;
+
+      // 检查是否是搜索标签的请求
+      if (input !== '/api/search/searchTag') {
+        return undefined; // 不是目标请求，继续原始请求
+      }
+
+      // 发送请求并处理响应
+      const response = await originalFetch(...args);
+
+      try {
+        const json = (await response.clone().json()) as searchTagRes;
         json.data.tags = json.data.tags.sort((a, b) => {
           // todo 在搜索高亮的情况下等于 \u003cmark\u003eto\u003c/mark\u003edo
           const a_key = a.replace(/<mark>(.*?)<\/mark>/g, '$1');
@@ -70,11 +256,17 @@ export default class ToolKitPlugin extends SiyuanPlugin {
           },
         });
         return newRes;
+      } catch (error) {
+        console.error('处理标签排序响应时出错:', error);
+        return response;
       }
-      return res;
     };
+
+    this.addFetchInterceptor(tagSortInterceptor);
+
+    // 清理函数
     this.addUnloadFn(() => {
-      globalThis.fetch = oldFetch;
+      this.removeFetchInterceptor(tagSortInterceptor);
     });
     const onTagClick = (e: MouseEvent) => {
       if (e.target instanceof HTMLElement && e.target.classList.contains('b3-list-item__text')) {
@@ -231,7 +423,9 @@ export default class ToolKitPlugin extends SiyuanPlugin {
         pushMsg(message);
       } else {
         if (skippedCount > 0) {
-          pushMsg(`没有成功压缩任何图片，跳过 ${skippedCount} 个图片（可能是 WebP 格式或压缩失败）`);
+          pushMsg(
+            `没有成功压缩任何图片，跳过 ${skippedCount} 个图片（可能是 WebP 格式或压缩失败）`,
+          );
         } else {
           pushMsg('当前笔记中没有找到可压缩的图片');
         }
@@ -241,7 +435,6 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       pushErrMsg('压缩图片时出错，请查看控制台');
     }
   }
-
 
   async compressImageToWebP(imageData: any): Promise<Blob | null> {
     return new Promise((resolve) => {
