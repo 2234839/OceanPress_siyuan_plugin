@@ -50,17 +50,10 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       return this.applyFetchInterceptors(input, init);
     };
-    const { unProxy, originXhr } = xhrProxy({
-      //请求发起前进入
-      onRequest: (config, handler) => {
-        console.log(config.url);
-        handler.next(config);
-      },
-    });
+
     // 取消拦截
     this.addUnloadFn(() => {
       globalThis.fetch = originalFetch;
-      unProxy();
     });
 
     this.fn_tagSort();
@@ -123,90 +116,6 @@ export default class ToolKitPlugin extends SiyuanPlugin {
   }
 
   setupImageCompressInterceptor() {
-    // Fetch 拦截器
-    const imageCompressInterceptor = async (
-      ...args: Parameters<typeof fetch>
-    ): Promise<Response | undefined> => {
-      const [input, init] = args;
-      // 检查是否启用了自动压缩
-      if (!this.imageCompressConfig.value().autoCompress) {
-        return undefined; // 继续原始请求
-      }
-
-      // 检查是否是 upload 请求
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-      if (!url.includes('/upload')) {
-        return undefined; // 继续原始请求
-      }
-      // 检查是否是 POST 请求且有文件数据
-      if (!init || !init.body) {
-        return undefined; // 继续原始请求
-      }
-
-      try {
-        // 如果是 FormData，我们需要处理它
-        if (init.body instanceof FormData) {
-          const formData = init.body;
-          const newFormData = new FormData();
-          let hasCompressed = false;
-
-          // 遍历所有表单数据
-          for (const [key, value] of formData.entries()) {
-            if (value instanceof File) {
-              // 检查是否为图片文件且不是 webp
-              const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg'];
-              const isImage = imageExtensions.some((ext) => value.name.toLowerCase().endsWith(ext));
-              const isWebp =
-                value.name.toLowerCase().endsWith('.webp') || value.type.includes('webp');
-
-              if (isImage && !isWebp) {
-                try {
-                  // 压缩图片
-                  const compressedBlob = await this.compressImageToWebP(value);
-                  if (compressedBlob) {
-                    const compressedFile = new File(
-                      [compressedBlob],
-                      value.name.replace(/\.[^/.]+$/, '.webp'),
-                      { type: 'image/webp' },
-                    );
-                    newFormData.append(key, compressedFile);
-                    hasCompressed = true;
-                    console.log(`已压缩图片: ${value.name} -> ${compressedFile.name}`);
-                  } else {
-                    // 压缩失败，使用原文件
-                    newFormData.append(key, value);
-                  }
-                } catch (error) {
-                  console.error(`压缩图片失败 ${value.name}:`, error);
-                  // 压缩失败，使用原文件
-                  newFormData.append(key, value);
-                }
-              } else {
-                // 不需要压缩的文件，直接添加
-                newFormData.append(key, value);
-              }
-            } else {
-              // 非文件数据，直接添加
-              newFormData.append(key, value);
-            }
-          }
-
-          // 如果有压缩的文件，使用新的 FormData 发送请求
-          if (hasCompressed) {
-            const newInit = { ...init };
-            newInit.body = newFormData;
-            return await originalFetch(input, newInit);
-          }
-        }
-      } catch (error) {
-        console.error('处理图片压缩拦截器时出错:', error);
-      }
-
-      return undefined; // 继续原始请求
-    };
-
-    this.addFetchInterceptor(imageCompressInterceptor);
-
     // XHR 拦截器
     const { unProxy: unProxyXhr } = xhrProxy({
       onRequest: (config, handler) => {
@@ -246,25 +155,27 @@ export default class ToolKitPlugin extends SiyuanPlugin {
 
               if (isImage && !isWebp) {
                 // 创建压缩 Promise
-                const compressionPromise = this.compressImageToWebP(value).then((compressedBlob) => {
-                  if (compressedBlob) {
-                    const compressedFile = new File(
-                      [compressedBlob],
-                      value.name.replace(/\.[^/.]+$/, '.webp'),
-                      { type: 'image/webp' },
-                    );
-                    newFormData.append(key, compressedFile);
-                    hasCompressed = true;
-                    console.log(`已压缩图片 (XHR): ${value.name} -> ${compressedFile.name}`);
-                  } else {
+                const compressionPromise = this.compressImageToWebP(value)
+                  .then((compressedBlob) => {
+                    if (compressedBlob) {
+                      const compressedFile = new File(
+                        [compressedBlob],
+                        value.name.replace(/\.[^/.]+$/, '.webp'),
+                        { type: 'image/webp' },
+                      );
+                      newFormData.append(key, compressedFile);
+                      hasCompressed = true;
+                      console.log(`已压缩图片 (XHR): ${value.name} -> ${compressedFile.name}`);
+                    } else {
+                      // 压缩失败，使用原文件
+                      newFormData.append(key, value);
+                    }
+                  })
+                  .catch((error) => {
+                    console.error(`压缩图片失败 (XHR) ${value.name}:`, error);
                     // 压缩失败，使用原文件
                     newFormData.append(key, value);
-                  }
-                }).catch((error) => {
-                  console.error(`压缩图片失败 (XHR) ${value.name}:`, error);
-                  // 压缩失败，使用原文件
-                  newFormData.append(key, value);
-                });
+                  });
                 compressionPromises.push(compressionPromise);
               } else {
                 // 不需要压缩的文件，直接添加
@@ -277,15 +188,17 @@ export default class ToolKitPlugin extends SiyuanPlugin {
           }
 
           // 等待所有压缩完成后继续请求
-          Promise.all(compressionPromises).then(() => {
-            if (hasCompressed) {
-              config.body = newFormData;
-            }
-            handler.next(config);
-          }).catch((error) => {
-            console.error('处理 XHR 图片压缩时出错:', error);
-            handler.next(config);
-          });
+          Promise.all(compressionPromises)
+            .then(() => {
+              if (hasCompressed) {
+                config.body = newFormData;
+              }
+              handler.next(config);
+            })
+            .catch((error) => {
+              console.error('处理 XHR 图片压缩时出错:', error);
+              handler.next(config);
+            });
         } else {
           handler.next(config);
         }
@@ -294,7 +207,6 @@ export default class ToolKitPlugin extends SiyuanPlugin {
 
     // 清理函数
     this.addUnloadFn(() => {
-      this.removeFetchInterceptor(imageCompressInterceptor);
       unProxyXhr();
     });
   }
