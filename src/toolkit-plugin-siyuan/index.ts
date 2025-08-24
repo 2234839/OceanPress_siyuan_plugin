@@ -392,18 +392,16 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       }
 
       const kramdown = kramdownRes.kramdown;
-
       // 匹配所有图片（排除 webp 格式），并使用工具提取块ID
-      const imageRegex = /!\[([^\]]*)\]\(([^)]+\.(png|jpg|jpeg|gif|bmp|svg))\)/gi;
+      const imageRegex = /!\[([^\]]*)\]\(([^)\s]+\.(png|jpg|jpeg|gif|bmp|svg))(?:\s+"([^"]*)")?\)/gi;
       const lines = kramdown.split('\n');
 
       let processedCount = 0;
       let skippedCount = 0;
-
+      // console.log('[kramdow n]', kramdown);
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const matches = [...line.matchAll(imageRegex)];
-
         if (matches.length > 0) {
           // 查找当前行或下一行的块ID
           let blockIdForLine = null;
@@ -452,7 +450,12 @@ export default class ToolKitPlugin extends SiyuanPlugin {
                   const res = await upload(undefined, [compressedImage]);
                   const webpPath = Object.values(res.succMap)[0];
                   const oldImageMarkdown = `![${match[1]}](${match[2]})`;
-                  const newImageMarkdown = `![${match[1]}](${webpPath})`;
+
+                  // 提取原始标题属性（如果存在）
+                  const title = match[4] ? ` "${match[4]}"` : '';
+                  console.log('[title]', title);
+
+                  const newImageMarkdown = `![${match[1]}](${webpPath}${title})`;
                   updatedBlockContent = updatedBlockContent.replace(
                     oldImageMarkdown,
                     newImageMarkdown,
