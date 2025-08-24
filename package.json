@@ -65,6 +65,7 @@
     "@univerjs/thread-comment-ui": "^0.10.5",
     "@univerjs/ui": "^0.10.5",
     "@vueuse/core": "^13.7.0",
+    "ajax-hook": "^3.0.3",
     "browser-image-compression": "^2.0.2",
     "locomotive-scroll": "^4.1.4",
     "marked": "^16.2.0",

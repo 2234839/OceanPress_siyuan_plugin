@@ -1,10 +1,12 @@
 import { siyuan } from '@llej/js_util';
-import { SiyuanPlugin } from '~/libs/siyuanPlugin';
-import { getBlockKramdown, updateBlock, pushMsg, pushErrMsg, upload } from '~/libs/api';
+import { Dialog } from 'siyuan';
+import { ref } from 'vue';
+import { getBlockKramdown, pushErrMsg, pushMsg, updateBlock, upload } from '~/libs/api';
 import { ialToJson } from '~/libs/siyuan_util';
+import { SiyuanPlugin } from '~/libs/siyuanPlugin';
 import Setting_view from './setting_view.vue';
+import { hook as xhrHook, proxy as xhrProxy } from 'ajax-hook';
 // @ts-ignore
-import imageCompression from 'browser-image-compression';
 // 引入这个变量后 vite 会自动注入 hot
 import.meta.hot;
 type searchTagRes = {
@@ -48,9 +50,17 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       return this.applyFetchInterceptors(input, init);
     };
-
+    const { unProxy, originXhr } = xhrProxy({
+      //请求发起前进入
+      onRequest: (config, handler) => {
+        console.log(config.url);
+        handler.next(config);
+      },
+    });
+    // 取消拦截
     this.addUnloadFn(() => {
       globalThis.fetch = originalFetch;
+      unProxy();
     });
 
     this.fn_tagSort();
@@ -117,7 +127,6 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       ...args: Parameters<typeof fetch>
     ): Promise<Response | undefined> => {
       const [input, init] = args;
-
       // 检查是否启用了自动压缩
       if (!this.imageCompressConfig.value().autoCompress) {
         return undefined; // 继续原始请求
@@ -128,7 +137,6 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       if (!url.includes('/upload')) {
         return undefined; // 继续原始请求
       }
-
       // 检查是否是 POST 请求且有文件数据
       if (!init || !init.body) {
         return undefined; // 继续原始请求
@@ -205,9 +213,6 @@ export default class ToolKitPlugin extends SiyuanPlugin {
   }
 
   showSettings() {
-    const { Dialog } = require('siyuan');
-    const { ref } = require('vue');
-
     const dialog = new Dialog({
       title: '图片压缩设置',
       content: `<div class="b3-dialog__content"></div>`,
