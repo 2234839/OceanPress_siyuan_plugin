@@ -440,12 +440,10 @@ export default class ToolKitPlugin extends SiyuanPlugin {
                   skippedCount++;
                   continue;
                 }
-                console.log('[imgUrl]', imgUrl);
                 // 获取图片数据
                 const imageData = await response.arrayBuffer();
 
                 const compressedImage = await this.compressImageToWebP(imageData, 0.8, imgUrl);
-                console.log('[compressedImage]', compressedImage);
                 if (compressedImage) {
                   const res = await upload(undefined, [compressedImage]);
                   const webpPath = Object.values(res.succMap)[0];
@@ -453,7 +451,6 @@ export default class ToolKitPlugin extends SiyuanPlugin {
 
                   // 提取原始标题属性（如果存在）
                   const title = match[4] ? ` "${match[4]}"` : '';
-                  console.log('[title]', title);
 
                   const newImageMarkdown = `![${match[1]}](${webpPath}${title})`;
                   updatedBlockContent = updatedBlockContent.replace(
@@ -472,7 +469,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
 
             // 如果块有变化，更新块
             if (blockHasChanges) {
-              console.log('[updatedBlockContent]', {
+              console.log('压缩图片[updatedBlockContent]', {
                 originalContent: blockContent,
                 updatedBlockContent,
               });
@@ -566,7 +563,6 @@ export default class ToolKitPlugin extends SiyuanPlugin {
 
       const baseName = getBaseFileName(originalFileName || file.name);
       const finalFileName = `${baseName}.webp`;
-      console.log('[finalFileName]', finalFileName);
       // 使用 browser-image-compression 压缩图片
       const options = {
         useWebWorker: true,
