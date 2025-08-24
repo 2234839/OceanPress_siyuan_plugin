@@ -40,11 +40,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       },
     });
     this.addTopBar({
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <path d="M8 12h8M8 16h8M8 8h4"/>
-        <path d="M17 21v-6l2 2M17 15l2-2"/>
-      </svg>`,
+      icon: `<svg><text x="50%" y="50%" text-anchor="middle" alignment-baseline="middle" font-size="13px">🗜️</text></svg>`,
       title: '压缩笔记图片为WebP',
       callback: () => {
         this.fn_compressImagesToWebP();
@@ -160,11 +156,11 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const matches = [...line.matchAll(imageRegex)];
-        
+
         if (matches.length > 0) {
           // 查找当前行或下一行的块ID
           let blockIdForLine = null;
-          
+
           // 检查当前行是否有块ID
           const currentLineIal = ialToJson(line);
           if (currentLineIal.id) {
@@ -246,7 +242,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     }
   }
 
-  
+
   async compressImageToWebP(imageData: any): Promise<Blob | null> {
     return new Promise((resolve) => {
       // 处理不同类型的图片数据
