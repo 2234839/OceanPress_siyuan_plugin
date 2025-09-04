@@ -189,6 +189,8 @@ LIMIT 99999`);
     let successful: string[] = [];
     let failing: string[] = [];
     let skip: string[] = [];
+    let consecutiveFailures = 0;
+    const MAX_CONSECUTIVE_FAILURES = 5;
     showMessage(`可以打开开发者工具查看进度`);
     let msg = '';
     for (const img of assets) {
@@ -217,9 +219,19 @@ LIMIT 99999`);
         }
         if (ok) {
           successful.push(imgSrc);
+          consecutiveFailures = 0; // 重置失败计数器
         } else {
           failing.push(imgSrc);
+          consecutiveFailures++; // 增加失败计数器
           console.log('失败', imgSrc);
+          
+          // 检查是否达到连续失败阈值
+          if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+            const errorMsg = `OCR 接口连续失败 ${MAX_CONSECUTIVE_FAILURES} 次，已停止批量OCR处理。\n建议检查网络连接或OCR服务状态后重试。`;
+            console.error(errorMsg);
+            showMessage(errorMsg, 10_000, 'error');
+            return;
+          }
         }
       }
       msg = `总计:${assets.length} 进度 ${((i / assets.length) * 100).toFixed(2)} 成功识别:${
