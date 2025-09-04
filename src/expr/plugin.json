@@ -2,7 +2,7 @@
   "name": "expr",
   "author": "崮生_子虚",
   "url": "https://github.com/2234839/siyuan_expr",
-  "version": "0.0.44",
+  "version": "0.0.45",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
@@ -26,5 +26,6 @@
     "custom": [
       "https://afdian.com/@llej0"
     ]
-  }
+  },
+  "disabledInPublish": true
 }

@@ -26,5 +26,6 @@
     "custom": [
       "https://afdian.com/@llej0"
     ]
-  }
+  },
+  "disabledInPublish": false
 }

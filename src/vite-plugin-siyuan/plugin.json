@@ -2,7 +2,7 @@
   "name": "vite-plugin-siyuan",
   "author": "崮生",
   "url": "https://github.com/2234839/vite-plugin-siyuan",
-  "version": "0.0.26",
+  "version": "0.0.27",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
@@ -26,5 +26,6 @@
     "custom": [
       "https://afdian.com/@llej0"
     ]
-  }
+  },
+  "disabledInPublish": false
 }
