@@ -133,10 +133,12 @@ export default class OceanPress extends SiyuanPlugin {
 
     if (!ok) return;
 
+    const ocrConf = this.ocrConfig.value();
     const jobStatus = await ocr({
       name: name || 'test.png',
       imgBase64: base64,
-      ...this.ocrConfig.value(),
+      type: 'umi-ocr',
+      umiApi: ocrConf.umiApi,
       // 防止下面的逻辑因为 throw 无法执行
     }).catch((e) => {
       if (e instanceof ocr_enabled_Error) {
@@ -247,14 +249,13 @@ LIMIT 99999`);
   }
   async ocrConfIsOK() {
     const ocrConf = this.ocrConfig.value();
-    if (ocrConf.type === 'oceanpress' && ocrConf.sk) {
-    } else if (ocrConf.type === 'umi-ocr' && ocrConf.umiApi) {
+    if (ocrConf.umiApi) {
+      return true;
     } else {
-      showMessage('请先填写 ocr 配置');
+      showMessage('请先填写 Umi-OCR API 配置');
       this.settingView();
       return false;
     }
-    return true;
   }
   async settingView() {
     const dialog = new Dialog({

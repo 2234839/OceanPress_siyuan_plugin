@@ -1,28 +1,12 @@
 <template>
   <div class="content">
-    选择 ocr api 提供程序：
-    <select :value="selectedValue" @change="handleTypeChange" name="ocr type">
-      <option value="oceanpress">oceanpress</option>
-      <option value="umi-ocr">umi-ocr</option>
-    </select>
-    <div v-if="selectedValue === 'oceanpress'">
-      sk
-      <input
-        type="text"
-        class="input"
-        placeholder="Enter sk..."
-        :value="sk"
-        @input="handleSkChange" />
-    </div>
-    <div v-if="selectedValue === 'umi-ocr'">
-      http api
-      <input
-        type="text"
-        class="input"
-        placeholder="Enter http api ..."
-        :value="umiApi"
-        @input="handleUmiApiChange" />
-    </div>
+    Umi-OCR HTTP API：
+    <input
+      type="text"
+      class="input"
+      placeholder="Enter Umi-OCR API URL..."
+      :value="umiApi"
+      @input="handleUmiApiChange" />
     <button class="button" @click="onExit">ok</button>
   </div>
 </template>
@@ -46,8 +30,6 @@
   });
 
   const data = ref(props.dataSignal);
-  const selectedValue = computed(() => data.value.type);
-  const sk = computed(() => data.value.sk);
   const umiApi = computed(() => data.value.umiApi);
 
   const onExit = () => {
@@ -57,20 +39,6 @@
 
   const setData = (updater: (prev: any) => any) => {
     data.value = updater(data.value);
-  };
-
-  const handleTypeChange = (e: Event) => {
-    setData((prev) => ({
-      ...prev,
-      type: (e.target as HTMLSelectElement).value as 'oceanpress',
-    }));
-  };
-
-  const handleSkChange = (e: Event) => {
-    setData((prev) => ({
-      ...prev,
-      sk: (e.target as HTMLInputElement).value,
-    }));
   };
 
   const handleUmiApiChange = (e: Event) => {
