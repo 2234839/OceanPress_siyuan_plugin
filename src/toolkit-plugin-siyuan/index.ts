@@ -182,7 +182,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
           for (const [key, value] of formData.entries()) {
             if (value instanceof File) {
               // 检查是否为图片文件
-              const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg'];
+              const imageExtensions = ['.png', '.jpg', '.jpeg', '.bmp', '.svg'];
               const isImage = imageExtensions.some((ext) => value.name.toLowerCase().endsWith(ext));
               const isWebp =
                 value.name.toLowerCase().endsWith('.webp') || value.type.includes('webp');
@@ -393,7 +393,8 @@ export default class ToolKitPlugin extends SiyuanPlugin {
 
       const kramdown = kramdownRes.kramdown;
       // 匹配所有图片（排除 webp 格式），并使用工具提取块ID
-      const imageRegex = /!\[([^\]]*)\]\(([^)\s]+\.(png|jpg|jpeg|gif|bmp|svg))(?:\s+"([^"]*)")?\)/gi;
+      const imageRegex =
+        /!\[([^\]]*)\]\(([^)\s]+\.(png|jpg|jpeg|gif|bmp|svg))(?:\s+"([^"]*)")?\)/gi;
       const lines = kramdown.split('\n');
 
       let processedCount = 0;
