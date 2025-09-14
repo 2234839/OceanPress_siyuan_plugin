@@ -4,6 +4,7 @@ import { sql } from '~/libs/api';
 import { SiyuanPlugin } from '~/libs/siyuanPlugin';
 import { ocr, ocr_enabled_Error, umiOcrEnabled } from '../libs/ocr/ocr';
 import { UTIF } from '../libs/UTIF';
+import { HEIC } from '../libs/HEIC';
 import { ICON, iconSVG, oceanpress_ui_flag } from './const';
 import './index.css';
 import { refMedia } from './refMedia';
@@ -91,6 +92,39 @@ export default class OceanPress extends SiyuanPlugin {
           console.log('替换tif为img', href, name, domElement);
           setTimeout(() => {}, 300);
         });
+
+      // 替换 HEIC 资源链接为图片链接
+      ['heic', 'heif'].forEach(ext => {
+        document
+          .querySelectorAll<HTMLElement>(`span[data-type="a"][data-href$=".${ext}"]`)
+          .forEach(async (span) => {
+            const href = span.dataset.href;
+            const name = span.textContent;
+
+            var htmlString = `<span contenteditable="false" data-type="img"
+          class="img"><span> </span><span><span class="protyle-action protyle-icons"><span
+                    class="protyle-icon protyle-icon--only"><svg class="svg">
+                        <use xlink:href="#iconMore"></use>
+                    </svg></span></span><img src="${href}"
+                data-src="${href}" alt="image"><span
+                class="protyle-action__drag"></span><span class="protyle-action__title"></span></span><span>
+          </span></span>`;
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlString;
+            var domElement = tempDiv.firstChild!;
+
+            span.parentNode!.replaceChild(domElement, span);
+            console.log(`替换${ext}为img`, href, name, domElement);
+
+            // 立即处理新创建的图片，避免定时器重复处理
+            setTimeout(() => {
+              const newImg = (domElement as HTMLElement).querySelector('img[data-src]') as HTMLImageElement;
+              if (newImg && !newImg.src.startsWith('data:')) {
+                HEIC.processImage(newImg);
+              }
+            }, 500);
+          });
+      });
       const imgTifEl = [
         ...document.querySelectorAll<HTMLImageElement>('img[data-src$=".tif"]'),
       ].filter((el) => !el.src.startsWith('data:'));
@@ -99,6 +133,18 @@ export default class OceanPress extends SiyuanPlugin {
         console.log('[imgTifEl]', imgTifEl);
         // @ts-ignore
         UTIF.replaceIMG();
+      }
+
+      // 处理 HEIC 格式图片
+      const imgHeicEl = [
+        ...document.querySelectorAll<HTMLImageElement>('img[data-src$=".heic"]'),
+        ...document.querySelectorAll<HTMLImageElement>('img[data-src$=".heif"]'),
+      ].filter((el) => !el.src.startsWith('data:'));
+
+      if (imgHeicEl.length > 0) {
+        console.log('[imgHeicEl]', imgHeicEl);
+        // @ts-ignore
+        HEIC.replaceIMG();
       }
     }, 1000);
     this.addUnloadFn(() => clearInterval(id));

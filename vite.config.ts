@@ -21,7 +21,6 @@ const viteConfig: UserConfigExport = (ctx) => {
   console.log('[pluginName]', pluginName, ctx.mode);
   if (ctx.mode === 'production' && !process.env.CI && !process.env.SKIP_VERSION_BUMP) {
     console.log('自动提升插件版本号', pluginName);
-
     // 自动提升插件版本号
     import(`./src/${pluginName}/plugin.json`).then((r) => {
       writeFile(

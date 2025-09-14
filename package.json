@@ -67,6 +67,7 @@
     "@vueuse/core": "^13.7.0",
     "ajax-hook": "^3.0.3",
     "browser-image-compression": "^2.0.2",
+    "heic2any": "^0.0.4",
     "locomotive-scroll": "^4.1.4",
     "marked": "^16.2.0",
     "mcp_agent_ts": "^1.0.2",

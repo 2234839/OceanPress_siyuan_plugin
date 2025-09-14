@@ -2,7 +2,7 @@
   "name": "oceanpress-siyuan-plugin",
   "author": "崮生",
   "url": "https://github.com/2234839/OceanPress_siyuan_plugin",
-  "version": "1.0.76",
+  "version": "1.0.88",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
@@ -15,8 +15,8 @@
     "zh_CN": "OceanPress 思源插件"
   },
   "description": {
-    "en_US": "Supports ocr text copy, umi ocr, and tif image display",
-    "zh_CN": "支持 ocr 文本复制、umi ocr，支持 tif 图片显示"
+    "en_US": "Supports OCR text copy, UMI OCR, and TIF/HEIC image display",
+    "zh_CN": "支持 OCR 文本复制、UMI OCR，支持 TIF/HEIC 图片显示"
   },
   "readme": {
     "en_US": "README.md",
