@@ -1,28 +1,31 @@
 // ABOUTME: HEIC图片解码器，用于在浏览器中解码HEIC格式图片
 import heic2any from 'heic2any';
 
-export let HEIC: any = {};
+interface HEICUtils {
+    decode: (arrayBuffer: ArrayBuffer) => Promise<string>;
+    isHEIC: (filename: string) => boolean;
+    bufferToURI: (buffer: ArrayBuffer) => Promise<string>;
+    processImage: (img: HTMLImageElement) => Promise<void>;
+    replaceIMG: (imgs?: HTMLCollectionOf<HTMLImageElement>) => Promise<void>;
+}
+
+export const HEIC: HEICUtils = {} as HEICUtils;
 
 // HEIC解码器主类
-HEIC.decode = async function(arrayBuffer: ArrayBuffer) {
+HEIC.decode = async function(arrayBuffer: ArrayBuffer): Promise<string> {
     try {
         // 创建 Blob 对象
         const blob = new Blob([arrayBuffer], { type: 'image/heic' });
 
-        // 使用 heic2any 库解码 HEIC 图片并转换为 JPEG
-        const jpegBlob = await heic2any({
+        // 使用 heic2any 库解码 HEIC 图片，支持动图转换为 GIF
+        const convertedBlob = await heic2any({
             blob: blob,
-            toType: 'image/jpeg',
+            toType: "image/gif",
             quality: 0.9
-        });
+        }) as Blob;
 
-        // 将 Blob 转换为 data URL
-        return new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(jpegBlob as Blob);
-        });
+        // 直接创建 Blob URL，不使用 base64
+        return URL.createObjectURL(convertedBlob);
     } catch (error) {
         console.error('HEIC decode error:', error);
         throw error;
@@ -30,18 +33,18 @@ HEIC.decode = async function(arrayBuffer: ArrayBuffer) {
 };
 
 // 检查是否为HEIC文件
-HEIC.isHEIC = function(filename: string) {
+HEIC.isHEIC = function(filename: string): boolean {
     if (!filename) return false;
     const ext = filename.split('.').pop()?.toLowerCase();
     return ext ? ['heic', 'heif'].includes(ext) : false;
 };
 
-// 将HEIC文件转换为data URL
-HEIC.bufferToURI = async function(buffer: ArrayBuffer) {
+// 将HEIC文件转换为Blob URL
+HEIC.bufferToURI = async function(buffer: ArrayBuffer): Promise<string> {
     try {
         // 解码HEIC图片
-        const jpegDataUrl = await HEIC.decode(buffer);
-        return jpegDataUrl;
+        const blobUrl = await HEIC.decode(buffer);
+        return blobUrl;
     } catch (error) {
         console.error('HEIC decode error:', error);
         throw error;
@@ -53,7 +56,7 @@ const failedImages = new Set<string>();
 const processingImages = new Set<string>();
 
 // 处理单个HEIC图片元素
-HEIC.processImage = async function(img: HTMLImageElement) {
+HEIC.processImage = async function(img: HTMLImageElement): Promise<void> {
     const src = img.getAttribute('src');
     if (!src || !HEIC.isHEIC(src)) {
         return;
@@ -84,7 +87,7 @@ HEIC.processImage = async function(img: HTMLImageElement) {
         xhr.open('GET', src);
         xhr.responseType = 'arraybuffer';
 
-        const dataUrl = await new Promise<string>((resolve, reject) => {
+        const blobUrl = await new Promise<string>((resolve, reject) => {
             xhr.onload = async () => {
                 try {
                     if (!xhr.response) {
@@ -101,8 +104,8 @@ HEIC.processImage = async function(img: HTMLImageElement) {
             xhr.send();
         });
 
-        // 替换图片源
-        img.setAttribute('src', dataUrl);
+        // 替换图片源为 Blob URL
+        img.setAttribute('src', blobUrl);
         console.log('HEIC image converted successfully:', src);
     } catch (error) {
         console.error('Failed to process HEIC image:', src, error);
@@ -115,7 +118,7 @@ HEIC.processImage = async function(img: HTMLImageElement) {
 };
 
 // 批量处理页面上的HEIC图片
-HEIC.replaceIMG = async function(imgs: HTMLCollectionOf<HTMLImageElement>) {
+HEIC.replaceIMG = async function(imgs?: HTMLCollectionOf<HTMLImageElement>): Promise<void> {
     if (!imgs) imgs = document.getElementsByTagName('img');
 
     const heicImages = [];
