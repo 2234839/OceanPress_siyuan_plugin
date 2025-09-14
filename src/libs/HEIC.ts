@@ -2,61 +2,79 @@
 import heic2any from 'heic2any';
 
 interface HEICUtils {
-    decode: (arrayBuffer: ArrayBuffer) => Promise<string>;
     isHEIC: (filename: string) => boolean;
-    bufferToURI: (buffer: ArrayBuffer) => Promise<string>;
     processImage: (img: HTMLImageElement) => Promise<void>;
     replaceIMG: (imgs?: HTMLCollectionOf<HTMLImageElement>) => Promise<void>;
 }
 
 export const HEIC: HEICUtils = {} as HEICUtils;
 
-// HEIC解码器主类
-HEIC.decode = async function(arrayBuffer: ArrayBuffer): Promise<string> {
-    try {
-        // 创建 Blob 对象
-        const blob = new Blob([arrayBuffer], { type: 'image/heic' });
-
-        // 使用 heic2any 库解码 HEIC 图片，支持动图转换为 GIF
-        const convertedBlob = await heic2any({
-            blob: blob,
-            toType: "image/gif",
-            quality: 0.9
-        }) as Blob;
-
-        // 直接创建 Blob URL，不使用 base64
-        return URL.createObjectURL(convertedBlob);
-    } catch (error) {
-        console.error('HEIC decode error:', error);
-        throw error;
-    }
-};
-
 // 检查是否为HEIC文件
-HEIC.isHEIC = function(filename: string): boolean {
+HEIC.isHEIC = function (filename: string): boolean {
     if (!filename) return false;
     const ext = filename.split('.').pop()?.toLowerCase();
     return ext ? ['heic', 'heif'].includes(ext) : false;
 };
 
-// 将HEIC文件转换为Blob URL
-HEIC.bufferToURI = async function(buffer: ArrayBuffer): Promise<string> {
-    try {
-        // 解码HEIC图片
-        const blobUrl = await HEIC.decode(buffer);
-        return blobUrl;
-    } catch (error) {
-        console.error('HEIC decode error:', error);
-        throw error;
+// 将多个图片帧转换为动画图片（使用 CSS 动画模拟 GIF）
+async function createGifFromFrames(frames: Blob[]): Promise<string> {
+    if (frames.length === 1) {
+        return URL.createObjectURL(frames[0]); // 单帧直接返回 URL
     }
-};
+
+    // 创建一个包含所有帧的 data URL 数组
+    const dataUrls = await Promise.all(
+        frames.map(frame => URL.createObjectURL(frame))
+    );
+
+    // 创建一个动画 HTML 元素
+    const frameDuration = 0.3; // 每帧显示 0.3 秒
+    const totalDuration = frames.length * frameDuration;
+
+    // 为每个帧生成动画关键帧
+    const keyframes = frames.map((_, index) => {
+        const startTime = (index * frameDuration / totalDuration * 100).toFixed(1);
+        const endTime = ((index + 1) * frameDuration / totalDuration * 100).toFixed(1);
+        return `
+            @keyframes heicFrame${index} {
+                0%, ${parseFloat(startTime) - 0.1}% { opacity: 0; }
+                ${startTime}%, ${endTime}% { opacity: 1; }
+                ${parseFloat(endTime) + 0.1}%, 100% { opacity: 0; }
+            }
+        `;
+    }).join('\n');
+
+    const animatedHtml = `
+        <div style="position: relative; display: inline-block; width: 100%; height: 100%;">
+            ${dataUrls.map((url, index) => `
+                <img src="${url}" style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    object-fit: contain;
+                    opacity: 0;
+                    animation: heicFrame${index} ${totalDuration}s infinite;
+                " />
+            `).join('')}
+            <style>
+                ${keyframes}
+            </style>
+        </div>
+    `;
+
+    // 创建 Blob URL 包含动画 HTML
+    const blob = new Blob([animatedHtml], { type: 'text/html' });
+    return URL.createObjectURL(blob);
+}
 
 // 存储已处理失败的图片，避免重复尝试
 const failedImages = new Set<string>();
 const processingImages = new Set<string>();
 
 // 处理单个HEIC图片元素
-HEIC.processImage = async function(img: HTMLImageElement): Promise<void> {
+HEIC.processImage = async function (img: HTMLImageElement): Promise<void> {
     const src = img.getAttribute('src');
     if (!src || !HEIC.isHEIC(src)) {
         return;
@@ -83,29 +101,50 @@ HEIC.processImage = async function(img: HTMLImageElement): Promise<void> {
     try {
         console.log('Processing HEIC image:', src);
 
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', src);
-        xhr.responseType = 'arraybuffer';
+        const response = await fetch(src);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const blob = await response.blob();
 
-        const blobUrl = await new Promise<string>((resolve, reject) => {
-            xhr.onload = async () => {
-                try {
-                    if (!xhr.response) {
-                        reject(new Error('No response data received'));
-                        return;
-                    }
-                    const uri = await HEIC.bufferToURI(xhr.response);
-                    resolve(uri);
-                } catch (error) {
-                    reject(error);
-                }
-            };
-            xhr.onerror = () => reject(new Error('Failed to load HEIC image'));
-            xhr.send();
+        // 提取所有图片帧
+        const convertedBlobs = await heic2any({
+            blob,
+            toType: 'image/jpeg',
+            multiple: true,
         });
 
-        // 替换图片源为 Blob URL
-        img.setAttribute('src', blobUrl);
+        // 如果只有一张图片，直接创建 Blob URL
+        if (!Array.isArray(convertedBlobs) || convertedBlobs.length === 1) {
+            const singleBlob = Array.isArray(convertedBlobs) ? convertedBlobs[0] : convertedBlobs;
+            const blobUrl = URL.createObjectURL(singleBlob as Blob);
+            img.setAttribute('src', blobUrl);
+            console.log('HEIC image converted successfully:', src);
+            return;
+        }
+
+        // 多张图片合成动画
+        const animatedUrl = await createGifFromFrames(convertedBlobs as Blob[]);
+
+        // 检查是否是多帧动画（通过判断 URL 是否指向 HTML）
+        const isMultiFrame = convertedBlobs.length > 1;
+
+        if (isMultiFrame) {
+            // 多帧：创建 iframe 来显示 CSS 动画
+            const iframe = document.createElement('iframe');
+            iframe.src = animatedUrl;
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            iframe.style.backgroundColor = 'transparent';
+
+            // 替换原始图片元素
+            img.parentNode?.replaceChild(iframe, img);
+        } else {
+            // 单帧：直接设置图片源
+            img.setAttribute('src', animatedUrl);
+        }
+
         console.log('HEIC image converted successfully:', src);
     } catch (error) {
         console.error('Failed to process HEIC image:', src, error);
@@ -118,7 +157,7 @@ HEIC.processImage = async function(img: HTMLImageElement): Promise<void> {
 };
 
 // 批量处理页面上的HEIC图片
-HEIC.replaceIMG = async function(imgs?: HTMLCollectionOf<HTMLImageElement>): Promise<void> {
+HEIC.replaceIMG = async function (imgs?: HTMLCollectionOf<HTMLImageElement>): Promise<void> {
     if (!imgs) imgs = document.getElementsByTagName('img');
 
     const heicImages = [];
@@ -137,7 +176,6 @@ HEIC.replaceIMG = async function(imgs?: HTMLCollectionOf<HTMLImageElement>): Pro
     const batchSize = 3; // 每次处理3个图片
     for (let i = 0; i < heicImagesArray.length; i += batchSize) {
         const batch = heicImagesArray.slice(i, i + batchSize);
-        await Promise.all(batch.map(img => HEIC.processImage(img)));
+        await Promise.all(batch.map((img) => HEIC.processImage(img)));
     }
 };
-

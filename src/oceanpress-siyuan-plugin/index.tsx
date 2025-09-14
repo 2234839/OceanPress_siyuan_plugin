@@ -142,8 +142,6 @@ export default class OceanPress extends SiyuanPlugin {
       ].filter((el) => !el.src.startsWith('data:'));
 
       if (imgHeicEl.length > 0) {
-        console.log('[imgHeicEl]', imgHeicEl);
-        // @ts-ignore
         HEIC.replaceIMG();
       }
     }, 1000);
@@ -272,7 +270,7 @@ LIMIT 99999`);
           failing.push(imgSrc);
           consecutiveFailures++; // 增加失败计数器
           console.log('失败', imgSrc);
-          
+
           // 检查是否达到连续失败阈值
           if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
             const errorMsg = `OCR 接口连续失败 ${MAX_CONSECUTIVE_FAILURES} 次，已停止批量OCR处理。\n建议检查网络连接或OCR服务状态后重试。`;
