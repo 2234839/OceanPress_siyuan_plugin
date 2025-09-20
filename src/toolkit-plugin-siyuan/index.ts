@@ -188,7 +188,10 @@ export default class ToolKitPlugin extends SiyuanPlugin {
               const isWebp =
                 value.name.toLowerCase().endsWith('.webp') || value.type.includes('webp');
 
-              if (isImage) {
+              // 检查是否为视频文件，排除视频格式
+              const isVideo = this.isVideoFile(value.name);
+
+              if (isImage && !isVideo) {
                 // 检查是否跳过 WebP
                 if (this.toolkit_setting.value().image_skip_webp && isWebp) {
                   newFormData.append(key, value);
@@ -396,6 +399,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       // 匹配所有图片（排除 webp 格式），并使用工具提取块ID
       const imageRegex =
         /!\[([^\]]*)\]\(([^)\s]+\.(png|jpg|jpeg|gif|bmp|svg))(?:\s+"([^"]*)")?\)/gi;
+
       const lines = kramdown.split('\n');
 
       let processedCount = 0;
@@ -437,6 +441,13 @@ export default class ToolKitPlugin extends SiyuanPlugin {
             for (const match of matches) {
               try {
                 const imgUrl = match[2];
+
+                // 检查是否为视频文件，排除视频格式
+                if (this.isVideoFile(imgUrl)) {
+                  skippedCount++;
+                  continue;
+                }
+
                 const response = await fetch(imgUrl);
                 if (!response || !response.ok) {
                   skippedCount++;
@@ -503,6 +514,14 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     }
   }
 
+  // 视频文件扩展名列表
+  private videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv', '.m4v', '.3gp', '.ogv'];
+
+  // 检查是否为视频文件
+  private isVideoFile(fileName: string): boolean {
+    return this.videoExtensions.some(ext => fileName.toLowerCase().includes(ext));
+  }
+
   setupImageMenu() {
     // 图片压缩菜单按钮
     this.eventBus.on('open-menu-image', (event) => {
@@ -531,6 +550,12 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       // 检查是否已经是 WebP 格式
       if (imgSrc.toLowerCase().includes('.webp')) {
         pushErrMsg('图片已经是 WebP 格式，无需压缩');
+        return false;
+      }
+
+      // 检查是否为视频文件，排除视频格式
+      if (this.isVideoFile(imgSrc)) {
+        pushErrMsg('视频文件不支持压缩');
         return false;
       }
 
