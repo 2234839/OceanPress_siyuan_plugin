@@ -62,6 +62,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
 
     this.fn_tagSort();
     this.setupImageCompressInterceptor();
+    this.setupImageMenu();
     this.addCommand({
       hotkey: '',
       langKey: `conflicted Comparison`,
@@ -499,6 +500,89 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     } catch (error) {
       console.error('压缩图片时出错:', error);
       pushErrMsg('压缩图片时出错，请查看控制台');
+    }
+  }
+
+  setupImageMenu() {
+    // 图片压缩菜单按钮
+    this.eventBus.on('open-menu-image', (event) => {
+      (globalThis.window.siyuan.menus.menu as Menu).addItem({
+        label: '压缩图片',
+        icon: 'toolkit_compress',
+        click: async () => {
+          const spanImg = event.detail.element as HTMLElement;
+          const img = spanImg.querySelector(`img[data-src]`) as HTMLImageElement;
+          const imgSrc = img.dataset.src!;
+          const ok = await this.compressSingleImage(imgSrc);
+          if (ok) {
+            pushMsg('图片压缩成功');
+            // 移除UI组件，定时循环就会自动添加一个新的，能够重新加载一遍 json 数据
+            spanImg.querySelector('.img__compress')?.remove();
+          } else {
+            pushErrMsg('图片压缩失败');
+          }
+        },
+      });
+    });
+  }
+
+  async compressSingleImage(imgSrc: string): Promise<boolean> {
+    try {
+      // 检查是否已经是 WebP 格式
+      if (imgSrc.toLowerCase().includes('.webp')) {
+        pushErrMsg('图片已经是 WebP 格式，无需压缩');
+        return false;
+      }
+
+      const response = await fetch(imgSrc);
+      if (!response || !response.ok) {
+        console.error('无法获取图片:', imgSrc);
+        return false;
+      }
+
+      // 获取图片数据
+      const imageData = await response.arrayBuffer();
+
+      // 压缩图片
+      const compressedImage = await this.compressImageToWebP(imageData, this.toolkit_setting.value().image_compression_quality, imgSrc);
+
+      if (compressedImage) {
+        // 上传压缩后的图片
+        const uploadRes = await upload(undefined, [compressedImage]);
+        const webpPath = Object.values(uploadRes.succMap)[0];
+
+        if (webpPath) {
+          // 获取当前笔记的块ID来更新内容
+          const activeElement = document.querySelector('.protyle:not(.fn__none) .protyle-content');
+          if (activeElement) {
+            const documentElement = activeElement.querySelector('.protyle-title[data-node-id]');
+            if (documentElement) {
+              const blockId = documentElement.getAttribute('data-node-id');
+              if (blockId) {
+                const kramdownRes = await getBlockKramdown(blockId);
+                if (kramdownRes && kramdownRes.kramdown) {
+                  const kramdown = kramdownRes.kramdown;
+                  // 替换图片链接
+                  const updatedKramdown = kramdown.replace(
+                    new RegExp(`\\!\\[([^\\]]*)\\]\\(${imgSrc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s+"([^"]*)")?\\)`, 'g'),
+                    `![$1](${webpPath})`
+                  );
+
+                  if (updatedKramdown !== kramdown) {
+                    await updateBlock('markdown', updatedKramdown, blockId);
+                    return true;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error('压缩单个图片时出错:', error);
+      return false;
     }
   }
 

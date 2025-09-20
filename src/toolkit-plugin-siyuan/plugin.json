@@ -2,7 +2,7 @@
   "name": "toolkit-plugin-siyuan",
   "author": "崮生",
   "url": "https://github.com/2234839/toolkit-plugin-siyuan",
-  "version": "0.0.87",
+  "version": "0.0.88",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
