@@ -1,11 +1,12 @@
 <template>
   <div class="content">
-    <div class="header">
-      <div class="title">🔍 OCR 服务配置</div>
-      <div class="subtitle">让文字识别变得更简单、更高效</div>
-    </div>
+    <div class="scroll-area">
+      <div class="header">
+        <div class="title">🔍 OCR 服务配置</div>
+        <div class="subtitle">让文字识别变得更简单、更高效</div>
+      </div>
 
-    <div class="section">
+      <div class="section">
       <div class="section-title">📡 选择 OCR 服务</div>
       <div class="server-options">
         <div
@@ -73,6 +74,7 @@
       </div>
     </div>
 
+    </div>
     <div class="actions">
       <button class="save-btn" @click="onExit">
         <span class="btn-icon">✅</span>
@@ -148,13 +150,21 @@
   .content {
     display: flex;
     flex-direction: column;
-    padding: 24px;
+    height: calc(100vh - 40px);
+    max-height: 100vh;
+    padding: 12px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 12px;
-    min-width: 500px;
-    max-width: 600px;
+    border-radius: 10px;
+    width: min(92vw, 640px);
     color: white;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    box-sizing: border-box;
+  }
+
+  .scroll-area {
+    overflow-y: auto;
+    flex: 1 1 auto;
+    padding-right: 6px;
   }
 
   /* 头部样式 */
@@ -393,10 +403,25 @@
   }
 
   /* 响应式设计 */
-  @media (max-width: 600px) {
+  @media (max-width: 520px) {
     .content {
-      min-width: auto;
-      margin: 16px;
+      height: calc(100vh - 20px);
+      padding: 8px;
+      width: min(96vw, 520px);
     }
+    .title { font-size: 16px; }
+    .section { padding: 10px; }
+  }
+
+  /* 滚动条样式 */
+  .scroll-area::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scroll-area::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+  }
+  .scroll-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.3);
   }
 </style>
