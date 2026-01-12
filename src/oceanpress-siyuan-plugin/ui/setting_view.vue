@@ -3,82 +3,73 @@
     <div class="scroll-area">
       <div class="header">
         <div class="title">🔍 OCR 服务配置</div>
-        <div class="subtitle">让文字识别变得更简单、更高效</div>
+        <div class="subtitle">选择文字识别服务</div>
       </div>
 
       <div class="section">
-      <div class="section-title">📡 选择 OCR 服务</div>
-      <div class="server-options">
-        <div
-          class="server-option"
-          :class="{ active: selectedServer === 'custom' }"
-          @click="selectServer('custom')">
-          <div class="server-icon">🏠</div>
-          <div class="server-info">
-            <div class="server-name">本地服务</div>
-            <div class="server-desc">使用您自己的 Umi-OCR 服务</div>
+        <div class="section-title">服务类型</div>
+        <div class="server-options">
+          <div
+            class="server-option"
+            :class="{ active: selectedServer === 'custom' }"
+            @click="selectServer('custom')">
+            <div class="server-icon">🏠</div>
+            <div class="server-info">
+              <div class="server-name">本地服务</div>
+              <div class="server-desc">使用自己的 Umi-OCR 服务</div>
+            </div>
+          </div>
+
+          <div
+            class="server-option"
+            :class="{ active: selectedServer === 'public' }"
+            @click="selectServer('public')">
+            <div class="server-icon">❤️</div>
+            <div class="server-info">
+              <div class="server-name">公益服务器</div>
+              <div class="server-desc">免费的 Umi-OCR 服务</div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div
-          class="server-option"
-          :class="{ active: selectedServer === 'public' }"
-          @click="selectServer('public')">
-          <div class="server-icon">❤️</div>
-          <div class="server-info">
-            <div class="server-name">崮生公益服务器</div>
-            <div class="server-desc">免费的 Umi-OCR 服务</div>
+      <div class="section" v-if="selectedServer === 'custom'">
+        <div class="section-title">API 地址</div>
+        <input
+          type="text"
+          class="input"
+          placeholder="输入 Umi-OCR API 地址"
+          :value="umiApi"
+          @input="handleUmiApiChange" />
+      </div>
+
+      <div class="section" v-if="selectedServer === 'public'">
+        <div class="public-server-info">
+          <div class="info-item">
+            <span class="info-emoji">🔒</span>
+            <span>识别完成后图片立即删除</span>
+          </div>
+          <div class="info-item">
+            <span class="info-emoji">🌐</span>
+            <span>支持多种语言和格式识别</span>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="section" v-if="selectedServer === 'custom'">
-      <div class="section-title">🔧 自定义 API 地址</div>
-      <input
-        type="text"
-        class="input"
-        placeholder="请输入您的 Umi-OCR API 地址..."
-        :value="umiApi"
-        @input="handleUmiApiChange" />
-    </div>
-
-    <div class="section" v-if="selectedServer === 'public'">
-      <div class="public-server-info">
-        <div class="info-header">
-          <span class="info-icon">🌟</span>
-          <span class="info-title">公益服务说明</span>
-        </div>
-        <div class="info-content">
-          <p>🔥 <strong>免费使用</strong>：无需任何费用，即开即用</p>
-          <p>🛡️ <strong>隐私保护</strong>：识别完成后立即删除，绝不保留</p>
-          <p>🎯 <strong>精准识别</strong>：支持多种语言和格式</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="donation-section">
-      <div class="donation-header">
-        <span class="heart-icon">💖</span>
-        <span class="donation-title">支持公益服务持续运营</span>
-      </div>
-      <div class="donation-content">
-        <p>亲爱的用户，公益服务器的运营需要资金支持。服务器费用、维护成本、带宽费用都需要资金来维持。</p>
-        <p>如果您觉得这个服务对您有帮助，欢迎在爱发电上支持我们，让这份爱心能够持续传递下去！</p>
-        <div class="donation-actions">
+      <div class="donation-section" v-if="selectedServer === 'public'">
+        <div class="donation-header">💖 支持公益服务</div>
+        <div class="donation-content">
+          <p>如果这个服务对您有帮助，欢迎在爱发电上支持我们，让这份爱心持续传递。</p>
           <a href="https://afdian.com/@llej0" target="_blank" class="donation-btn">
-            <span class="btn-icon">❤️</span>
-            <span class="btn-text">前往爱发电支持</span>
+            前往爱发电支持
           </a>
         </div>
       </div>
-    </div>
 
     </div>
     <div class="actions">
       <button class="save-btn" @click="onExit">
-        <span class="btn-icon">✅</span>
-        <span class="btn-text">保存配置</span>
+        完成
       </button>
     </div>
   </div>
@@ -150,92 +141,87 @@
   .content {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 40px);
-    max-height: 100vh;
-    padding: 12px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 10px;
-    width: min(92vw, 640px);
-    color: white;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-height: 80vh;
+    width: min(92vw, 500px);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
     box-sizing: border-box;
+    background: var(--b3-theme-background, #f5f5f5);
+    padding: 16px;
+    border-radius: 12px;
   }
 
   .scroll-area {
     overflow-y: auto;
     flex: 1 1 auto;
-    padding-right: 6px;
+    padding-right: 4px;
   }
 
   /* 头部样式 */
   .header {
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
   }
 
   .title {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--b3-theme-on-background, #1a1a1a);
   }
 
   .subtitle {
     font-size: 14px;
-    opacity: 0.9;
-    font-weight: 300;
+    color: var(--b3-theme-on-surface, #666666);
   }
 
   /* 区块样式 */
   .section {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--b3-theme-surface, #ffffff);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   }
 
   .section-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 14px;
+    color: var(--b3-theme-on-surface, #888888);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
   /* 服务器选项样式 */
   .server-options {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   }
 
   .server-option {
     display: flex;
     align-items: center;
-    padding: 16px;
+    padding: 14px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid transparent;
+    background: transparent;
+    border: 1.5px solid transparent;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
   }
 
   .server-option:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
+    background: var(--b3-theme-background, #f9f9f9);
   }
 
   .server-option.active {
-    border-color: #fbbf24;
-    background: rgba(251, 191, 36, 0.2);
+    border-color: var(--b3-theme-primary, #4a9eff);
+    background: var(--b3-theme-background, #f0f7ff);
   }
 
   .server-icon {
     font-size: 24px;
-    margin-right: 16px;
+    margin-right: 14px;
   }
 
   .server-info {
@@ -243,185 +229,150 @@
   }
 
   .server-name {
-    font-weight: 600;
-    font-size: 16px;
-    margin-bottom: 4px;
+    font-weight: 500;
+    font-size: 15px;
+    margin-bottom: 3px;
+    color: var(--b3-theme-on-background, #1a1a1a);
   }
 
   .server-desc {
     font-size: 12px;
-    opacity: 0.8;
+    color: var(--b3-theme-on-surface, #888888);
   }
 
   /* 输入框样式 */
   .input {
     width: 100%;
-    padding: 12px 16px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    padding: 11px 13px;
+    border: 1.5px solid var(--b3-theme-border, #e0e0e0);
+    border-radius: 8px;
+    background: var(--b3-theme-background, #fafafa);
+    color: var(--b3-theme-on-background, #1a1a1a);
     font-size: 14px;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    font-family: inherit;
   }
 
   .input::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--b3-theme-on-surface, #999999);
   }
 
   .input:focus {
     outline: none;
-    border-color: #fbbf24;
-    background: rgba(255, 255, 255, 0.2);
+    border-color: var(--b3-theme-primary, #4a9eff);
+    background: var(--b3-theme-surface, #ffffff);
   }
 
   /* 公益服务器信息样式 */
   .public-server-info {
-    background: rgba(251, 191, 36, 0.1);
-    border-radius: 8px;
-    padding: 16px;
-    border: 1px solid rgba(251, 191, 36, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
-  .info-header {
+  .info-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    font-weight: 600;
-    color: #fbbf24;
-  }
-
-  .info-content {
+    gap: 10px;
     font-size: 14px;
-    line-height: 1.6;
+    color: var(--b3-theme-on-background, #333333);
   }
 
-  .info-content p {
-    margin-bottom: 8px;
-  }
-
-  .server-url {
-    margin-top: 12px;
-    padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    font-size: 12px;
-  }
-
-  .server-url code {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 2px 6px;
-    border-radius: 2px;
-    font-family: 'Courier New', monospace;
+  .info-emoji {
+    font-size: 18px;
   }
 
   /* 打赏区域样式 */
   .donation-section {
-    background: rgba(239, 68, 68, 0.1);
-    border-radius: 8px;
-    padding: 20px;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    margin-bottom: 20px;
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.08) 0%, rgba(255, 142, 83, 0.08) 100%);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255, 107, 107, 0.15);
   }
 
   .donation-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 16px;
-    font-weight: 600;
-    color: #fca5a5;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    color: var(--b3-theme-on-background, #1a1a1a);
   }
 
   .donation-content {
     font-size: 14px;
     line-height: 1.6;
+    color: var(--b3-theme-on-background, #333333);
   }
 
   .donation-content p {
     margin-bottom: 12px;
   }
 
-  .donation-actions {
-    margin-top: 16px;
-    text-align: center;
-  }
-
   .donation-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    background: linear-gradient(45deg, #ef4444, #dc2626);
+    display: inline-block;
+    padding: 9px 18px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff8f53 100%);
     color: white;
     text-decoration: none;
-    border-radius: 25px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.25);
   }
 
   .donation-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.35);
   }
 
   /* 操作按钮样式 */
   .actions {
     display: flex;
     justify-content: center;
-    margin-top: 24px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--b3-theme-border, #e8e8e8);
   }
 
   .save-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 32px;
-    background: linear-gradient(45deg, #10b981, #059669);
+    padding: 11px 40px;
+    background: var(--b3-theme-primary, #4a9eff);
     color: white;
     border: none;
-    border-radius: 25px;
-    font-weight: 600;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(74, 158, 255, 0.3);
+    font-family: inherit;
   }
 
   .save-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-  }
-
-  .btn-icon {
-    font-size: 16px;
-  }
-
-  .btn-text {
-    font-size: 14px;
-  }
-
-  /* 响应式设计 */
-  @media (max-width: 520px) {
-    .content {
-      height: calc(100vh - 20px);
-      padding: 8px;
-      width: min(96vw, 520px);
-    }
-    .title { font-size: 16px; }
-    .section { padding: 10px; }
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
   }
 
   /* 滚动条样式 */
   .scroll-area::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
   }
   .scroll-area::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.2);
+    background: var(--b3-theme-border, #d0d0d0);
     border-radius: 3px;
   }
   .scroll-area::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.3);
+    background: var(--b3-theme-on-surface, #b0b0b0);
+  }
+
+  /* 深色模式适配 */
+  [data-theme-mode="dark"] .donation-section {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.12) 0%, rgba(255, 142, 83, 0.12) 100%);
+    border-color: rgba(255, 107, 107, 0.25);
+  }
+
+  [data-theme-mode="dark"] .server-option.active {
+    background: rgba(74, 158, 255, 0.15);
   }
 </style>
