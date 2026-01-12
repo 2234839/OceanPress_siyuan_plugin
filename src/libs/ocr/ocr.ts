@@ -12,6 +12,18 @@ type umi_ocr_res = {
   timestamp: number;
 };
 
+const PUBLIC_SERVER_URL = 'https://ocr.heartstack.space/api/ocr';
+
+/** 判断是否是公益服务器 */
+function isPublicServer(apiUrl: string): boolean {
+  return apiUrl.includes(PUBLIC_SERVER_URL);
+}
+
+/** 获取公益服务器的错误提示 */
+function getPublicServerError(baseMessage: string): string {
+  return `${baseMessage}<br/><br/>💖 <a href="https://afdian.com/@llej0" target="_blank">赞助支持</a>让公益服务更稳定<br/>如遇不稳定，请稍后重试`;
+}
+
 let umiEnabled = {
   time: Date.now(),
 };
@@ -45,7 +57,10 @@ export async function ocr(
     // 未找到文字
     return { words_result: [] };
   } else if (res.code !== 100) {
-    showMessage("umi-ocr 失败<br/>" + res.data, 5_000, "error");
+    const errorMsg = isPublicServer(opt.umiApi)
+      ? getPublicServerError("OCR 识别失败")
+      : "umi-ocr 失败<br/>" + res.data;
+    showMessage(errorMsg, 5_000, "error");
     return;
   }
 
@@ -75,7 +90,10 @@ export async function umiOcrEnabled(umiApi: string) {
     })
       .then((r) => r.json())
       .catch((_e) => {
-        showMessage(`umi-ocr 似乎未启动，请启动`, 10_000, "error");
+        const errorMsg = isPublicServer(umiApi)
+          ? getPublicServerError("OCR 服务暂时不可用")
+          : `umi-ocr 似乎未启动，请启动`;
+        showMessage(errorMsg, 10_000, "error");
         throw new ocr_enabled_Error("umi-ocr 未启动");
       });
     umiEnabled.time = Date.now();
