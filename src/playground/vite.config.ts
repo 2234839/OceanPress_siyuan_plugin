@@ -23,10 +23,27 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['@jsquash/webp', '@jsquash/avif', '@jsquash/jpeg', '@jsquash/png', '@jsquash/jxl'],
+    exclude: [
+      '@jsquash/webp',
+      '@jsquash/avif',
+      '@jsquash/jpeg',
+      '@jsquash/png',
+      '@jsquash/jxl',
+    ],
   },
   build: {
     outDir: './dist',
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          // 将 jSquash 模块单独打包
+          if (id.includes('@jsquash')) {
+            return 'jsquash';
+          }
+        },
+      },
+    },
   },
+  assetsInclude: ['**/*.wasm'],
 });
