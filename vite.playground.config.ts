@@ -8,9 +8,9 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   plugins: [vue(), VueDevTools()],
-  root: __dirname,
+  root: resolve(__dirname, 'src/playground'),
   base: './',
-  publicDir: './public',
+  publicDir: resolve(__dirname, 'src/playground/public'),
   server: {
     port: 5173,
     open: true,
@@ -18,8 +18,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '~': resolve(__dirname, '../..'),
-      '@': resolve(__dirname, '..'),
+      '~': resolve(__dirname, 'src'),
+      '@': resolve(__dirname, 'src'),
     },
   },
   optimizeDeps: {
@@ -32,7 +32,7 @@ export default defineConfig({
     ],
   },
   build: {
-    outDir: './dist',
+    outDir: resolve(__dirname, 'src/playground/dist'),
     emptyOutDir: true,
     rollupOptions: {
       output: {

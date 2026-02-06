@@ -65,9 +65,41 @@
         </select>
       </div>
 
-      <button class="compress-btn" @click="compressImage" :disabled="compressing">
+      <!-- 普通压缩按钮 -->
+      <button class="compress-btn" @click="compressImage" :disabled="compressing || optimalCompressing">
         {{ compressing ? '压缩中...' : '🚀 开始压缩' }}
       </button>
+
+      <!-- 最优压缩按钮 -->
+      <div class="optimal-compress-section">
+        <div class="optimal-compress-input-wrapper">
+          <label>目标相似度:</label>
+          <div class="input-with-unit">
+            <input
+              v-model.number="targetSimilarity"
+              type="number"
+              min="80"
+              max="100"
+              step="0.1"
+              class="similarity-input"
+              :disabled="optimalCompressing"
+            />
+            <span class="unit">%</span>
+          </div>
+        </div>
+        <button
+          class="optimal-compress-btn"
+          @click="startOptimalCompression"
+          :disabled="optimalCompressing || compressing"
+        >
+          {{ optimalCompressing ? `优化中 (${optimalCompressionRound}/${maxOptimalRounds})` : '🎯 最优压缩' }}
+        </button>
+      </div>
+
+      <!-- 优化进度提示 -->
+      <div v-if="optimalCompressing && optimalCompressionLog" class="optimization-log">
+        {{ optimalCompressionLog }}
+      </div>
     </div>
 
     <!-- 结果展示 -->
@@ -113,29 +145,17 @@
 
 <script setup lang="ts">
 import { ref, computed, useTemplateRef } from 'vue';
-import * as avif from '@jsquash/avif';
-import * as jpeg from '@jsquash/jpeg';
-import * as webp from '@jsquash/webp';
-import ImageCompare from '../../components/ImageCompare.vue';
+import ImageCompare from '@/playground/components/ImageCompare.vue';
+import type { CompressionResult, AlgorithmId } from '@/playground/utils/compression';
+import { compressImage as compressImageUtil, findOptimalCompression } from '@/playground/utils/compression';
 
 /** 文件输入引用 */
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput');
-
-/** 压缩算法类型 */
-type AlgorithmId = 'browser-compression' | 'jsquash-webp' | 'jsquash-avif' | 'jsquash-jpeg';
 
 interface Algorithm {
   id: AlgorithmId;
   name: string;
   desc: string;
-}
-
-interface CompressionResult {
-  blob: Blob;
-  size: number;
-  preview: string;
-  compressionRatio: number;
-  time: number;
 }
 
 /** 原始图片文件 */
@@ -154,6 +174,16 @@ const outputFormat = ref<string>('original');
 const compressing = ref(false);
 /** 错误信息 */
 const error = ref<string>('');
+/** 目标相似度 (百分比) */
+const targetSimilarity = ref(99);
+/** 最优压缩中状态 */
+const optimalCompressing = ref(false);
+/** 最优压缩当前轮数 */
+const optimalCompressionRound = ref(0);
+/** 最大优化轮数 */
+const maxOptimalRounds = 10;
+/** 优化过程日志 */
+const optimalCompressionLog = ref('');
 
 /** 可用的压缩算法列表 */
 const algorithms: Algorithm[] = [
@@ -221,71 +251,6 @@ async function loadImage(file: File) {
 }
 
 /**
- * 使用 browser-image-compression 压缩
- */
-async function compressWithBrowserCompression(file: File, mimeType: string): Promise<Blob> {
-  const imageCompression = await import('browser-image-compression');
-  const options = {
-    maxSizeMB: Number.MAX_VALUE,
-    maxWidthOrHeight: undefined,
-    useWebWorker: true,
-    fileType: mimeType as any,
-    initialQuality: quality.value,
-  };
-  return await imageCompression.default(file, options);
-}
-
-/**
- * 使用 jSquash WebP 压缩
- */
-async function compressWithJSquashWebP(imageData: ImageData): Promise<Blob> {
-  const options = { quality: Math.round(quality.value * 100) };
-  const compressed = await webp.encode(imageData, options);
-  return new Blob([compressed], { type: 'image/webp' });
-}
-
-/**
- * 使用 jSquash AVIF 压缩
- */
-async function compressWithJSquashAVIF(imageData: ImageData): Promise<Blob> {
-  const options = { quality: Math.round(quality.value * 100) };
-  const compressed = await avif.encode(imageData, options);
-  return new Blob([compressed], { type: 'image/avif' });
-}
-
-/**
- * 使用 jSquash JPEG 压缩
- */
-async function compressWithJSquashJPEG(imageData: ImageData): Promise<Blob> {
-  const options = { quality: Math.round(quality.value * 100) };
-  const compressed = await jpeg.encode(imageData, options);
-  return new Blob([compressed], { type: 'image/jpeg' });
-}
-
-/**
- * 将 Blob 转换为 ImageData
- */
-async function blobToImageData(blob: Blob): Promise<ImageData> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('无法获取 Canvas 上下文'));
-        return;
-      }
-      ctx.drawImage(img, 0, 0);
-      resolve(ctx.getImageData(0, 0, canvas.width, canvas.height));
-    };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(blob);
-  });
-}
-
-/**
  * 压缩图片
  */
 async function compressImage() {
@@ -296,34 +261,19 @@ async function compressImage() {
 
   try {
     const startTime = performance.now();
-    let compressedBlob: Blob;
 
     // 确定输出 MIME 类型
     const outputMimeType =
       outputFormat.value === 'original' ? originalImage.value.type : outputFormat.value;
 
-    switch (selectedAlgorithm.value) {
-      case 'browser-compression':
-        compressedBlob = await compressWithBrowserCompression(originalImage.value, outputMimeType);
-        break;
-
-      case 'jsquash-webp':
-      case 'jsquash-avif':
-      case 'jsquash-jpeg': {
-        const imageData = await blobToImageData(originalImage.value);
-        if (selectedAlgorithm.value === 'jsquash-webp') {
-          compressedBlob = await compressWithJSquashWebP(imageData);
-        } else if (selectedAlgorithm.value === 'jsquash-avif') {
-          compressedBlob = await compressWithJSquashAVIF(imageData);
-        } else {
-          compressedBlob = await compressWithJSquashJPEG(imageData);
-        }
-        break;
+    const compressedBlob = await compressImageUtil(
+      originalImage.value,
+      selectedAlgorithm.value,
+      {
+        quality: quality.value,
+        mimeType: outputMimeType,
       }
-
-      default:
-        throw new Error('未知的压缩算法');
-    }
+    );
 
     const endTime = performance.now();
     const compressionTime = Math.round(endTime - startTime);
@@ -356,6 +306,59 @@ function downloadResult() {
   link.href = result.value.preview;
   link.download = `compressed-${Date.now()}.${result.value.blob.type.split('/')[1]}`;
   link.click();
+}
+
+/**
+ * 使用二分法进行最优压缩
+ */
+async function startOptimalCompression() {
+  if (!originalImage.value) return;
+
+  optimalCompressing.value = true;
+  optimalCompressionRound.value = 0;
+  error.value = '';
+  result.value = null;
+
+  try {
+    const outputMimeType =
+      outputFormat.value === 'original' ? originalImage.value.type : outputFormat.value;
+
+    const optimalResult = await findOptimalCompression(
+      originalImage.value,
+      selectedAlgorithm.value,
+      outputMimeType,
+      originalPreview.value,
+      targetSimilarity.value,
+      maxOptimalRounds,
+      (progress) => {
+        optimalCompressionLog.value = progress.log;
+      }
+    );
+
+    // 计算压缩比
+    const compressionRatio =
+      ((originalImage.value.size - optimalResult.blob.size) / originalImage.value.size) * 100;
+
+    result.value = {
+      blob: optimalResult.blob,
+      size: optimalResult.blob.size,
+      preview: URL.createObjectURL(optimalResult.blob),
+      compressionRatio,
+      time: 0,
+    };
+
+    optimalCompressionLog.value = `✓ 最优质量: ${optimalResult.quality.toFixed(
+      3
+    )} → 相似度 ${optimalResult.similarity.toFixed(2)}% → 文件大小 ${formatSize(optimalResult.blob.size)}`;
+
+    // 更新质量滑块为找到的最优质量
+    quality.value = optimalResult.quality;
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '最优压缩失败';
+    console.error('最优压缩错误:', err);
+  } finally {
+    optimalCompressing.value = false;
+  }
 }
 </script>
 
@@ -569,6 +572,109 @@ function downloadResult() {
   cursor: not-allowed;
 }
 
+.optimal-compress-section {
+  margin-top: 12px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+}
+
+.optimal-compress-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.optimal-compress-input-wrapper label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #555;
+  white-space: nowrap;
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+
+.similarity-input {
+  width: 100%;
+  padding: 8px 30px 8px 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.similarity-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.similarity-input:disabled {
+  background: #e9ecef;
+  cursor: not-allowed;
+}
+
+.unit {
+  position: absolute;
+  right: 10px;
+  color: #999;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.optimal-compress-btn {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.optimal-compress-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(56, 239, 125, 0.3);
+}
+
+.optimal-compress-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.optimization-log {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #e7f3ff;
+  border-left: 4px solid #2196f3;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #1976d2;
+  font-family: monospace;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .results-section {
   background: white;
   border-radius: 12px;
@@ -697,6 +803,31 @@ function downloadResult() {
 
   .algo-name {
     color: #e0e0e0;
+  }
+
+  .optimal-compress-section {
+    background: #3d3d3d;
+    border-color: #555;
+  }
+
+  .optimal-compress-input-wrapper label {
+    color: #bbb;
+  }
+
+  .similarity-input {
+    background: #4d4d4d;
+    color: #e0e0e0;
+    border-color: #555;
+  }
+
+  .similarity-input:disabled {
+    background: #3d3d3d;
+  }
+
+  .optimization-log {
+    background: #1a237e;
+    border-left-color: #64b5f6;
+    color: #90caf9;
   }
 }
 </style>

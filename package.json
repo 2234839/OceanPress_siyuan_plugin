@@ -9,7 +9,7 @@
   "license": "GPL-3.0",
   "scripts": {
     "dev": "vite",
-    "dev:playground": "vite --config src/playground/vite.config.ts",
+    "dev:playground": "vite --config vite.playground.config.ts",
     "dev:vite-plugin-siyuan": "cross-env plugin_name=vite-plugin-siyuan pnpm vite",
     "buildAll": "pnpm /build:.*/",
     "build:template": "cross-env plugin_name=template vite build",
