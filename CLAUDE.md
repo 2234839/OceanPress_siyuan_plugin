@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-这是一个思源笔记的多插件仓库，包含多个 TypeScript 插件，用于扩展思源笔记应用的功能。项目使用 Vite、Vue3、ts、tailwindcss v4技术
+这是一个思源笔记的多插件仓库，包含多个 TypeScript 插件，用于扩展思源笔记应用的功能。项目使用 Vite、Vue3、ts、tailwindcss v4，[reka-ui 无样式组件库](./reka-ui.llm.md) 能够使用组件库的就用组件库，不行的再基于reka或从零建立咱们自己的组件
 
 ## 开发命令
 
@@ -58,11 +58,11 @@ src/[plugin-name]/
 ## 类型检查
 
 项目使用严格的 TypeScript 配置
-运行 `pnpm tsc` 验证类型安全。
+每次完成后，运行 `pnpm tsc` 检查是一个好习惯
 
 ## 包管理器
 
-此项目使用 pnpm 作为包管理器
+pnpm
 
 ## 夜间主题
 

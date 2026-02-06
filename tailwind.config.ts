@@ -1,18 +1,15 @@
 /**
  * Tailwind CSS v4 配置
  * 参考: https://tailwindcss.com/docs/dark-mode#toggling-dark-mode-manually
+ *
+ * 注意：Tailwind CSS v4 使用 CSS-first 配置方式
+ * Vite 插件会自动扫描所有 .vue, .tsx, .jsx 文件提取类名
+ * 不再需要手动配置 content 选项
  */
 import type { Config } from 'tailwindcss';
 import plugin from 'tailwindcss/plugin';
 
 export default {
-  content: [
-    './index.html',
-    './src/playground/**/*.{vue,js,ts,jsx,tsx}',
-  ],
-  // 手动切换深色模式 - 通过 selector 方式
-  // 思源笔记使用 html[data-theme-mode="dark"] 来切换
-  darkMode: 'selector',
   theme: {
     extend: {
       fontSize: {

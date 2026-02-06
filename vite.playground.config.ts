@@ -1,14 +1,28 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import vueJsx from '@vitejs/plugin-vue-jsx';
 import VueDevTools from 'vite-plugin-vue-devtools';
 import tailwindcss from '@tailwindcss/vite';
+import Components from 'unplugin-vue-components/vite';
+import RekaResolver from 'reka-ui/resolver';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
-  plugins: [vue(), VueDevTools(), tailwindcss()],
+  plugins: [
+    vue(),
+    vueJsx(),
+    VueDevTools(),
+    tailwindcss(),
+    Components({
+      dts: true,
+      resolvers: [
+        RekaResolver(),
+      ],
+    }),
+  ],
   base: './',
   publicDir: resolve(__dirname, 'src/playground/public'),
   server: {

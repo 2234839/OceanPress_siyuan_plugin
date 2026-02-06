@@ -12,6 +12,13 @@
 @config '../../../tailwind.config.ts';
 
 /**
+ * 配置 Tailwind 扫描的源文件
+ * 包括 Vue 组件、TSX/JSX 文件和 HTML 文件
+ */
+@source '../../**/*.{vue,tsx,jsx}';
+@source '../../../index.html';
+
+/**
  * 配置深色模式使用思源笔记的 data-theme-mode 属性
  * 当 html[data-theme-mode="dark"] 时激活 dark: 前缀的样式
  */
