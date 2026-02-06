@@ -97,12 +97,11 @@
       <div class="mb-4">
         <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">输出格式</label>
         <select v-model="outputFormat" class="w-full px-2.5 py-2 text-sm border-2 border-gray-200 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
-          <option value="original">保持原格式</option>
-          <option value="image/webp">WebP</option>
-          <option value="image/avif">AVIF</option>
-          <option value="image/jpeg">JPEG</option>
-          <option value="image/png">PNG</option>
+          <option v-for="format in availableOutputFormats" :key="format.value" :value="format.value">
+            {{ format.label }}
+          </option>
         </select>
+        <MetricHint v-if="selectedAlgorithm !== 'browser-compression'" hint="当前算法仅支持特定输出格式" class="mt-1" />
       </div>
 
       <!-- 压缩按钮 -->
@@ -164,8 +163,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, useTemplateRef } from 'vue';
+import { ref, computed, useTemplateRef, watch, onUnmounted } from 'vue';
 import ImageCompare from '@/playground/components/ImageCompare.vue';
+import MetricHint from '@/playground/components/MetricHint.vue';
 import type { CompressionResult, AlgorithmId } from '@/playground/utils/compression';
 import { compressImage as compressImageUtil, findOptimalCompression } from '@/playground/utils/compression';
 
@@ -176,6 +176,11 @@ interface Algorithm {
   id: AlgorithmId;
   name: string;
   desc: string;
+}
+
+interface OutputFormat {
+  value: string;
+  label: string;
 }
 
 /** 原始图片文件 */
@@ -214,6 +219,48 @@ const algorithms: Algorithm[] = [
   { id: 'jsquash-avif', name: 'jSquash AVIF', desc: '下一代格式' },
   { id: 'jsquash-jpeg', name: 'jSquash JPEG', desc: 'MozJPEG 编码器' },
 ];
+
+/** 所有可用的输出格式 */
+const allOutputFormats: OutputFormat[] = [
+  { value: 'original', label: '保持原格式' },
+  { value: 'image/webp', label: 'WebP' },
+  { value: 'image/avif', label: 'AVIF' },
+  { value: 'image/jpeg', label: 'JPEG' },
+  { value: 'image/png', label: 'PNG' },
+];
+
+/** 根据当前算法获取可用的输出格式 */
+const availableOutputFormats = computed(() => {
+  switch (selectedAlgorithm.value) {
+    case 'jsquash-webp':
+      return [{ value: 'image/webp', label: 'WebP' }];
+    case 'jsquash-avif':
+      return [{ value: 'image/avif', label: 'AVIF' }];
+    case 'jsquash-jpeg':
+      return [{ value: 'image/jpeg', label: 'JPEG' }];
+    case 'browser-compression':
+    default:
+      return allOutputFormats;
+  }
+});
+
+/** 监听算法变化，自动调整输出格式 */
+const { stop } = watch(selectedAlgorithm, () => {
+  // 检查当前输出格式是否可用
+  const isCurrentFormatAvailable = availableOutputFormats.value.some(
+    format => format.value === outputFormat.value
+  );
+
+  // 如果当前格式不可用，切换到第一个可用格式
+  if (!isCurrentFormatAvailable && availableOutputFormats.value.length > 0) {
+    outputFormat.value = availableOutputFormats.value[0].value;
+  }
+});
+
+/** 组件卸载时停止监听 */
+onUnmounted(() => {
+  stop();
+});
 
 /** 质量提示文字 */
 const qualityHint = computed(() => {
