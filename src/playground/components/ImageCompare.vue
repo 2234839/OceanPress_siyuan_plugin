@@ -43,13 +43,17 @@
 
       <!-- 分隔线 -->
       <div
+        ref="handleRef"
         class="absolute top-0 bottom-0 w-0.5 bg-white cursor-ew-resize -translate-x-1/2 z-10 shadow-[0_0_10px_rgba(0,0,0,0.3)]"
         :style="{ left: `${position}%` }"
         @mousedown="handleDragStart"
         @touchstart.prevent="handleDragStart"
       >
         <div class="w-full h-full bg-white"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+        <div
+          class="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+          :style="{ top: handleButtonTop }"
+        >
           <svg class="w-6 h-6 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M18 8L22 12L18 16" stroke-width="2" />
             <path d="M6 8L2 12L6 16" stroke-width="2" />
@@ -58,14 +62,15 @@
       </div>
 
       <!-- 标签 -->
-      <div class="absolute bottom-3 px-3 py-1.5 text-sm font-semibold text-white bg-black/70 rounded-md pointer-events-none transition-opacity duration-200" :style="{ left: '12px', opacity: position > 15 ? 1 : 0 }">原图</div>
-      <div class="absolute bottom-3 px-3 py-1.5 text-sm font-semibold text-white bg-black/70 rounded-md pointer-events-none transition-opacity duration-200" :style="{ right: '12px', opacity: position < 85 ? 1 : 0 }">压缩后</div>
+      <div class="absolute px-3 py-1.5 text-sm font-semibold text-white bg-black/70 rounded-md pointer-events-none transition-opacity duration-200 whitespace-nowrap" :style="{ left: '12px', top: handleButtonTop, opacity: isDragging && position > 15 ? 1 : 0, transform: 'translateY(-50%)' }">原图</div>
+      <div class="absolute px-3 py-1.5 text-sm font-semibold text-white bg-black/70 rounded-md pointer-events-none transition-opacity duration-200 whitespace-nowrap" :style="{ right: '12px', top: handleButtonTop, opacity: isDragging && position < 85 ? 1 : 0, transform: 'translateY(-50%)' }">压缩后</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { useWindowScroll, useThrottleFn } from '@vueuse/core';
 import { calculateSimilarity } from '../utils/imageSimilarity';
 import MetricHint from './MetricHint.vue';
 
@@ -99,8 +104,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 /** 容器引用 */
 const containerRef = ref<HTMLElement | null>(null);
+/** 分隔线引用 */
+const handleRef = ref<HTMLElement | null>(null);
 /** 当前分隔线位置（百分比） */
 const position = ref(props.initialPosition);
+/** 按钮在分隔线上的位置（百分比） */
+const handleButtonTop = ref('50%');
 /** 是否正在拖动 */
 const isDragging = ref(false);
 /** 相似度计算结果 */
@@ -196,8 +205,46 @@ function handleResize() {
   position.value = Math.max(0, Math.min(100, position.value));
 }
 
+/**
+ * 更新按钮位置到可见区域中心
+ */
+function updateHandleButtonPosition() {
+  if (!containerRef.value) return;
+
+  const rect = containerRef.value.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+
+  // 计算组件在视口中的可见区域
+  const visibleTop = Math.max(0, -rect.top);
+  const visibleBottom = Math.min(rect.height, viewportHeight - rect.top);
+  const visibleHeight = visibleBottom - visibleTop;
+
+  // 如果组件完全不在视口中，不更新
+  if (visibleHeight <= 0) return;
+
+  // 计算可见区域的中心位置（相对于组件顶部）
+  const visibleCenter = visibleTop + visibleHeight / 2;
+
+  // 转换为百分比
+  const percentage = (visibleCenter / rect.height) * 100;
+  handleButtonTop.value = `${Math.max(0, Math.min(100, percentage))}%`;
+}
+
 // 监听窗口大小变化
 window.addEventListener('resize', handleResize);
+
+// 使用 useWindowScroll 监听滚动，自动管理事件监听器
+const { y: scrollY } = useWindowScroll();
+
+// 监听滚动位置变化，使用节流优化
+watch(scrollY, useThrottleFn(() => {
+  updateHandleButtonPosition();
+}, 6));
+
+// 组件挂载后立即计算一次
+onMounted(() => {
+  updateHandleButtonPosition();
+});
 </script>
 
 <style scoped>
