@@ -29,9 +29,9 @@
       </div>
     </div>
 
-    <div class="image-wrapper" :style="{ height: containerHeight }">
+    <div class="image-wrapper">
       <!-- 底层图片（压缩后） -->
-      <img :src="after" alt="After" class="image-after" @load="handleImageLoad" />
+      <img :src="after" alt="After" class="image-after" />
 
       <!-- 顶层图片（原图）- 使用 clip-path 裁剪 -->
       <img
@@ -101,8 +101,6 @@ const props = withDefaults(defineProps<Props>(), {
 const containerRef = ref<HTMLElement | null>(null);
 /** 当前分隔线位置（百分比） */
 const position = ref(props.initialPosition);
-/** 容器高度 */
-const containerHeight = ref<string>('auto');
 /** 是否正在拖动 */
 const isDragging = ref(false);
 /** 相似度计算结果 */
@@ -139,18 +137,6 @@ watch(
   },
   { immediate: true }
 );
-
-/**
- * 图片加载完成后的处理
- */
-function handleImageLoad() {
-  if (containerRef.value) {
-    const img = containerRef.value.querySelector('.image-after') as HTMLImageElement;
-    if (img) {
-      containerHeight.value = `${img.height}px`;
-    }
-  }
-}
 
 /**
  * 开始拖动
@@ -289,7 +275,7 @@ window.addEventListener('resize', handleResize);
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 4px;
+  width: 2px;
   background: white;
   cursor: ew-resize;
   transform: translateX(-50%);
