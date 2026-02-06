@@ -584,7 +584,7 @@
     if (compressing.value) {
       return '压缩中...';
     }
-    return enableAutoBinary.value ? '🎯 开始自动二分逼近压缩' : '🚀 开始压缩';
+    return enableAutoBinary.value ? '🎯 开始智能压缩' : '🚀 开始压缩';
   }
 
   /**
