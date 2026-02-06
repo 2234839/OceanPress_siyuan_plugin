@@ -1,13 +1,45 @@
 name: Create Release on Tag Push
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'plugin.json'
+      - 'src/*/plugin.json'
+      - '.github/workflows/releaseAll.yml'
 
 permissions:
   contents: write
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.check_loop.outputs.should_skip }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for loop
+        id: check_loop
+        run: |
+          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "Last commit message: $LAST_COMMIT_MSG"
+
+          if [[ "$LAST_COMMIT_MSG" == *"Update dist to GitHub"* ]]; then
+            echo "This is a workflow-generated commit, skipping..."
+            echo "should_skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "This is a manual commit, proceeding..."
+            echo "should_skip=false" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: check
+    if: needs.check.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     env:
       CI: true
