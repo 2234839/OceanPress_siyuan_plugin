@@ -21,8 +21,8 @@ export interface CompressionResult {
   preview: string;
   /** 压缩比 */
   compressionRatio: number;
-  /** 压缩耗时(ms) */
-  time: number;
+  /** 每轮压缩耗时(ms)，普通压缩时为 [单次时间]，二分逼近压缩时为 [轮1时间, 轮2时间, ...] */
+  roundTimes: number[];
 }
 
 /** 压缩选项 */
@@ -41,8 +41,8 @@ export interface OptimalCompressionResult {
   similarity: number;
   /** 压缩后的 Blob */
   blob: Blob;
-  /** 压缩轮数 */
-  rounds: number;
+  /** 每轮压缩耗时(ms) */
+  roundTimes: number[];
 }
 
 /**
@@ -204,9 +204,11 @@ export async function findOptimalCompression(
   let low = 0.1;
   let high = 1.0;
   let bestResult: OptimalCompressionResult | null = null;
+  const roundTimes: number[] = [];
 
   // 二分法搜索最优压缩质量
   for (let round = 1; round <= maxRounds; round++) {
+    const roundStart = performance.now();
     const mid = (low + high) / 2;
 
     const { blob, similarity } = await compressWithSimilarity(
@@ -216,6 +218,9 @@ export async function findOptimalCompression(
       mimeType,
       originalPreview
     );
+
+    const roundEnd = performance.now();
+    roundTimes.push(Math.round(roundEnd - roundStart));
 
     if (similarity === null) {
       throw new Error('无法计算相似度');
@@ -233,7 +238,7 @@ export async function findOptimalCompression(
 
     // 如果达到目标相似度，记录这个结果并尝试更低的压缩质量
     if (similarity >= targetSimilarity) {
-      bestResult = { quality: mid, similarity, blob, rounds: round };
+      bestResult = { quality: mid, similarity, blob, roundTimes: [...roundTimes] };
       high = mid; // 尝试更低的压缩质量
     } else {
       low = mid; // 相似度不够，需要提高压缩质量

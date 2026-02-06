@@ -65,34 +65,36 @@
         </select>
       </div>
 
-      <!-- 普通压缩按钮 -->
-      <button class="compress-btn" @click="compressImage" :disabled="compressing || optimalCompressing">
-        {{ compressing ? '压缩中...' : '🚀 开始压缩' }}
-      </button>
+      <!-- 压缩按钮组 -->
+      <div class="compress-buttons-group">
+        <button class="compress-btn" @click="compressImage" :disabled="compressing || optimalCompressing">
+          {{ compressing ? '压缩中...' : '🚀 开始压缩' }}
+        </button>
 
-      <!-- 最优压缩按钮 -->
-      <div class="optimal-compress-section">
-        <div class="optimal-compress-input-wrapper">
-          <label>目标相似度:</label>
-          <div class="input-with-unit">
-            <input
-              v-model.number="targetSimilarity"
-              type="number"
-              min="80"
-              max="100"
-              step="0.1"
-              class="similarity-input"
-              :disabled="optimalCompressing"
-            />
-            <span class="unit">%</span>
-          </div>
-        </div>
         <button
           class="optimal-compress-btn"
           @click="startOptimalCompression"
           :disabled="optimalCompressing || compressing"
         >
-          {{ optimalCompressing ? `优化中 (${optimalCompressionRound}/${maxOptimalRounds})` : '🎯 最优压缩' }}
+          <span class="btn-content">
+            <span class="btn-text">
+              {{ optimalCompressing ? `优化中 (${optimalCompressionRound}/${maxOptimalRounds})` : '二分逼近相似度压缩' }}
+            </span>
+            <span class="btn-input-wrapper">
+              <span class="input-label">目标:</span>
+              <input
+                v-model.number="targetSimilarity"
+                type="number"
+                min="80"
+                max="100"
+                step="0.1"
+                class="btn-input"
+                :disabled="optimalCompressing"
+                @click.stop
+              />
+              <span class="unit">%</span>
+            </span>
+          </span>
         </button>
       </div>
 
@@ -120,8 +122,10 @@
           <div class="stat-value">{{ result.compressionRatio.toFixed(1) }}%</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">压缩时间</div>
-          <div class="stat-value">{{ result.time }}ms</div>
+          <div class="stat-label">
+            压缩时间 ({{ totalRounds }}轮)
+          </div>
+          <div class="stat-value">{{ totalTime }}ms</div>
         </div>
       </div>
 
@@ -200,6 +204,18 @@ const qualityHint = computed(() => {
   if (quality.value >= 0.5) return '中等质量';
   if (quality.value >= 0.3) return '低质量';
   return '最低质量';
+});
+
+/** 计算压缩总时间(ms) */
+const totalTime = computed(() => {
+  if (!result.value) return 0;
+  return result.value.roundTimes.reduce((sum: number, time: number) => sum + time, 0);
+});
+
+/** 计算压缩轮数 */
+const totalRounds = computed(() => {
+  if (!result.value) return 0;
+  return result.value.roundTimes.length;
 });
 
 /**
@@ -286,7 +302,7 @@ async function compressImage() {
       size: compressedBlob.size,
       preview: URL.createObjectURL(compressedBlob),
       compressionRatio,
-      time: compressionTime,
+      roundTimes: [compressionTime],
     };
   } catch (err) {
     error.value = err instanceof Error ? err.message : '压缩失败';
@@ -332,6 +348,7 @@ async function startOptimalCompression() {
       maxOptimalRounds,
       (progress) => {
         optimalCompressionLog.value = progress.log;
+        optimalCompressionRound.value = progress.round;
       }
     );
 
@@ -344,7 +361,7 @@ async function startOptimalCompression() {
       size: optimalResult.blob.size,
       preview: URL.createObjectURL(optimalResult.blob),
       compressionRatio,
-      time: 0,
+      roundTimes: optimalResult.roundTimes,
     };
 
     optimalCompressionLog.value = `✓ 最优质量: ${optimalResult.quality.toFixed(
@@ -547,10 +564,17 @@ async function startOptimalCompression() {
   background: white;
 }
 
-.compress-btn,
-.download-btn {
-  width: 100%;
-  padding: 10px;
+/* 压缩按钮组 */
+.compress-buttons-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.compress-btn {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 16px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
@@ -559,10 +583,10 @@ async function startOptimalCompression() {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
-.compress-btn:hover:not(:disabled),
-.download-btn:hover {
+.compress-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
@@ -572,66 +596,11 @@ async function startOptimalCompression() {
   cursor: not-allowed;
 }
 
-.optimal-compress-section {
-  margin-top: 12px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-}
-
-.optimal-compress-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.optimal-compress-input-wrapper label {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #555;
-  white-space: nowrap;
-}
-
-.input-with-unit {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  position: relative;
-}
-
-.similarity-input {
-  width: 100%;
-  padding: 8px 30px 8px 10px;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  background: white;
-  transition: border-color 0.2s;
-}
-
-.similarity-input:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.similarity-input:disabled {
-  background: #e9ecef;
-  cursor: not-allowed;
-}
-
-.unit {
-  position: absolute;
-  right: 10px;
-  color: #999;
-  font-weight: 600;
-  font-size: 0.85rem;
-}
-
+/* 二分逼近压缩按钮 */
 .optimal-compress-btn {
-  width: 100%;
-  padding: 10px;
+  flex: 1;
+  min-width: 280px;
+  padding: 10px 16px;
   background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
   color: white;
   border: none;
@@ -650,6 +619,93 @@ async function startOptimalCompression() {
 .optimal-compress-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btn-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-text {
+  white-space: nowrap;
+}
+
+.btn-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.input-label {
+  font-size: 0.8rem;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+.btn-input {
+  width: 70px;
+  padding: 4px 24px 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s;
+  /* 移除数字输入框的上下箭头 */
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* 移除 Webkit 浏览器的数字输入框箭头 */
+.btn-input::-webkit-outer-spin-button,
+.btn-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.btn-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.btn-input:disabled {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.2);
+  cursor: not-allowed;
+}
+
+.btn-input-wrapper .unit {
+  position: absolute;
+  right: 6px;
+  font-size: 0.75rem;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+/* 下载按钮 */
+.download-btn {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.download-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .optimization-log {
@@ -805,23 +861,19 @@ async function startOptimalCompression() {
     color: #e0e0e0;
   }
 
-  .optimal-compress-section {
-    background: #3d3d3d;
-    border-color: #555;
+  .btn-input {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
   }
 
-  .optimal-compress-input-wrapper label {
-    color: #bbb;
+  .btn-input:focus {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
   }
 
-  .similarity-input {
-    background: #4d4d4d;
-    color: #e0e0e0;
-    border-color: #555;
-  }
-
-  .similarity-input:disabled {
-    background: #3d3d3d;
+  .btn-input:disabled {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.15);
   }
 
   .optimization-log {
