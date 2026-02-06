@@ -36,6 +36,7 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
+        format: 'es',
         manualChunks: (id) => {
           // 将 jSquash 模块单独打包
           if (id.includes('@jsquash')) {
@@ -44,6 +45,9 @@ export default defineConfig({
         },
       },
     },
+  },
+  worker: {
+    format: 'es',
   },
   assetsInclude: ['**/*.wasm'],
 });
