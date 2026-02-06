@@ -39,7 +39,7 @@ jobs:
       - name: Install dependencies and build
         run: |
           pnpm install --frozen-lockfile
-          pnpm vite build --config src/playground/vite.config.ts
+          pnpm vite build --config vite.playground.config.ts
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
