@@ -1,7 +1,5 @@
 import { siyuan } from "@llej/js_util";
-import { createSignal, createMemo, onMount, onCleanup } from "solid-js";
-import { createStore } from "solid-js/store";
-import { effect } from "solid-js/web";
+import { ref, reactive, computed, watchEffect } from "vue";
 import { SiyuanPlugin } from "~/libs/siyuanPlugin";
 // 引入这个变量后 vite 会自动注入 hot
 import.meta.hot;
@@ -13,95 +11,95 @@ export default class VitePlugin extends SiyuanPlugin {
     that: this,
     storageName: "callJS.json",
   });
-  onload(): void {
-    const [gamepads, setGamepads] = createStore<{ [key: number]: Gamepad }>({});
-    /** axes[0] 对应左摇杆左右 1 对应左摇杆上下， 2 3 对应右摇杆左右 上下 */
-    const [axes, setAxes] = createSignal<number[]>([]);
-    /** 我的手柄只能读取到 value 的值 */
-    const [buttons, setButtons] = createSignal<
-      { value: number; pressed: boolean; touched: boolean }[]
-    >([]);
-    /** 映射手柄按钮 */
-    const useGamepadButtonMap = () => {
-      const useButtonMap = (index: number) =>
-        createMemo((): number | undefined => {
-          return buttons()[index]?.value;
-        });
-      const useAxesMap = (index: number) =>
-        createMemo((): number | undefined => {
-          return axes()[index];
-        });
-      return {
-        /** 摇杆四个轴，取值范围是-1 到 1 */
-        rocker_left_x: useAxesMap(0),
-        rocker_left_y: useAxesMap(1),
-        rocker_right_x: useAxesMap(2),
-        rocker_right_y: useAxesMap(3),
-        /** 右侧a b x y */
-        btn_a: useButtonMap(0),
-        btn_b: useButtonMap(1),
-        btn_x: useButtonMap(2),
-        btn_y: useButtonMap(3),
-        /** 肩键 */
-        shoulder_left: useButtonMap(4),
-        shoulder_right: useButtonMap(5),
-        /** 线性扳机 */
-        trigger_left: useButtonMap(6),
-        trigger_right: useButtonMap(7),
-        /** 功能键 */
-        btn_select: useButtonMap(8),
-        btn_start: useButtonMap(9),
-        /** 摇杆下按，两个快捷键也是这个 */
-        btn_rocker_left: useButtonMap(10),
-        btn_rocker_right: useButtonMap(11),
-        /** 左侧上下左右 */
-        btn_top: useButtonMap(12),
-        btn_bottom: useButtonMap(13),
-        btn_left: useButtonMap(14),
-        btn_right: useButtonMap(15),
-      };
+
+  // 使用 Vue3 响应式系统
+  private gamepads = reactive<{ [key: number]: Gamepad }>({});
+  private axes = ref<number[]>([]);
+  private buttons = ref<{ value: number; pressed: boolean; touched: boolean }[]>([]);
+
+  /** 映射手柄按钮 */
+  private useGamepadButtonMap() {
+    const useButtonMap = (index: number) =>
+      computed((): number | undefined => {
+        return this.buttons.value[index]?.value;
+      });
+    const useAxesMap = (index: number) =>
+      computed((): number | undefined => {
+        return this.axes.value[index];
+      });
+    return {
+      /** 摇杆四个轴，取值范围是-1 到 1 */
+      rocker_left_x: useAxesMap(0),
+      rocker_left_y: useAxesMap(1),
+      rocker_right_x: useAxesMap(2),
+      rocker_right_y: useAxesMap(3),
+      /** 右侧a b x y */
+      btn_a: useButtonMap(0),
+      btn_b: useButtonMap(1),
+      btn_x: useButtonMap(2),
+      btn_y: useButtonMap(3),
+      /** 肩键 */
+      shoulder_left: useButtonMap(4),
+      shoulder_right: useButtonMap(5),
+      /** 线性扳机 */
+      trigger_left: useButtonMap(6),
+      trigger_right: useButtonMap(7),
+      /** 功能键 */
+      btn_select: useButtonMap(8),
+      btn_start: useButtonMap(9),
+      /** 摇杆下按，两个快捷键也是这个 */
+      btn_rocker_left: useButtonMap(10),
+      btn_rocker_right: useButtonMap(11),
+      /** 左侧上下左右 */
+      btn_top: useButtonMap(12),
+      btn_bottom: useButtonMap(13),
+      btn_left: useButtonMap(14),
+      btn_right: useButtonMap(15),
     };
-    const gameBtn = useGamepadButtonMap();
-    function checkGamepad() {
-      const gamepad = Object.values(gamepads)[0];
-      if (!gamepad) {
-        requestAnimationFrame(checkGamepad);
-        return;
-      }
-      setAxes([...gamepad.axes]);
-      setButtons([...gamepad.buttons]);
-      requestAnimationFrame(checkGamepad);
+  }
+
+  private gameBtn = this.useGamepadButtonMap();
+
+  private checkGamepad() {
+    const gamepad = Object.values(this.gamepads)[0];
+    if (!gamepad) {
+      requestAnimationFrame(() => this.checkGamepad());
+      return;
     }
-    requestAnimationFrame(checkGamepad);
+    this.axes.value = [...gamepad.axes];
+    this.buttons.value = [...gamepad.buttons];
+    requestAnimationFrame(() => this.checkGamepad());
+  }
+
+  onload(): void {
+    requestAnimationFrame(() => this.checkGamepad());
 
     // 管理手柄链接
-    onMount(() => {
-      const onGamepadConnected = (event: GamepadEvent) => {
-        setGamepads(event.gamepad.index, event.gamepad);
-      };
-      const onGamepadDisconnected = (event: GamepadEvent) => {
-        const newGamepads = { ...gamepads };
-        delete newGamepads[event.gamepad.index];
-        setGamepads(newGamepads);
-      };
-      const id = setInterval(() => {
-        navigator.getGamepads().forEach((gamepad) => {
-          if (!gamepad) return;
-          setGamepads(gamepad.index, gamepad);
-        });
-      }, 1000);
-
-      window.addEventListener("gamepadconnected", onGamepadConnected);
-      window.addEventListener("gamepaddisconnected", onGamepadDisconnected);
-      onCleanup(() => {
-        clearInterval(id);
-        window.removeEventListener("gamepadconnected", onGamepadConnected);
-        window.removeEventListener("gamepaddisconnected", onGamepadDisconnected);
+    const onGamepadConnected = (event: GamepadEvent) => {
+      this.gamepads[event.gamepad.index] = event.gamepad;
+    };
+    const onGamepadDisconnected = (event: GamepadEvent) => {
+      delete this.gamepads[event.gamepad.index];
+    };
+    const id = setInterval(() => {
+      navigator.getGamepads().forEach((gamepad) => {
+        if (!gamepad) return;
+        this.gamepads[gamepad.index] = gamepad;
       });
+    }, 1000);
+
+    window.addEventListener("gamepadconnected", onGamepadConnected);
+    window.addEventListener("gamepaddisconnected", onGamepadDisconnected);
+
+    this.addUnloadFn(() => {
+      clearInterval(id);
+      window.removeEventListener("gamepadconnected", onGamepadConnected);
+      window.removeEventListener("gamepaddisconnected", onGamepadDisconnected);
     });
 
-    effect(() => {
-      console.log("[gameBtn.btn_left()]", gameBtn.btn_left());
+    // 使用 watchEffect 替代 SolidJS 的 effect
+    const stopEffect = watchEffect(() => {
+      console.log("[gameBtn.btn_left()]", this.gameBtn.btn_left.value);
       const key = "ArrowUp";
       // 创建键盘事件对象
       const event1 = new KeyboardEvent("keypress", {
@@ -125,5 +123,7 @@ export default class VitePlugin extends SiyuanPlugin {
 
       // 触发事件在光标位置
     });
+
+    this.addUnloadFn(stopEffect);
   }
 }

@@ -1,7 +1,6 @@
 import { resolve } from 'path';
 import { defineConfig, type UserConfigExport, loadEnv } from 'vite';
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
-import solidPlugin from 'vite-plugin-solid';
 import { writeFile, copyFile } from 'fs/promises';
 import { execSync } from 'child_process';
 import vue from '@vitejs/plugin-vue';
@@ -80,12 +79,6 @@ const viteConfig: UserConfigExport = (ctx) => {
     plugins: [
       cssInjectedByJsPlugin(),
       vue(),
-      solidPlugin({
-        solid: {
-          // 禁止事件委派，不禁用的话 需要 on:click 的形式才能阻止事件冒泡，但 typescript 类型不友好会报错
-          delegateEvents: false,
-        },
-      }),
       // siyuan lib 实际上是空的，在运行时才能够通过 require 进行加载，
       // 而 vite 使用 import 会无法加载到改包，这里做一个 hack 给改成 require
       // 这样配合 vite-plugin-siyuan 就可以在开发的时候直接引用了

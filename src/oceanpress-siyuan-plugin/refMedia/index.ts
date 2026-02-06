@@ -1,5 +1,5 @@
-import { render } from "solid-js/web";
-import { videoControls } from "./controls";
+import { createApp } from 'vue';
+import VideoControls from './controls.vue';
 
 /**
  * 媒体引用组件,可以引用音视频片段，视频图片的区域
@@ -44,13 +44,20 @@ setInterval(() => {
     iframeContent.appendChild(controlsEL);
     const props = JSON.parse(embedBlock.getAttribute("custom-sy2video") ?? "{}");
     video.controls = false;
-    const dispose = render(() => videoControls({ video, props }) as any, controlsEL);
+
+    // 使用 Vue3 渲染
+    const app = createApp(VideoControls, {
+      video,
+      propsData: props,
+    });
+    app.mount(controlsEL);
+
     video.addEventListener("", () => {
       controlsEL.style.display = "block";
     });
     refMedia.addUnLoadFn(() => {
       controlsEL.remove();
-      dispose();
+      app.unmount();
       video.controls = true;
     });
   });

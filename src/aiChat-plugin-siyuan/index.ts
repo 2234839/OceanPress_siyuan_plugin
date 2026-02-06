@@ -29,7 +29,7 @@ export default class VitePlugin extends SiyuanPlugin {
 
     const id = setInterval(() => {
       document.querySelectorAll<HTMLElement>(`[custom-ai-chat]`).forEach((el) => {
-        this.addVueUiComponent(el, chatAIView, { plugin: this });
+        this.addVueUi(el, chatAIView, { plugin: this });
       });
     }, 500);
     await this.loadConfig(); // Load the config when the plugin loads
