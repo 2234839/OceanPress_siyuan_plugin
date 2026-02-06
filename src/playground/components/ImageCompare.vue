@@ -1,5 +1,43 @@
 <template>
   <div class="image-compare" ref="containerRef">
+    <!-- 相似度指标显示 -->
+    <div v-if="similarityResult" class="similarity-info">
+      <div class="similarity-metrics">
+        <div class="metric">
+          <div class="metric-label">
+            相似度
+            <MetricHint :hint="metricHints.ssim" />
+          </div>
+          <span class="metric-value" :class="`quality-${qualityRating}`">
+            {{ (similarityResult.ssim * 100).toFixed(2) }}%
+          </span>
+        </div>
+        <div class="metric">
+          <div class="metric-label">
+            质量等级
+            <MetricHint :hint="metricHints.quality" />
+          </div>
+          <span class="metric-value" :class="`quality-${qualityRating}`">
+            {{ qualityLabel }}
+          </span>
+        </div>
+        <div class="metric">
+          <div class="metric-label">
+            PSNR
+            <MetricHint :hint="metricHints.psnr" />
+          </div>
+          <span class="metric-value">{{ similarityResult.psnr.toFixed(2) }} dB</span>
+        </div>
+        <div class="metric">
+          <div class="metric-label">
+            MSE
+            <MetricHint :hint="metricHints.mse" />
+          </div>
+          <span class="metric-value">{{ similarityResult.mse.toFixed(2) }}</span>
+        </div>
+      </div>
+    </div>
+
     <div class="image-wrapper" :style="{ height: containerHeight }">
       <!-- 底层图片（压缩后） -->
       <img :src="after" alt="After" class="image-after" @load="handleImageLoad" />
@@ -36,7 +74,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onUnmounted } from 'vue';
+import { calculateSimilarity, getQualityRating, getQualityLabel } from '../utils/imageSimilarity';
+import MetricHint from './MetricHint.vue';
+
+/** 相似度计算结果 */
+interface SimilarityResult {
+  ssim: number;
+  psnr: number;
+  mse: number;
+}
+
+/** 指标说明文本 */
+const metricHints = {
+  ssim: 'SSIM (结构相似性指数) 是衡量两张图片相似度的指标，范围 0-1。该指标考虑了亮度、对比度和结构信息，更符合人眼对图片质量的感知。值越接近 1 表示两张图片越相似。',
+  quality: '质量等级基于 SSIM 值评定：≥ 95% 为优秀，≥ 85% 为良好，≥ 70% 为一般，< 70% 为较差。此等级可以帮助你快速判断压缩效果是否可接受。',
+  psnr: 'PSNR (峰值信噪比) 是传统的图片质量评估指标，单位为 dB。通常值在 20-40 之间，值越大表示失真越小。PSNR ≥ 30dB 通常认为质量可接受。',
+  mse: 'MSE (均方误差) 计算两张图片像素值差异的平方平均值。值越小表示差异越小，0 表示完全相同。MSE 是最基础的误差计算方法，但不一定符合人眼感知。',
+};
 
 /** 组件属性 */
 interface Props {
@@ -60,6 +115,51 @@ const position = ref(props.initialPosition);
 const containerHeight = ref<string>('auto');
 /** 是否正在拖动 */
 const isDragging = ref(false);
+/** 相似度计算结果 */
+const similarityResult = ref<SimilarityResult | null>(null);
+/** 是否正在计算相似度 */
+const isCalculating = ref(false);
+
+/** 质量等级 */
+const qualityRating = computed(() => {
+  if (!similarityResult.value) return 'poor';
+  return getQualityRating(similarityResult.value);
+});
+
+/** 质量等级标签 */
+const qualityLabel = computed(() => {
+  return getQualityLabel(qualityRating.value);
+});
+
+/**
+ * 计算图片相似度
+ */
+async function calculateImageSimilarity() {
+  if (!props.before || !props.after || isCalculating.value) return;
+
+  isCalculating.value = true;
+
+  try {
+    const result = await calculateSimilarity(props.before, props.after);
+    similarityResult.value = result;
+  } catch (error) {
+    console.error('计算相似度失败:', error);
+    similarityResult.value = null;
+  } finally {
+    isCalculating.value = false;
+  }
+}
+
+/** 监听图片 URL 变化，重新计算相似度 */
+watch(
+  () => [props.before, props.after],
+  () => {
+    if (props.before && props.after) {
+      calculateImageSimilarity();
+    }
+  },
+  { immediate: true }
+);
 
 /**
  * 图片加载完成后的处理
@@ -119,13 +219,82 @@ onUnmounted(() => {
   document.removeEventListener('mouseup', handleDragEnd);
   document.removeEventListener('touchmove', handleDragMove);
   document.removeEventListener('touchend', handleDragEnd);
+  window.removeEventListener('resize', handleResize);
 });
+
+/**
+ * 窗口大小改变时的处理
+ */
+function handleResize() {
+  // 确保分隔线位置在合理范围内
+  // 位置已经是百分比，会自动适应容器宽度
+  position.value = Math.max(0, Math.min(100, position.value));
+}
+
+// 监听窗口大小变化
+window.addEventListener('resize', handleResize);
 </script>
 
 <style scoped>
 .image-compare {
   width: 100%;
   margin: 16px 0;
+}
+
+.similarity-info {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+  overflow: visible;
+  position: relative;
+  z-index: 100;
+}
+
+.similarity-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  position: relative;
+}
+
+.metric {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.metric-label {
+  font-size: 11px;
+  opacity: 0.85;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.metric-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+}
+
+.metric-value.quality-excellent {
+  color: #4ade80;
+}
+
+.metric-value.quality-good {
+  color: #fbbf24;
+}
+
+.metric-value.quality-fair {
+  color: #fb923c;
+}
+
+.metric-value.quality-poor {
+  color: #f87171;
 }
 
 .image-wrapper {
@@ -214,6 +383,11 @@ onUnmounted(() => {
 }
 
 @media (prefers-color-scheme: dark) {
+  .similarity-info {
+    background: linear-gradient(135deg, #4c51bf 0%, #553c9a 100%);
+    box-shadow: 0 4px 12px rgba(76, 81, 191, 0.4);
+  }
+
   .divider {
     background: #667eea;
   }
@@ -229,6 +403,21 @@ onUnmounted(() => {
   .label {
     background: rgba(255, 255, 255, 0.9);
     color: #333;
+  }
+}
+
+@media (max-width: 640px) {
+  .similarity-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .metric-label {
+    font-size: 10px;
+  }
+
+  .metric-value {
+    font-size: 14px;
   }
 }
 </style>
