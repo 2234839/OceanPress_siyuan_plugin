@@ -56,10 +56,10 @@
           <div v-for="algo in algorithms" :key="algo.id" class="relative h-full">
             <RadioGroupItem
               :value="algo.id"
-              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-0" />
+              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
             <div
               :class="[
-                'relative z-10 h-full px-2.5 py-2.5 text-left border-2 rounded-lg bg-white transition-all hover:-translate-y-px',
+                'relative z-0 h-full px-2.5 py-2.5 text-left border-2 rounded-lg bg-white transition-all hover:-translate-y-px',
                 selectedAlgorithm === algo.id ?
                   'border-indigo-500 bg-indigo-50/10'
                 : 'border-gray-200 hover:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:hover:border-indigo-400',
@@ -167,23 +167,25 @@
           >输出格式</label
         >
         <div class="flex items-center gap-2">
-          <SelectRoot v-model="outputFormat">
+          <SelectRoot v-model="outputFormat" :disabled="!hasMultipleFormats">
             <SelectTrigger
-              class="flex-1 px-2.5 py-2 text-sm border-2 border-gray-200 rounded-md bg-white hover:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:hover:border-indigo-400 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 transition-all">
+              class="flex-1 px-2.5 py-2 text-sm border-2 border-gray-200 rounded-md bg-white hover:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:hover:border-indigo-400 dark:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 transition-all data-disabled:opacity-50 data-disabled:cursor-not-allowed">
               <SelectValue placeholder="选择输出格式" />
             </SelectTrigger>
             <SelectPortal>
               <SelectContent
                 class="bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-50 overflow-auto z-50">
-                <SelectItem
-                  v-for="format in availableOutputFormats"
-                  :key="format.value"
-                  :value="format.value"
-                  class="px-2.5 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 focus:bg-indigo-50 dark:focus:bg-indigo-900/20 focus:outline-none data-[state=checked]:bg-indigo-100 dark:data-[state=checked]:bg-indigo-900/40 transition-colors text-sm">
-                  <SelectItemText>
-                    {{ format.label }}
-                  </SelectItemText>
-                </SelectItem>
+                <SelectViewport>
+                  <SelectItem
+                    v-for="format in availableOutputFormats"
+                    :key="format.value"
+                    :value="format.value"
+                    class="px-2.5 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 focus:bg-indigo-50 dark:focus:bg-indigo-900/20 focus:outline-none data-[state=checked]:bg-indigo-100 dark:data-[state=checked]:bg-indigo-900/40 transition-colors text-sm">
+                    <SelectItemText>
+                      {{ format.label }}
+                    </SelectItemText>
+                  </SelectItem>
+                </SelectViewport>
               </SelectContent>
             </SelectPortal>
           </SelectRoot>
@@ -332,6 +334,7 @@
     SelectItem,
     SelectItemText,
     SelectPortal,
+    SelectViewport,
   } from 'reka-ui';
 
   /** 文件输入引用 */
@@ -429,6 +432,9 @@
         return allOutputFormats;
     }
   });
+
+  /** 是否有多个输出格式可选 */
+  const hasMultipleFormats = computed(() => availableOutputFormats.value.length > 1);
 
   /** 监听算法变化，自动调整输出格式 */
   const { stop } = watch(selectedAlgorithm, () => {
