@@ -20,7 +20,7 @@
       </a>
     </header>
 
-    <main class="flex-1 max-w-3xl w-full mx-auto px-4 pb-4">
+    <main class="flex-1">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -94,10 +94,6 @@
   .github-link svg {
     width: 20px;
     height: 20px;
-  }
-
-  main {
-    padding: 0 12px 12px;
   }
 }
 

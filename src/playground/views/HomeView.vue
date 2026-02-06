@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full">
+  <div class="w-full max-w-3xl mx-auto px-4 pb-4">
     <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
       <router-link
         v-for="test in tests"
@@ -100,6 +100,10 @@ const statusText = {
 @media (max-width: 768px) {
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  div[class*="max-w"] {
+    padding: 0 12px 12px;
   }
 }
 

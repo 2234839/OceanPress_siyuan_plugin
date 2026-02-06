@@ -51,7 +51,47 @@
           压缩质量: {{ quality.toFixed(2) }}
           <span class="text-xs font-normal text-gray-500 dark:text-gray-400">({{ qualityHint }})</span>
         </label>
-        <input v-model.number="quality" type="range" min="0.1" max="1" step="0.01" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4.5 [&::-webkit-slider-thumb]:h-4.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-500 [&::-webkit-slider-thumb]:cursor-pointer" />
+        <input
+          v-model.number="quality"
+          type="range"
+          min="0.1"
+          max="1"
+          step="0.01"
+          :disabled="enableAutoBinary"
+          class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4.5 [&::-webkit-slider-thumb]:h-4.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-500 [&::-webkit-slider-thumb]:cursor-pointer disabled:[&::-webkit-slider-thumb]:bg-gray-400"
+        />
+      </div>
+
+      <!-- 自动二分逼近选项 -->
+      <div class="mb-4 p-3 bg-gray-50 rounded-lg border-2 border-gray-200 dark:bg-gray-700/50 dark:border-gray-600">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input
+            v-model="enableAutoBinary"
+            type="checkbox"
+            class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+          />
+          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            启用自动二分逼近
+          </span>
+        </label>
+
+        <div v-if="enableAutoBinary" class="mt-2 flex items-center gap-2 animate-fade-in">
+          <span class="text-xs text-gray-600 dark:text-gray-400">目标相似度:</span>
+          <div class="flex items-center gap-1 relative">
+            <input
+              v-model.number="targetSimilarity"
+              type="number"
+              min="80"
+              max="100"
+              step="0.1"
+              class="w-25 px-2 py-1 pr-8 text-sm font-semibold text-center text-gray-900 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+            />
+            <span class="absolute right-2 text-xs text-gray-500 pointer-events-none">%</span>
+          </div>
+          <span class="text-xs text-gray-500 dark:text-gray-400">
+            (80-100)
+          </span>
+        </div>
       </div>
 
       <div class="mb-4">
@@ -65,38 +105,14 @@
         </select>
       </div>
 
-      <!-- 压缩按钮组 -->
-      <div class="flex gap-3 flex-wrap">
-        <button class="flex-1 min-w-[140px] px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg whitespace-nowrap cursor-pointer transition-all hover:-translate-y-px hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed" @click="compressImage" :disabled="compressing || optimalCompressing">
-          {{ compressing ? '压缩中...' : '🚀 开始压缩' }}
-        </button>
-
-        <button
-          class="flex-1 min-w-[280px] px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-br from-emerald-600 to-green-400 rounded-lg cursor-pointer transition-all hover:-translate-y-px hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
-          @click="startOptimalCompression"
-          :disabled="optimalCompressing || compressing"
-        >
-          <span class="flex items-center justify-center gap-3 flex-wrap">
-            <span class="whitespace-nowrap">
-              {{ optimalCompressing ? `优化中 (${optimalCompressionRound}/${maxOptimalRounds})` : '二分逼近相似度压缩' }}
-            </span>
-            <span class="flex items-center gap-1 relative">
-              <span class="text-xs opacity-90 whitespace-nowrap">目标:</span>
-              <input
-                v-model.number="targetSimilarity"
-                type="number"
-                min="80"
-                max="100"
-                step="0.1"
-                class="w-[70px] px-2 py-1 pr-6 text-sm font-semibold text-center text-white border border-white/40 rounded bg-white/20 focus:outline-none focus:bg-white/30 focus:border-white/60 disabled:bg-black/20 disabled:border-white/20 disabled:cursor-not-allowed [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
-                :disabled="optimalCompressing"
-                @click.stop
-              />
-              <span class="absolute right-1.5 text-xs opacity-80 pointer-events-none">%</span>
-            </span>
-          </span>
-        </button>
-      </div>
+      <!-- 压缩按钮 -->
+      <button
+        class="w-full px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg cursor-pointer transition-all hover:-translate-y-px hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+        @click="handleCompress"
+        :disabled="compressing || optimalCompressing"
+      >
+        {{ getCompressingText() }}
+      </button>
 
       <!-- 优化进度提示 -->
       <div v-if="optimalCompressing && optimalCompressionLog" class="mt-2.5 px-3 py-2.5 text-xs font-mono text-blue-700 bg-blue-50 border-l-4 border-blue-600 rounded animate-fade-in dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-400">
@@ -174,6 +190,8 @@ const selectedAlgorithm = ref<AlgorithmId>('browser-compression');
 const quality = ref(0.8);
 /** 输出格式 */
 const outputFormat = ref<string>('original');
+/** 是否启用自动二分逼近 */
+const enableAutoBinary = ref(false);
 /** 压缩中状态 */
 const compressing = ref(false);
 /** 错误信息 */
@@ -309,6 +327,30 @@ async function compressImage() {
     console.error('压缩错误:', err);
   } finally {
     compressing.value = false;
+  }
+}
+
+/**
+ * 获取压缩按钮文本
+ */
+function getCompressingText(): string {
+  if (optimalCompressing.value) {
+    return `优化中 (${optimalCompressionRound.value}/${maxOptimalRounds})...`;
+  }
+  if (compressing.value) {
+    return '压缩中...';
+  }
+  return enableAutoBinary.value ? '🎯 开始自动二分逼近压缩' : '🚀 开始压缩';
+}
+
+/**
+ * 处理压缩按钮点击
+ */
+async function handleCompress() {
+  if (enableAutoBinary.value) {
+    await startOptimalCompression();
+  } else {
+    await compressImage();
   }
 }
 
