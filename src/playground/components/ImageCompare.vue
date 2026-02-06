@@ -8,17 +8,8 @@
             相似度
             <MetricHint :hint="metricHints.ssim" />
           </div>
-          <span class="metric-value" :class="`quality-${qualityRating}`">
+          <span class="metric-value">
             {{ (similarityResult.ssim * 100).toFixed(2) }}%
-          </span>
-        </div>
-        <div class="metric">
-          <div class="metric-label">
-            质量等级
-            <MetricHint :hint="metricHints.quality" />
-          </div>
-          <span class="metric-value" :class="`quality-${qualityRating}`">
-            {{ qualityLabel }}
           </span>
         </div>
         <div class="metric">
@@ -74,8 +65,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue';
-import { calculateSimilarity, getQualityRating, getQualityLabel } from '../utils/imageSimilarity';
+import { ref, watch, onUnmounted } from 'vue';
+import { calculateSimilarity } from '../utils/imageSimilarity';
 import MetricHint from './MetricHint.vue';
 
 /** 相似度计算结果 */
@@ -88,7 +79,6 @@ interface SimilarityResult {
 /** 指标说明文本 */
 const metricHints = {
   ssim: 'SSIM (结构相似性指数) 是衡量两张图片相似度的指标，范围 0-1。该指标考虑了亮度、对比度和结构信息，更符合人眼对图片质量的感知。值越接近 1 表示两张图片越相似。',
-  quality: '质量等级基于 SSIM 值评定：≥ 95% 为优秀，≥ 85% 为良好，≥ 70% 为一般，< 70% 为较差。此等级可以帮助你快速判断压缩效果是否可接受。',
   psnr: 'PSNR (峰值信噪比) 是传统的图片质量评估指标，单位为 dB。通常值在 20-40 之间，值越大表示失真越小。PSNR ≥ 30dB 通常认为质量可接受。',
   mse: 'MSE (均方误差) 计算两张图片像素值差异的平方平均值。值越小表示差异越小，0 表示完全相同。MSE 是最基础的误差计算方法，但不一定符合人眼感知。',
 };
@@ -119,17 +109,6 @@ const isDragging = ref(false);
 const similarityResult = ref<SimilarityResult | null>(null);
 /** 是否正在计算相似度 */
 const isCalculating = ref(false);
-
-/** 质量等级 */
-const qualityRating = computed(() => {
-  if (!similarityResult.value) return 'poor';
-  return getQualityRating(similarityResult.value);
-});
-
-/** 质量等级标签 */
-const qualityLabel = computed(() => {
-  return getQualityLabel(qualityRating.value);
-});
 
 /**
  * 计算图片相似度
@@ -255,7 +234,7 @@ window.addEventListener('resize', handleResize);
 
 .similarity-metrics {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   position: relative;
 }
@@ -279,22 +258,6 @@ window.addEventListener('resize', handleResize);
   font-size: 16px;
   font-weight: 700;
   color: white;
-}
-
-.metric-value.quality-excellent {
-  color: #4ade80;
-}
-
-.metric-value.quality-good {
-  color: #fbbf24;
-}
-
-.metric-value.quality-fair {
-  color: #fb923c;
-}
-
-.metric-value.quality-poor {
-  color: #f87171;
 }
 
 .image-wrapper {
@@ -418,6 +381,12 @@ window.addEventListener('resize', handleResize);
 
   .metric-value {
     font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .similarity-metrics {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -197,26 +197,3 @@ export function formatSimilarityResult(result: SimilarityResult): string {
   return `SSIM: ${(result.ssim * 100).toFixed(2)}% | PSNR: ${result.psnr.toFixed(2)}dB | MSE: ${result.mse.toFixed(2)}`;
 }
 
-/**
- * 根据相似度判断质量等级
- */
-export function getQualityRating(result: SimilarityResult): 'excellent' | 'good' | 'fair' | 'poor' {
-  // SSIM 是主要指标
-  if (result.ssim >= 0.95) return 'excellent';
-  if (result.ssim >= 0.85) return 'good';
-  if (result.ssim >= 0.70) return 'fair';
-  return 'poor';
-}
-
-/**
- * 获取质量等级的中文描述
- */
-export function getQualityLabel(rating: string): string {
-  const labels: Record<string, string> = {
-    excellent: '优秀',
-    good: '良好',
-    fair: '一般',
-    poor: '较差',
-  };
-  return labels[rating] || '未知';
-}
