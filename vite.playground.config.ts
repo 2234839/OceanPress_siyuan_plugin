@@ -1,14 +1,14 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import VueDevTools from 'vite-plugin-vue-devtools';
+import tailwindcss from '@tailwindcss/vite';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
-  plugins: [vue(), VueDevTools()],
-  root: resolve(__dirname, 'src/playground'),
+  plugins: [vue(), VueDevTools(), tailwindcss()],
   base: './',
   publicDir: resolve(__dirname, 'src/playground/public'),
   server: {

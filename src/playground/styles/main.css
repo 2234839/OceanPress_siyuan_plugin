@@ -1,0 +1,18 @@
+/**
+ * Tailwind CSS v4 - 使用 CSS-first 配置
+ */
+
+@import "tailwindcss";
+
+/**
+ * 引用 Tailwind 配置文件
+ * 必须使用 @config 指令，否则配置文件不会生效
+ * 从 src/playground/styles/main.css 到项目根目录的 tailwind.config.ts
+ */
+@config '../../../tailwind.config.ts';
+
+/**
+ * 配置深色模式使用思源笔记的 data-theme-mode 属性
+ * 当 html[data-theme-mode="dark"] 时激活 dark: 前缀的样式
+ */
+@custom-variant dark (&:where([data-theme-mode=dark], [data-theme-mode=dark] *));

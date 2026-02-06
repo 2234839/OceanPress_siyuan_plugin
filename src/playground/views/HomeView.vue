@@ -1,24 +1,24 @@
 <template>
-  <div class="home-view">
-    <div class="test-grid">
+  <div class="w-full">
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
       <router-link
         v-for="test in tests"
         :key="test.path"
         :to="{ name: test.name }"
         class="test-card"
       >
-        <div class="test-icon">{{ test.meta?.icon }}</div>
-        <h3 class="test-title">{{ test.meta?.title }}</h3>
-        <p class="test-description">{{ test.meta?.description }}</p>
+        <div class="text-2xl mb-2">{{ test.meta?.icon }}</div>
+        <h3 class="text-base mb-1.5 text-[#333]">{{ test.meta?.title }}</h3>
+        <p class="text-[#666] mb-2 flex-1 text-sm">{{ test.meta?.description }}</p>
         <div class="test-status" :class="test.status">
           {{ statusText[test.status] }}
         </div>
       </router-link>
 
       <div class="test-card placeholder">
-        <div class="test-icon">➕</div>
-        <h3 class="test-title">更多测试</h3>
-        <p class="test-description">即将推出...</p>
+        <div class="text-2xl mb-2">➕</div>
+        <h3 class="text-base mb-1.5 text-[#333]">更多测试</h3>
+        <p class="text-[#666] mb-2 flex-1 text-sm">即将推出...</p>
       </div>
     </div>
   </div>
@@ -49,16 +49,6 @@ const statusText = {
 </script>
 
 <style scoped>
-.home-view {
-  width: 100%;
-}
-
-.test-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-}
-
 .test-card {
   background: white;
   border-radius: 10px;
@@ -85,24 +75,6 @@ const statusText = {
   pointer-events: none;
 }
 
-.test-icon {
-  font-size: 2rem;
-  margin-bottom: 8px;
-}
-
-.test-title {
-  font-size: 1rem;
-  margin-bottom: 6px;
-  color: #333;
-}
-
-.test-description {
-  color: #666;
-  margin-bottom: 8px;
-  flex: 1;
-  font-size: 0.85rem;
-}
-
 .test-status {
   padding: 4px 12px;
   border-radius: 16px;
@@ -126,7 +98,7 @@ const statusText = {
 }
 
 @media (max-width: 768px) {
-  .test-grid {
+  .grid {
     grid-template-columns: 1fr;
   }
 }
@@ -137,11 +109,11 @@ const statusText = {
     border: 1px solid #333;
   }
 
-  .test-title {
+  .test-card h3 {
     color: #e0e0e0;
   }
 
-  .test-description {
+  .test-card p {
     color: #aaa;
   }
 }

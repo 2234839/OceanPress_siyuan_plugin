@@ -1,56 +1,56 @@
 <template>
-  <div class="image-compare" ref="containerRef">
+  <div ref="containerRef" class="w-full my-4">
     <!-- 相似度指标显示 -->
-    <div v-if="similarityResult" class="similarity-info">
-      <div class="similarity-metrics">
-        <div class="metric">
-          <div class="metric-label">
+    <div v-if="similarityResult" class="relative z-100 p-3 mb-3 text-white bg-linear-to-br from-indigo-500 to-purple-600 rounded-lg shadow-[0_2px_8px_rgba(102,126,234,0.2)] overflow-visible">
+      <div class="relative grid grid-cols-3 gap-3">
+        <div class="flex items-baseline gap-1.5">
+          <div class="flex items-center gap-0.5 text-xs font-medium opacity-85">
             相似度
             <MetricHint :hint="metricHints.ssim" />
           </div>
-          <span class="metric-value">
+          <span class="text-base font-bold text-white">
             {{ (similarityResult.ssim * 100).toFixed(2) }}%
           </span>
         </div>
-        <div class="metric">
-          <div class="metric-label">
+        <div class="flex items-baseline gap-1.5">
+          <div class="flex items-center gap-0.5 text-xs font-medium opacity-85">
             PSNR
             <MetricHint :hint="metricHints.psnr" />
           </div>
-          <span class="metric-value">{{ similarityResult.psnr.toFixed(2) }} dB</span>
+          <span class="text-base font-bold text-white">{{ similarityResult.psnr.toFixed(2) }} dB</span>
         </div>
-        <div class="metric">
-          <div class="metric-label">
+        <div class="flex items-baseline gap-1.5">
+          <div class="flex items-center gap-0.5 text-xs font-medium opacity-85">
             MSE
             <MetricHint :hint="metricHints.mse" />
           </div>
-          <span class="metric-value">{{ similarityResult.mse.toFixed(2) }}</span>
+          <span class="text-base font-bold text-white">{{ similarityResult.mse.toFixed(2) }}</span>
         </div>
       </div>
     </div>
 
-    <div class="image-wrapper">
+    <div class="relative w-full overflow-hidden rounded-lg select-none">
       <!-- 底层图片（压缩后） -->
-      <img :src="after" alt="After" class="image-after" />
+      <img :src="after" alt="After" class="w-full h-full object-contain block" />
 
       <!-- 顶层图片（原图）- 使用 clip-path 裁剪 -->
       <img
         :src="before"
         alt="Before"
-        class="image-before"
+        class="absolute top-0 left-0 w-full h-full object-contain block transition-[clip-path] duration-50 ease-out"
         :style="{ clipPath: `inset(0 ${100 - position}% 0 0)` }"
       />
 
       <!-- 分隔线 -->
       <div
-        class="divider"
+        class="absolute top-0 bottom-0 w-0.5 bg-white cursor-ew-resize -translate-x-1/2 z-10 shadow-[0_0_10px_rgba(0,0,0,0.3)]"
         :style="{ left: `${position}%` }"
         @mousedown="handleDragStart"
         @touchstart.prevent="handleDragStart"
       >
-        <div class="divider-line"></div>
-        <div class="divider-handle">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <div class="w-full h-full bg-white"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+          <svg class="w-6 h-6 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M18 8L22 12L18 16" stroke-width="2" />
             <path d="M6 8L2 12L6 16" stroke-width="2" />
           </svg>
@@ -58,8 +58,8 @@
       </div>
 
       <!-- 标签 -->
-      <div class="label label-before" :style="{ opacity: position > 15 ? 1 : 0 }">原图</div>
-      <div class="label label-after" :style="{ opacity: position < 85 ? 1 : 0 }">压缩后</div>
+      <div class="absolute bottom-3 px-3 py-1.5 text-sm font-semibold text-white bg-black/70 rounded-md pointer-events-none transition-opacity duration-200" :style="{ left: '12px', opacity: position > 15 ? 1 : 0 }">原图</div>
+      <div class="absolute bottom-3 px-3 py-1.5 text-sm font-semibold text-white bg-black/70 rounded-md pointer-events-none transition-opacity duration-200" :style="{ right: '12px', opacity: position < 85 ? 1 : 0 }">压缩后</div>
     </div>
   </div>
 </template>
@@ -201,178 +201,31 @@ window.addEventListener('resize', handleResize);
 </script>
 
 <style scoped>
-.image-compare {
-  width: 100%;
-  margin: 16px 0;
-}
-
-.similarity-info {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  color: white;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
-  overflow: visible;
-  position: relative;
-  z-index: 100;
-}
-
-.similarity-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  position: relative;
-}
-
-.metric {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.metric-label {
-  font-size: 11px;
-  opacity: 0.85;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.metric-value {
-  font-size: 16px;
-  font-weight: 700;
-  color: white;
-}
-
-.image-wrapper {
-  position: relative;
-  width: 100%;
-  overflow: hidden;
-  border-radius: 8px;
-  user-select: none;
-}
-
-.image-after,
-.image-before {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
-
-.image-before {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transition: clip-path 0.05s ease-out;
-}
-
-.divider {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: white;
-  cursor: ew-resize;
-  transform: translateX(-50%);
-  z-index: 10;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-}
-
-.divider-line {
-  width: 100%;
-  height: 100%;
-  background: white;
-}
-
-.divider-handle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 40px;
-  height: 40px;
-  background: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.divider-handle svg {
-  width: 24px;
-  height: 24px;
-  color: #667eea;
-}
-
-.label {
-  position: absolute;
-  bottom: 12px;
-  padding: 6px 12px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-
-.label-before {
-  left: 12px;
-}
-
-.label-after {
-  right: 12px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .similarity-info {
-    background: linear-gradient(135deg, #4c51bf 0%, #553c9a 100%);
-    box-shadow: 0 4px 12px rgba(76, 81, 191, 0.4);
-  }
-
-  .divider {
-    background: #667eea;
-  }
-
-  .divider-line {
-    background: #667eea;
-  }
-
-  .divider-handle {
-    background: #2d2d2d;
-  }
-
-  .label {
-    background: rgba(255, 255, 255, 0.9);
-    color: #333;
-  }
-}
-
+/* 响应式调整 */
 @media (max-width: 640px) {
-  .similarity-metrics {
+  .grid-cols-3 {
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-
-  .metric-label {
-    font-size: 10px;
-  }
-
-  .metric-value {
-    font-size: 14px;
   }
 }
 
 @media (max-width: 480px) {
-  .similarity-metrics {
+  .grid-cols-3 {
     grid-template-columns: 1fr;
+  }
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .from-indigo-500 {
+    --tw-gradient-from: #4c51bf;
+  }
+
+  .to-purple-600 {
+    --tw-gradient-to: #553c9a;
+  }
+
+  .bg-white {
+    background-color: rgb(45, 45, 45) !important;
   }
 }
 </style>
