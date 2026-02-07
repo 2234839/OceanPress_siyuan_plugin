@@ -5,11 +5,11 @@
       <div class="relative grid grid-cols-3 gap-3">
         <div class="flex items-baseline gap-1.5">
           <div class="flex items-center gap-0.5 text-xs font-medium opacity-85">
-            相似度
-            <MetricHint :hint="metricHints.ssim" />
+            MS-SSIM
+            <MetricHint :hint="metricHints.msSsim" />
           </div>
           <span class="text-base font-bold text-white">
-            {{ (similarityResult.ssim * 100).toFixed(2) }}%
+            {{ ((similarityResult.msSsim ?? similarityResult.ssim) * 100).toFixed(2) }}%
           </span>
         </div>
         <div class="flex items-baseline gap-1.5">
@@ -77,12 +77,14 @@ import MetricHint from './MetricHint.vue';
 /** 相似度计算结果 */
 interface SimilarityResult {
   ssim: number;
+  msSsim?: number;
   psnr: number;
   mse: number;
 }
 
 /** 指标说明文本 */
-const metricHints = {
+const metricHints: Record<string, string> = {
+  msSsim: 'MS-SSIM (多尺度结构相似性指数) 是衡量两张图片相似度的指标，范围 0-1。相比单尺度 SSIM，MS-SSIM 在多个分辨率尺度上计算，更符合人眼对图片质量的感知。值越接近 1 表示两张图片越相似。',
   ssim: 'SSIM (结构相似性指数) 是衡量两张图片相似度的指标，范围 0-1。该指标考虑了亮度、对比度和结构信息，更符合人眼对图片质量的感知。值越接近 1 表示两张图片越相似。',
   psnr: 'PSNR (峰值信噪比) 是传统的图片质量评估指标，单位为 dB。通常值在 20-40 之间，值越大表示失真越小。PSNR ≥ 30dB 通常认为质量可接受。',
   mse: 'MSE (均方误差) 计算两张图片像素值差异的平方平均值。值越小表示差异越小，0 表示完全相同。MSE 是最基础的误差计算方法，但不一定符合人眼感知。',
@@ -126,7 +128,10 @@ async function calculateImageSimilarity() {
   isCalculating.value = true;
 
   try {
-    const result = await calculateSimilarity(props.before, props.after);
+    const result = await calculateSimilarity(props.before, props.after, {
+      mode: 'accurate', // 精确模式：2048px 采样
+      enableMsSsim: true, // 启用 MS-SSIM
+    });
     similarityResult.value = result;
   } catch (error) {
     console.error('计算相似度失败:', error);

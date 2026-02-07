@@ -377,8 +377,8 @@
   /** 最优压缩当前轮数 */
   const optimalCompressionRound = ref(0);
   /** 最大优化轮数 */
-  const maxOptimalRounds = 10;
   /** 优化过程日志 */
+  const maxOptimalRounds = 10;
   const optimalCompressionLog = ref('');
 
   /** 可用的压缩算法列表 */
