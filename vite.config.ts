@@ -114,15 +114,14 @@ const viteConfig: UserConfigExport = (ctx) => {
       // minify: false,
       minify: true,
       rollupOptions: {
-        output: [
-          {
-            entryFileNames:
-              (format === 'esm' ? 'es/' : '') + scriptFile.replace(/\.tsx?$/, '.js'),
-            format,
-            assetFileNames: `asset/[name]-[hash][extname]`,
-            manualChunks: undefined,
-          },
-        ],
+        output: {
+          entryFileNames:
+            (format === 'esm' ? 'es/' : '') + scriptFile.replace(/\.tsx?$/, '.js'),
+          format,
+          assetFileNames: `asset/[name]-[hash][extname]`,
+          // 禁用代码分割，确保所有代码打包到一个文件
+          inlineDynamicImports: true,
+        },
         external: ['siyuan', 'process'],
       },
     },

@@ -147,9 +147,9 @@
           </label>
           <SliderRoot
             v-model="qualityModel"
-            :min="0.1"
+            :min="0.001"
             :max="1"
-            :step="0.01"
+            :step="0.001"
             :disabled="enableAutoBinary"
             class="relative flex items-center w-full h-5 touch-none select-none data-disabled:opacity-50 data-disabled:cursor-not-allowed">
             <SliderTrack class="w-full h-1.5 bg-gray-200 rounded-full dark:bg-gray-700 relative">
