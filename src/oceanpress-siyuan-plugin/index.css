@@ -8,3 +8,8 @@
 [custom-oceanpress-widget-update] .oceanpress_widget_ui {
   filter: grayscale(0%);
 }
+
+/* 移除包含ui组件元素的对话框元素的 padding */
+.b3-dialog__content:has(> .oceanpress_ui_falg) {
+  padding: 0 !important;
+}
