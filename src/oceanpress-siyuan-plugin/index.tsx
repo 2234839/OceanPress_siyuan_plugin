@@ -9,6 +9,7 @@ import { ICON, iconSVG, oceanpress_ui_flag } from './const';
 import './index.css';
 import { refMedia } from './refMedia';
 import Setting_view from './ui/setting_view.vue';
+import { queryInDocuments } from '~/libs/domUtil';
 
 /** 为了当 index.html 改变时触发 watch 编译 */
 import { ref } from 'vue';
@@ -54,7 +55,7 @@ export default class OceanPress extends SiyuanPlugin {
       // });
 
       // ocr 文本显示
-      document.body.querySelectorAll<HTMLImageElement>(`img[data-src]`).forEach(async (img) => {
+      queryInDocuments<HTMLImageElement>(`img[data-src]`).forEach(async (img) => {
         this.addVueUi(img.parentElement!, Img_ocr_text, {
           data: async () => {
             const path = img.dataset.src!.replace('/', '_');
@@ -70,8 +71,7 @@ export default class OceanPress extends SiyuanPlugin {
         });
       });
       // 替换 tif 资源链接为图片链接
-      document
-        .querySelectorAll<HTMLElement>('span[data-type="a"][data-href$=".tif"]')
+      queryInDocuments<HTMLElement>('span[data-type="a"][data-href$=".tif"]')
         .forEach((span) => {
           const href = span.dataset.href;
           const name = span.textContent;
@@ -95,8 +95,7 @@ export default class OceanPress extends SiyuanPlugin {
 
       // 替换 HEIC 资源链接为图片链接
       ['heic', 'heif'].forEach(ext => {
-        document
-          .querySelectorAll<HTMLElement>(`span[data-type="a"][data-href$=".${ext}"]`)
+        queryInDocuments<HTMLElement>(`span[data-type="a"][data-href$=".${ext}"]`)
           .forEach(async (span) => {
             const href = span.dataset.href;
             const name = span.textContent;
@@ -125,8 +124,9 @@ export default class OceanPress extends SiyuanPlugin {
             }, 500);
           });
       });
+      // 处理 TIF 图片
       const imgTifEl = [
-        ...document.querySelectorAll<HTMLImageElement>('img[data-src$=".tif"]'),
+        ...queryInDocuments<HTMLImageElement>('img[data-src$=".tif"]'),
       ].filter((el) => !el.src.startsWith('data:'));
 
       if (imgTifEl.length > 0) {
@@ -137,8 +137,8 @@ export default class OceanPress extends SiyuanPlugin {
 
       // 处理 HEIC 格式图片
       const imgHeicEl = [
-        ...document.querySelectorAll<HTMLImageElement>('img[data-src$=".heic"]'),
-        ...document.querySelectorAll<HTMLImageElement>('img[data-src$=".heif"]'),
+        ...queryInDocuments<HTMLImageElement>('img[data-src$=".heic"]'),
+        ...queryInDocuments<HTMLImageElement>('img[data-src$=".heif"]'),
       ].filter((el) => !el.src.startsWith('data:'));
 
       if (imgHeicEl.length > 0) {

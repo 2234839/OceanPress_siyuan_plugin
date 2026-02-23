@@ -1,5 +1,6 @@
 import { createApp } from 'vue';
 import VideoControls from './controls.vue';
+import { queryInDocuments } from '~/libs/domUtil';
 
 /**
  * 媒体引用组件,可以引用音视频片段，视频图片的区域
@@ -24,7 +25,7 @@ setInterval(() => {
   if (refMedia.loadStatus === false) return;
   // === 视频块引用
   const videos = Array.from<HTMLElement>(
-    document.querySelectorAll(
+    queryInDocuments<HTMLElement>(
       '[data-type="NodeBlockQueryEmbed"] > .protyle-wysiwyg__embed > [data-type="NodeVideo"]',
     ),
   );
