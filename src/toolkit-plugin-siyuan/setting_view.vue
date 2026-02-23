@@ -54,20 +54,31 @@
       <div class="setting-item">
         <label class="number-label">
           <span class="label-text">压缩质量：</span>
-          <input 
-            type="range" 
-            min="0.1" 
-            max="1" 
-            step="0.1" 
-            :value="image_compression_quality" 
+          <input
+            type="range"
+            min="0.1"
+            max="1"
+            step="0.1"
+            :value="image_compression_quality"
             @input="handleQualityChange"
+            :disabled="enable_smart_compression"
             class="range-slider"
           />
-          <span class="value-display">{{ image_compression_quality }}</span>
+          <input
+            type="number"
+            min="0.1"
+            max="1"
+            step="0.1"
+            :value="image_compression_quality"
+            @input="handleQualityChange"
+            :disabled="enable_smart_compression"
+            class="number-input quality-input"
+          />
         </label>
       </div>
       <div class="setting-description">
         图片压缩质量，值越高图片质量越好但文件越大
+        <span v-if="enable_smart_compression" style="color: #f57c00; margin-left: 8px;">（智能压缩模式下此设置无效）</span>
       </div>
 
       <div class="setting-item">
@@ -86,6 +97,50 @@
       </div>
       <div class="setting-description">
         小于此大小的图片将不会被压缩
+      </div>
+
+      <div class="setting-item">
+        <label class="switch-label">
+          <input
+            type="checkbox"
+            :checked="enable_smart_compression"
+            @change="handleEnableSmartCompressionChange"
+            class="switch"
+          />
+          <span class="slider"></span>
+        </label>
+        <span class="setting-text">启用智能压缩</span>
+      </div>
+      <div class="setting-description">
+        启用后，使用 MS-SSIM 相似度评估自动寻找最优压缩质量（需要更多时间）
+      </div>
+
+      <div class="setting-item" v-if="enable_smart_compression">
+        <label class="number-label">
+          <span class="label-text">目标相似度：</span>
+          <input
+            type="range"
+            min="50"
+            max="100"
+            step="0.5"
+            :value="target_similarity"
+            @input="handleTargetSimilarityChange"
+            class="range-slider"
+          />
+          <input
+            type="number"
+            min="50"
+            max="100"
+            step="0.5"
+            :value="target_similarity"
+            @input="handleTargetSimilarityChange"
+            class="number-input quality-input"
+          />
+          <span class="unit">%</span>
+        </label>
+      </div>
+      <div class="setting-description" v-if="enable_smart_compression">
+        目标相似度百分比，值越高图片质量越好但文件越大（推荐 99%）
       </div>
     </div>
 
@@ -140,6 +195,8 @@ const image_skip_webp = computed(() => data.value.image_skip_webp ?? true);
 const image_skip_small = computed(() => data.value.image_skip_small ?? true);
 const image_compression_quality = computed(() => data.value.image_compression_quality ?? 0.8);
 const image_min_size = computed(() => data.value.image_min_size ?? 102400);
+const enable_smart_compression = computed(() => data.value.enable_smart_compression ?? false);
+const target_similarity = computed(() => data.value.target_similarity ?? 99);
 const tag_sort_reverse = computed(() => data.value.tag_sort_reverse ?? false);
 
 const onExit = () => {
@@ -201,6 +258,23 @@ const handleTagSortReverseChange = (e: Event) => {
     ...prev,
     tag_sort_reverse: (e.target as HTMLInputElement).checked,
   }));
+};
+
+const handleEnableSmartCompressionChange = (e: Event) => {
+  setData((prev) => ({
+    ...prev,
+    enable_smart_compression: (e.target as HTMLInputElement).checked,
+  }));
+};
+
+const handleTargetSimilarityChange = (e: Event) => {
+  const value = parseFloat((e.target as HTMLInputElement).value);
+  if (!isNaN(value) && value >= 50 && value <= 100) {
+    setData((prev) => ({
+      ...prev,
+      target_similarity: value,
+    }));
+  }
 };
 </script>
 
@@ -319,6 +393,22 @@ const handleTagSortReverseChange = (e: Event) => {
   font-size: 14px;
 }
 
+.number-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.quality-input {
+  width: 70px;
+  margin-left: 10px;
+}
+
+.range-slider:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .unit {
   font-size: 14px;
   color: #666;
@@ -428,5 +518,12 @@ const handleTagSortReverseChange = (e: Event) => {
 
 .switch:checked + .slider:before {
   transform: translateX(26px);
+}
+</style>
+
+<style>
+/* 移除包含 toolkit 设置 UI 组件元素的对话框 padding */
+.b3-dialog__content:has(> .oceanpress_ui_falg) {
+  padding: 0 !important;
 }
 </style>

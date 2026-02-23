@@ -6,7 +6,7 @@ import { ialToJson } from '~/libs/siyuan_util';
 import { SiyuanPlugin } from '~/libs/siyuanPlugin';
 import Setting_view from './setting_view.vue';
 import { proxy as xhrProxy } from 'ajax-hook';
-import imageCompression from 'browser-image-compression';
+import { compressImageToWebP, smartCompressImage } from '~/libs/imageCompression';
 // @ts-ignore
 // 引入这个变量后 vite 会自动注入 hot
 import.meta.hot;
@@ -36,6 +36,8 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       image_skip_small: true,
       image_min_size: 102400, // 100KB
       image_max_dimension: 4096,
+      enable_smart_compression: false, // 是否启用智能压缩
+      target_similarity: 99, // 目标相似度百分比
     },
     that: this,
     storageName: 'toolkit_setting.json',
@@ -206,31 +208,76 @@ export default class ToolKitPlugin extends SiyuanPlugin {
                   newFormData.append(key, value);
                   continue;
                 }
+
                 // 创建压缩 Promise
-                const compressionPromise = this.compressImageToWebP(
-                  value,
-                  this.toolkit_setting.value().image_compression_quality,
-                )
-                  .then((compressedBlob) => {
-                    if (compressedBlob) {
-                      const compressedFile = new File(
-                        [compressedBlob],
-                        value.name.replace(/\.[^/.]+$/, '.webp'),
-                        { type: 'image/webp' },
-                      );
+                const enableSmartCompression = this.toolkit_setting.value().enable_smart_compression;
+                const targetSimilarity = this.toolkit_setting.value().target_similarity;
+
+                // 智能压缩需要原始图片的预览 URL
+                const originalPreview = URL.createObjectURL(value);
+
+                const compressionPromise = enableSmartCompression ?
+                  // 使用智能压缩
+                  this.smartCompressImage(value, originalPreview, targetSimilarity, 10)
+                    .then((result) => {
+                      // 智能压缩会自动释放 originalPreview URL
+                      const compressedFile = result.file;
                       newFormData.append(key, compressedFile);
                       hasCompressed = true;
-                      console.log(`已压缩图片 (XHR): ${value.name} -> ${compressedFile.name}`);
-                    } else {
+                      const compressionRatio = ((value.size - compressedFile.size) / value.size * 100).toFixed(1);
+                      const totalRounds = result.roundTimes.length;
+                      console.log(`[智能压缩] 已压缩图片 (XHR): ${value.name} | ${(value.size / 1024).toFixed(1)}KB -> ${(compressedFile.size / 1024).toFixed(1)}KB (-${compressionRatio}%) | 相似度 ${result.similarity.toFixed(2)}% | 轮数 ${totalRounds}`);
+                    })
+                    .catch((error) => {
+                      // 智能压缩失败，释放 URL
+                      URL.revokeObjectURL(originalPreview);
+                      console.error(`[智能压缩] 失败 (XHR) ${value.name}:`, error);
+                      // 回退到普通压缩
+                      return this.compressImageToWebP(value, this.toolkit_setting.value().image_compression_quality)
+                        .then((compressedBlob) => {
+                          if (compressedBlob) {
+                            const compressedFile = new File(
+                              [compressedBlob],
+                              value.name.replace(/\.[^/.]+$/, '.webp'),
+                              { type: 'image/webp' },
+                            );
+                            newFormData.append(key, compressedFile);
+                            hasCompressed = true;
+                            const compressionRatio = ((value.size - compressedFile.size) / value.size * 100).toFixed(1);
+                            console.log(`[回退普通压缩] 已压缩图片 (XHR): ${value.name} -> ${compressedFile.name} | ${(value.size / 1024).toFixed(1)}KB -> ${(compressedFile.size / 1024).toFixed(1)}KB (-${compressionRatio}%)`);
+                          } else {
+                            newFormData.append(key, value);
+                          }
+                        });
+                    })
+                  :
+                  // 使用普通压缩
+                  this.compressImageToWebP(value, this.toolkit_setting.value().image_compression_quality)
+                    .then((compressedBlob) => {
+                      // 普通压缩完成，释放 URL
+                      URL.revokeObjectURL(originalPreview);
+                      if (compressedBlob) {
+                        const compressedFile = new File(
+                          [compressedBlob],
+                          value.name.replace(/\.[^/.]+$/, '.webp'),
+                          { type: 'image/webp' },
+                        );
+                        newFormData.append(key, compressedFile);
+                        hasCompressed = true;
+                        const compressionRatio = ((value.size - compressedFile.size) / value.size * 100).toFixed(1);
+                        console.log(`已压缩图片 (XHR): ${value.name} -> ${compressedFile.name} | ${(value.size / 1024).toFixed(1)}KB -> ${(compressedFile.size / 1024).toFixed(1)}KB (-${compressionRatio}%)`);
+                      } else {
+                        // 压缩失败，使用原文件
+                        newFormData.append(key, value);
+                      }
+                    })
+                    .catch((error) => {
+                      URL.revokeObjectURL(originalPreview);
+                      console.error(`压缩图片失败 (XHR) ${value.name}:`, error);
                       // 压缩失败，使用原文件
                       newFormData.append(key, value);
-                    }
-                  })
-                  .catch((error) => {
-                    console.error(`压缩图片失败 (XHR) ${value.name}:`, error);
-                    // 压缩失败，使用原文件
-                    newFormData.append(key, value);
-                  });
+                    });
+
                 compressionPromises.push(compressionPromise);
               } else {
                 // 不需要压缩的文件，直接添加
@@ -611,82 +658,8 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     }
   }
 
-  async compressImageToWebP(
-    imageData: any,
-    quality: number = 0.8,
-    originalFileName?: string,
-  ): Promise<File | null> {
-    try {
-      // 处理不同类型的图片数据
-      let file: File;
-      let fileName: string;
-
-      if (typeof imageData === 'string') {
-        if (imageData.startsWith('data:')) {
-          // 将 dataURL 转换为 File
-          const response = await fetch(imageData);
-          const blob = await response.blob();
-          fileName = originalFileName || 'image.webp';
-          file = new File([blob], fileName, { type: blob.type });
-        } else {
-          // 假设是 base64 数据，添加适当的前缀
-          const dataUrl = 'data:image/png;base64,' + imageData;
-          const response = await fetch(dataUrl);
-          const blob = await response.blob();
-          fileName = originalFileName || 'image.png';
-          file = new File([blob], fileName, { type: blob.type });
-        }
-      } else if (imageData instanceof ArrayBuffer) {
-        // 如果是 ArrayBuffer，转换为 File
-        fileName = originalFileName || 'image.png';
-        file = new File([imageData], fileName, { type: 'image/png' });
-      } else if (imageData instanceof Blob) {
-        // 如果是 Blob，转换为 File
-        fileName = originalFileName || 'image';
-        file = new File([imageData], fileName, { type: imageData.type });
-      } else if (imageData instanceof File) {
-        // 如果已经是 File，直接使用，但会重新创建文件以保持正确的文件名
-        file = imageData;
-      } else {
-        return null;
-      }
-
-      // 从原始文件名获取基础名称（不含扩展名）
-      const getBaseFileName = (fullName: string): string => {
-        if (!fullName) return 'image';
-
-        // 如果是URL，提取文件名部分
-        if (fullName.startsWith('http://') || fullName.startsWith('https://')) {
-          try {
-            const url = new URL(fullName);
-            const pathname = url.pathname;
-            const filename = pathname.split('/').pop() || 'image';
-            return filename.split('.')[0];
-          } catch {
-            return 'image';
-          }
-        }
-
-        // 如果是普通文件名，去除扩展名
-        return fullName.split('.')[0];
-      };
-
-      const baseName = getBaseFileName(originalFileName || file.name);
-      const finalFileName = `${baseName}.webp`;
-      // 使用 browser-image-compression 压缩图片
-      const options = {
-        useWebWorker: true,
-        fileType: 'image/webp',
-        quality: quality,
-      };
-
-      const compressedFile = await imageCompression(file, options);
-
-      // 创建新文件，保持原始文件名（但改为webp扩展名）
-      return new File([compressedFile], finalFileName, { type: 'image/webp' });
-    } catch (error) {
-      console.error('Image compression error:', error);
-      return null;
-    }
-  }
+  // compressImageToWebP 方法已移至 ~/libs/imageCompression
+  // 保留方法签名用于内部调用，实际使用导入的函数
+  private compressImageToWebP = compressImageToWebP;
+  private smartCompressImage = smartCompressImage;
 }
