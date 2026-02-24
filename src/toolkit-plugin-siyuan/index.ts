@@ -1,7 +1,7 @@
 import { siyuan } from '@llej/js_util';
-import { Dialog, Menu } from 'siyuan';
+import { Dialog, Menu, showMessage } from 'siyuan';
 import { ref } from 'vue';
-import { getBlockKramdown, pushErrMsg, pushMsg, updateBlock, upload } from '~/libs/api';
+import { getBlockKramdown, updateBlock, upload } from '~/libs/api';
 import { ialToJson } from '~/libs/siyuan_util';
 import { SiyuanPlugin } from '~/libs/siyuanPlugin';
 import Setting_view from './setting_view.vue';
@@ -196,7 +196,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
                 const skipCheck = this.shouldSkipCompression(value);
                 if (skipCheck.skip) {
                   if (skipCheck.reason === 'Excalidraw 插件资源') {
-                    pushMsg(`跳过 Excalidraw 插件资源: ${value.name}`);
+                    showMessage(`跳过 Excalidraw 插件资源: ${value.name}`);
                   }
                   newFormData.append(key, value);
                   continue;
@@ -369,25 +369,25 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     try {
       const activeElement = document.querySelector('.protyle:not(.fn__none) .protyle-content');
       if (!activeElement) {
-        pushErrMsg('请先打开一个笔记');
+        showMessage('请先打开一个笔记');
         return;
       }
 
       const documentElement = activeElement.querySelector('.protyle-title[data-node-id]');
       if (!documentElement) {
-        pushErrMsg('无法获取当前笔记ID');
+        showMessage('无法获取当前笔记ID');
         return;
       }
 
       const blockId = documentElement.getAttribute('data-node-id');
       if (!blockId) {
-        pushErrMsg('无法获取当前笔记ID');
+        showMessage('无法获取当前笔记ID');
         return;
       }
 
       const kramdownRes = await getBlockKramdown(blockId);
       if (!kramdownRes || !kramdownRes.kramdown) {
-        pushErrMsg('无法获取笔记内容');
+        showMessage('无法获取笔记内容');
         return;
       }
 
@@ -508,19 +508,19 @@ export default class ToolKitPlugin extends SiyuanPlugin {
         if (skippedCount > 0) {
           message += `，跳过 ${skippedCount} 个图片（可能是 WebP 格式或压缩失败）`;
         }
-        pushMsg(message);
+        showMessage(message);
       } else {
         if (skippedCount > 0) {
-          pushMsg(
+          showMessage(
             `没有成功压缩任何图片，跳过 ${skippedCount} 个图片（可能是 WebP 格式或压缩失败）`,
           );
         } else {
-          pushMsg('当前笔记中没有找到可压缩的图片');
+          showMessage('当前笔记中没有找到可压缩的图片');
         }
       }
     } catch (error) {
       console.error('压缩图片时出错:', error);
-      pushErrMsg('压缩图片时出错，请查看控制台');
+      showMessage('压缩图片时出错，请查看控制台', 3000, 'error');
     }
   }
 
@@ -548,7 +548,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     // 检查是否为 Excalidraw 插件资源
     const fileName = file.name.toLowerCase();
     const urlPath = imgUrl?.toLowerCase() || '';
-    const isExcalidraw = fileName.startsWith('excalidraw-image-') || urlPath.includes('excalidraw-image-');
+    const isExcalidraw = fileName.startsWith('excalidraw-') || urlPath.includes('excalidraw-');
 
     if (isExcalidraw) {
       return { skip: true, reason: 'Excalidraw 插件资源' };
@@ -637,24 +637,26 @@ export default class ToolKitPlugin extends SiyuanPlugin {
           const spanImg = event.detail.element as HTMLElement;
           const img = spanImg.querySelector(`img[data-src]`) as HTMLImageElement;
           const imgSrc = img.dataset.src!;
-          const ok = await this.compressSingleImage(imgSrc);
-          if (ok) {
-            pushMsg('图片压缩成功');
+          const result = await this.compressSingleImage(imgSrc);
+          if (result === true) {
+            showMessage('图片压缩成功');
             // 移除UI组件，定时循环就会自动添加一个新的，能够重新加载一遍 json 数据
             spanImg.querySelector('.img__compress')?.remove();
+          } else if (result === 'skipped') {
+            // 已显示跳过原因，不需要额外提示
           } else {
-            pushErrMsg('图片压缩失败');
+            showMessage('图片压缩失败', 3000, 'error');
           }
         },
       });
     });
   }
 
-  async compressSingleImage(imgSrc: string): Promise<boolean> {
+  async compressSingleImage(imgSrc: string): Promise<boolean | 'skipped'> {
     try {
       // 检查是否为视频文件，排除视频格式
       if (this.isVideoFile(imgSrc)) {
-        pushErrMsg('视频文件不支持压缩');
+        showMessage('视频文件不支持压缩', 3000, 'error');
         return false;
       }
 
@@ -672,8 +674,8 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       const skipCheck = this.shouldSkipCompression(file, imgSrc);
       if (skipCheck.skip) {
         const message = `跳过压缩: ${skipCheck.reason || '未知原因'}`;
-        pushMsg(message);
-        return false;
+        showMessage(message);
+        return 'skipped';
       }
 
       // 创建预览 URL 用于智能压缩
