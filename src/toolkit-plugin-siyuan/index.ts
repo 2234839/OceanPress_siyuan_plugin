@@ -193,7 +193,11 @@ export default class ToolKitPlugin extends SiyuanPlugin {
 
               if (isImage && !isVideo) {
                 // 检查是否应该跳过压缩
-                if (this.shouldSkipCompression(value)) {
+                const skipCheck = this.shouldSkipCompression(value);
+                if (skipCheck.skip) {
+                  if (skipCheck.reason === 'Excalidraw 插件资源') {
+                    pushMsg(`跳过 Excalidraw 插件资源: ${value.name}`);
+                  }
                   newFormData.append(key, value);
                   continue;
                 }
@@ -450,8 +454,12 @@ export default class ToolKitPlugin extends SiyuanPlugin {
                 const file = new File([imageData], imgUrl.split('/').pop() || 'image.png', { type: 'image/png' });
 
                 // 检查是否应该跳过压缩
-                if (this.shouldSkipCompression(file, imgUrl)) {
+                const skipCheck = this.shouldSkipCompression(file, imgUrl);
+                if (skipCheck.skip) {
                   skippedCount++;
+                  if (skipCheck.reason === 'Excalidraw 插件资源') {
+                    console.log(`跳过 Excalidraw 插件资源: ${imgUrl}`);
+                  }
                   continue;
                 }
 
@@ -534,8 +542,17 @@ export default class ToolKitPlugin extends SiyuanPlugin {
    * @param imgUrl 图片 URL（可选，用于检查扩展名）
    * @returns 是否应该跳过压缩
    */
-  private shouldSkipCompression(file: File, imgUrl?: string): boolean {
+  private shouldSkipCompression(file: File, imgUrl?: string): { skip: boolean; reason?: string } {
     const settings = this.toolkit_setting.value();
+
+    // 检查是否为 Excalidraw 插件资源
+    const fileName = file.name.toLowerCase();
+    const urlPath = imgUrl?.toLowerCase() || '';
+    const isExcalidraw = fileName.startsWith('excalidraw-image-') || urlPath.includes('excalidraw-image-');
+
+    if (isExcalidraw) {
+      return { skip: true, reason: 'Excalidraw 插件资源' };
+    }
 
     // 检查是否为 WebP 图片
     const isWebp =
@@ -544,15 +561,15 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       (imgUrl && imgUrl.toLowerCase().includes('.webp'));
 
     if (settings.image_skip_webp && isWebp) {
-      return true;
+      return { skip: true, reason: 'WebP 格式' };
     }
 
     // 检查文件大小
     if (settings.image_skip_small && file.size < settings.image_min_size) {
-      return true;
+      return { skip: true, reason: '文件太小' };
     }
 
-    return false;
+    return { skip: false };
   }
 
   /**
@@ -570,7 +587,11 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     const settings = this.toolkit_setting.value();
 
     // 检查是否应该跳过
-    if (this.shouldSkipCompression(file)) {
+    const skipCheck = this.shouldSkipCompression(file);
+    if (skipCheck.skip) {
+      if (skipCheck.reason === 'Excalidraw 插件资源') {
+        console.log(`跳过 ${skipCheck.reason}: ${file.name}`);
+      }
       return null;
     }
 
@@ -648,11 +669,10 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       const file = new File([imageData], imgSrc.split('/').pop() || 'image.png', { type: 'image/png' });
 
       // 检查是否应该跳过压缩
-      if (this.shouldSkipCompression(file, imgSrc)) {
-        const skipReason = this.toolkit_setting.value().image_skip_webp && imgSrc.toLowerCase().includes('.webp')
-          ? '图片已经是 WebP 格式'
-          : '图片文件太小，无需压缩';
-        pushErrMsg(skipReason);
+      const skipCheck = this.shouldSkipCompression(file, imgSrc);
+      if (skipCheck.skip) {
+        const message = `跳过压缩: ${skipCheck.reason || '未知原因'}`;
+        pushMsg(message);
         return false;
       }
 
