@@ -187,13 +187,14 @@ export async function smartCompressImage(
       URL.revokeObjectURL(compressedPreview);
     }
 
-    console.log(
-      `[智能压缩] ` +
-      `质量${(quality * 100).toFixed(1)}% | ` +
-      `${(file.size / 1024).toFixed(1)}KB → ${compressedFile ? (compressedFile.size / 1024).toFixed(1) : 'N/A'}KB | ` +
-      `MS-SSIM ${similarity?.toFixed(2) ?? 'N/A'}% | ` +
-      `耗时 ${compressTime}ms`
-    );
+    // 静默处理压缩结果，不在每轮打印日志
+    // console.log(
+    //   `[智能压缩] ` +
+    //   `质量${(quality * 100).toFixed(1)}% | ` +
+    //   `${(file.size / 1024).toFixed(1)}KB → ${compressedFile ? (compressedFile.size / 1024).toFixed(1) : 'N/A'}KB | ` +
+    //   `MS-SSIM ${similarity?.toFixed(2) ?? 'N/A'}% | ` +
+    //   `耗时 ${compressTime}ms`
+    // );
 
     return { file: compressedFile, similarity, compressTime };
   };
@@ -236,8 +237,9 @@ export async function smartCompressImage(
         mid = Math.max(0.05, Math.min(1, mid + (Math.random() - 0.5) * 0.01));
       }
 
-      const hasBoundary = lowPoint !== null && highPoint !== null;
-      console.log(`[策略] 第${round}轮: ${hasBoundary ? '二分' : '找边界'} → 质量 ${(mid * 100).toFixed(1)}%`);
+      // 静默处理策略选择
+      // const hasBoundary = lowPoint !== null && highPoint !== null;
+      // console.log(`[策略] 第${round}轮: ${hasBoundary ? '二分' : '找边界'} → 质量 ${(mid * 100).toFixed(1)}%`);
     }
 
     const { file: compressedFile, similarity, compressTime } = await compressWithSimilarity(mid);
@@ -277,7 +279,8 @@ export async function smartCompressImage(
     // 退出判断
     if (round >= 3 && lowPoint && highPoint) {
       if (highPoint.quality - lowPoint.quality < 0.02) {
-        console.log(`[退出] 质量范围${((highPoint.quality - lowPoint.quality) * 100).toFixed(1)}%，已收敛`);
+        // 静默退出
+        // console.log(`[退出] 质量范围${((highPoint.quality - lowPoint.quality) * 100).toFixed(1)}%，已收敛`);
         break;
       }
     }
@@ -287,7 +290,16 @@ export async function smartCompressImage(
     throw new Error(`无法达到目标相似度 ${targetSimilarity}%`);
   }
 
-  console.log(`[完成] 最优质量: ${bestResult.quality.toFixed(3)} → 相似度 ${bestResult.similarity.toFixed(2)}% → 文件大小 ${(bestResult.file.size / 1024).toFixed(1)}KB`);
+  // 只打印最终结果
+  const compressionRatio = ((file.size - bestResult.file.size) / file.size * 100).toFixed(1);
+  console.log(
+    `[智能压缩完成] ` +
+    `${file.name} | ` +
+    `${(file.size / 1024).toFixed(1)}KB → ${(bestResult.file.size / 1024).toFixed(1)}KB (-${compressionRatio}%) | ` +
+    `相似度 ${bestResult.similarity.toFixed(2)}% | ` +
+    `轮数 ${roundTimes.length} | ` +
+    `总耗时 ${roundTimes.reduce((a, b) => a + b, 0)}ms`
+  );
 
   // 释放原始图片预览 URL
   URL.revokeObjectURL(originalPreview);

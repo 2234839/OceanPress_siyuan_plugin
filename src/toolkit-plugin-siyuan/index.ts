@@ -392,9 +392,9 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       }
 
       const kramdown = kramdownRes.kramdown;
-      // 匹配所有图片（排除 webp 格式），并使用工具提取块ID
+      // 匹配所有图片（排除 webp 和 gif 格式），并使用工具提取块ID
       const imageRegex =
-        /!\[([^\]]*)\]\(([^)\s]+\.(png|jpg|jpeg|gif|bmp|svg))(?:\s+"([^"]*)")?\)/gi;
+        /!\[([^\]]*)\]\(([^)\s]+\.(png|jpg|jpeg|bmp|svg))(?:\s+"([^"]*)")?\)/gi;
 
       const lines = kramdown.split('\n');
 
@@ -554,6 +554,16 @@ export default class ToolKitPlugin extends SiyuanPlugin {
       return { skip: true, reason: 'Excalidraw 插件资源' };
     }
 
+    // 检查是否为 GIF 图片（GIF 压缩会变成静态图，需要跳过）
+    const isGif =
+      fileName.endsWith('.gif') ||
+      file.type.includes('gif') ||
+      (imgUrl && imgUrl.toLowerCase().includes('.gif'));
+
+    if (isGif) {
+      return { skip: true, reason: 'GIF 动图' };
+    }
+
     // 检查是否为 WebP 图片
     const isWebp =
       file.name.toLowerCase().endsWith('.webp') ||
@@ -637,7 +647,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
           const spanImg = event.detail.element as HTMLElement;
           const img = spanImg.querySelector(`img[data-src]`) as HTMLImageElement;
           const imgSrc = img.dataset.src!;
-          const result = await this.compressSingleImage(imgSrc);
+          const result = await this.compressSingleImage(imgSrc, spanImg);
           if (result === true) {
             showMessage('图片压缩成功');
             // 移除UI组件，定时循环就会自动添加一个新的，能够重新加载一遍 json 数据
@@ -652,7 +662,7 @@ export default class ToolKitPlugin extends SiyuanPlugin {
     });
   }
 
-  async compressSingleImage(imgSrc: string): Promise<boolean | 'skipped'> {
+  async compressSingleImage(imgSrc: string, imgElement?: HTMLElement): Promise<boolean | 'skipped'> {
     try {
       // 检查是否为视频文件，排除视频格式
       if (this.isVideoFile(imgSrc)) {
@@ -688,30 +698,102 @@ export default class ToolKitPlugin extends SiyuanPlugin {
         const webpPath = Object.values(uploadRes.succMap)[0];
 
         if (webpPath) {
-          // 获取当前笔记的块ID来更新内容
-          const activeElement = document.querySelector('.protyle:not(.fn__none) .protyle-content');
-          if (activeElement) {
-            const documentElement = activeElement.querySelector('.protyle-title[data-node-id]');
-            if (documentElement) {
-              const blockId = documentElement.getAttribute('data-node-id');
-              if (blockId) {
-                const kramdownRes = await getBlockKramdown(blockId);
-                if (kramdownRes && kramdownRes.kramdown) {
-                  const kramdown = kramdownRes.kramdown;
-                  // 替换图片链接
-                  const updatedKramdown = kramdown.replace(
-                    new RegExp(`\\!\\[([^\\]]*)\\]\\(${imgSrc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s+"([^"]*)")?\\)`, 'g'),
-                    `![$1](${webpPath})`
-                  );
+          // 尝试找到图片所在的块
+          let blockId: string | null = null;
 
-                  if (updatedKramdown !== kramdown) {
-                    await updateBlock('markdown', updatedKramdown, blockId);
-                    return true;
-                  }
-                }
+          if (imgElement) {
+            // 从图片元素向上查找最近的块
+            const blockElement = imgElement.closest('[data-node-id]') as HTMLElement;
+            if (blockElement) {
+              blockId = blockElement.getAttribute('data-node-id');
+              console.log('[compressSingleImage] 找到图片所在块:', blockId);
+            } else {
+              console.warn('[compressSingleImage] 无法从 imgElement 找到块元素');
+            }
+          }
+
+          // 如果没找到，回退到文档级别的更新
+          if (!blockId) {
+            console.log('[compressSingleImage] 回退到文档级别更新');
+            const activeElement = document.querySelector('.protyle:not(.fn__none) .protyle-content');
+            if (activeElement) {
+              const documentElement = activeElement.querySelector('.protyle-title[data-node-id]');
+              if (documentElement) {
+                blockId = documentElement.getAttribute('data-node-id');
+                console.log('[compressSingleImage] 使用文档块ID:', blockId);
               }
             }
           }
+
+          if (!blockId) {
+            console.error('[compressSingleImage] 无法获取块ID');
+            showMessage('无法获取笔记块ID', 3000, 'error');
+            return false;
+          }
+
+          const kramdownRes = await getBlockKramdown(blockId);
+          if (!kramdownRes || !kramdownRes.kramdown) {
+            console.error('[compressSingleImage] 无法获取块内容:', blockId);
+            showMessage('无法获取块内容', 3000, 'error');
+            return false;
+          }
+
+          const kramdown = kramdownRes.kramdown;
+          // 使用简单的字符串查找和替换，避免复杂的正则表达式
+          // 查找图片链接的位置，替换 URL 部分，保留后面的所有内容（包括属性）
+          const imgIndex = kramdown.indexOf(`](${imgSrc})`);
+          if (imgIndex === -1) {
+            // 尝试查找带引号的 title 格式：](url "title")
+            const titleMatchIndex = kramdown.indexOf(`](${imgSrc} "`);
+            if (titleMatchIndex === -1) {
+              console.error('[compressSingleImage] 图片地址替换失败，未找到匹配项:', imgSrc);
+              console.log('[compressSingleImage] 块内容:', kramdown);
+              showMessage('图片地址替换失败', 3000, 'error');
+              return false;
+            }
+
+            // 找到了带 title 的格式，提取 title 和后面的内容
+            const beforeTitle = kramdown.substring(0, titleMatchIndex + 2); // ](
+            const afterTitleStart = titleMatchIndex + 2 + imgSrc.length + 2; // ](<url> "
+            const titleEndIndex = kramdown.indexOf('")', afterTitleStart);
+            if (titleEndIndex === -1) {
+              console.error('[compressSingleImage] 图片 title 格式错误');
+              showMessage('图片地址替换失败', 3000, 'error');
+              return false;
+            }
+            const title = kramdown.substring(afterTitleStart, titleEndIndex);
+            const afterTitle = kramdown.substring(titleEndIndex + 2); // 保留 ") 后面的所有内容（包括属性）
+            const updatedKramdown = beforeTitle + webpPath + ' "' + title + '")' + afterTitle;
+
+            await updateBlock('markdown', updatedKramdown, blockId);
+            // 等待一小段时间确保思源保存完成
+            await new Promise(resolve => setTimeout(resolve, 300));
+            console.log('[compressSingleImage] 图片压缩成功:', imgSrc, '->', webpPath);
+            return true;
+          }
+
+          // 简单格式：](url) 后面可能有属性 {: ...}
+          // 找到 url 后面的 ) 位置
+          const afterUrlStart = imgIndex + 2 + imgSrc.length;
+          const closingParenIndex = kramdown.indexOf(')', afterUrlStart);
+          if (closingParenIndex === -1) {
+            console.error('[compressSingleImage] 图片 URL 格式错误');
+            showMessage('图片地址替换失败', 3000, 'error');
+            return false;
+          }
+
+          const beforeUrl = kramdown.substring(0, imgIndex + 2); // ](
+          const afterUrl = kramdown.substring(closingParenIndex); // 保留 ) 后面的所有内容（包括属性）
+          const updatedKramdown = beforeUrl + webpPath + afterUrl;
+
+          await updateBlock('markdown', updatedKramdown, blockId);
+          // 等待一小段时间确保思源保存完成
+          await new Promise(resolve => setTimeout(resolve, 300));
+          console.log('[compressSingleImage] 图片压缩成功:', imgSrc, '->', webpPath);
+          return true;
+        } else {
+          console.error('[compressSingleImage] 上传图片失败，未返回路径');
+          showMessage('上传图片失败', 3000, 'error');
         }
       }
 
