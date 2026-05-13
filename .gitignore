@@ -11,3 +11,4 @@ tmp
 .env
 
 src/support-*
+.pilot

@@ -23,6 +23,7 @@
     "build:tts-plugin-siyuan": "cross-env plugin_name=tts-plugin-siyuan vite build",
     "build:expr": "cross-env plugin_name=expr vite build",
     "build:feed": "cross-env plugin_name=feed_siyuan_plugin vite build",
+    "build:pilot-siyuan-plugin": "cross-env plugin_name=pilot-siyuan-plugin vite build",
     "tsc": "vue-tsc --noEmit"
   },
   "devDependencies": {
@@ -35,6 +36,7 @@
     "typescript": "^6.0.3",
     "unplugin-vue-components": "^32.0.0",
     "vite": "^8.0.12",
+    "vite-plugin-pilot": "^1.0.31",
     "vite-plugin-vue-devtools": "^8.1.2",
     "vue-tsc": "^3.2.8"
   },

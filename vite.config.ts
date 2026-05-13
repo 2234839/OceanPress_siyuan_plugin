@@ -2,8 +2,10 @@ import { resolve } from 'path';
 import { defineConfig, type UserConfigExport, loadEnv } from 'vite';
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 import { writeFile, copyFile } from 'fs/promises';
+import { readFileSync } from 'fs';
 import { execSync } from 'child_process';
 import vue from '@vitejs/plugin-vue';
+import { pilot } from 'vite-plugin-pilot';
 
 console.log('=============================');
 const viteConfig: UserConfigExport = (ctx) => {
@@ -21,34 +23,22 @@ const viteConfig: UserConfigExport = (ctx) => {
   if (ctx.mode === 'production' && !process.env.CI && !process.env.SKIP_VERSION_BUMP) {
     console.log('自动提升插件版本号', pluginName);
     // 自动提升插件版本号
-    import(`./src/${pluginName}/plugin.json`).then((r) => {
+    const pluginJsonPath = resolve(__dirname, `src/${pluginName}/plugin.json`);
+    const pluginJson = JSON.parse(readFileSync(pluginJsonPath, 'utf-8'));
+    const newVersion = pluginJson.version.replace(/(\d+)$/, (match: string) => parseInt(match, 10) + 1);
+    const updated = { ...pluginJson, version: newVersion };
+    writeFile(
+      `./src/${pluginName}/plugin.json`,
+      JSON.stringify(updated, null, 2),
+    );
+    // 特例
+    if (pluginName === 'oceanpress-siyuan-plugin') {
       writeFile(
-        `./src/${pluginName}/plugin.json`,
-        JSON.stringify(
-          {
-            ...r.default,
-            version: r.default.version.replace(/(\d+)$/, (match) => parseInt(match, 10) + 1),
-          },
-          null,
-          2,
-        ),
+        `./plugin.json`,
+        JSON.stringify(updated, null, 2),
       );
-      // 特例
-      if (pluginName === 'oceanpress-siyuan-plugin') {
-        writeFile(
-          `./plugin.json`,
-          JSON.stringify(
-            {
-              ...r.default,
-              version: r.default.version.replace(/(\d+)$/, (match) => parseInt(match, 10) + 1),
-            },
-            null,
-            2,
-          ),
-        );
-        copyFile('./README.md', `./src/${pluginName}/README.md`);
-      }
-    });
+      copyFile('./README.md', `./src/${pluginName}/README.md`);
+    }
   }
   return defineConfig({
     server: {
@@ -80,6 +70,7 @@ const viteConfig: UserConfigExport = (ctx) => {
     plugins: [
       cssInjectedByJsPlugin(),
       vue(),
+      pilot({ locale: 'zh' }),
       // siyuan lib 实际上是空的，在运行时才能够通过 require 进行加载，
       // 而 vite 使用 import 会无法加载到改包，这里做一个 hack 给改成 require
       // 这样配合 vite-plugin-siyuan 就可以在开发的时候直接引用了

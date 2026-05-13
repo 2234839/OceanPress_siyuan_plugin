@@ -58,6 +58,23 @@
         </div>
       </div>
     </div>
+
+    <div class="config-section">
+      <h3 class="config-title">深度思考</h3>
+      <div class="config-fields">
+        <div class="config-field">
+          <label class="field-label">思考强度</label>
+          <select v-model="modelValue.reasoningEffort" class="field-input" @change="handleConfigChange">
+            <option value="">关闭</option>
+            <option value="low">低</option>
+            <option value="medium">中</option>
+            <option value="high">高</option>
+            <option value="max">最高</option>
+          </select>
+          <span class="field-hint">需要模型支持思考模式（如 DeepSeek V4）</span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -69,6 +86,8 @@ interface ApiConfig {
   apiKey: string;
   model: string;
   apiProvider: 'siyuan' | 'openai' | '崮生';
+  /** 深度思考强度 */
+  reasoningEffort: '' | 'low' | 'medium' | 'high' | 'max';
 }
 
 interface ApiProvider {
@@ -213,5 +232,12 @@ const handleProviderChange = () => {
 
 .field-input::placeholder {
   color: var(--b3-theme-on-background-light, #6c757d);
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--b3-theme-on-background-light, #999);
+  margin-top: 4px;
+  display: block;
 }
 </style>

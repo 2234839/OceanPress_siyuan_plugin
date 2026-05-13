@@ -1,0 +1,18 @@
+{
+  "name": "pilot-siyuan-plugin",
+  "author": "崮生",
+  "url": "https://github.com/2234839/OceanPress_siyuan_plugin",
+  "version": "0.0.1",
+  "minAppVersion": "2.10.3",
+  "backends": ["all"],
+  "frontends": ["all"],
+  "displayName": {
+    "en_US": "Pilot Dev Bridge",
+    "zh_CN": "Pilot 开发桥接"
+  },
+  "description": {
+    "en_US": "Inject vite-plugin-pilot bridge for browser testing during development",
+    "zh_CN": "注入 vite-plugin-pilot bridge 脚本，用于开发时浏览器测试"
+  },
+  "disabledInPublish": true
+}
