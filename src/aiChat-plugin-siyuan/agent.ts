@@ -236,6 +236,13 @@ export function getSiyuanAgent(): MicroAgentInstance {
   return currentAgent
 }
 
+/** 中止当前对话（不销毁 agent，保留上下文） */
+export function stopCurrentChat(): void {
+  if (currentAgent) {
+    currentAgent.stop()
+  }
+}
+
 /** 销毁当前 Agent 实例 */
 export function destroySiyuanAgent(): void {
   if (currentAgent) {

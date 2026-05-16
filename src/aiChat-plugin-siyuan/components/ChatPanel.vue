@@ -1,6 +1,11 @@
 <template>
-  <div class="chat-panel" contenteditable="false">
+  <div class="chat-panel">
     <div class="chat-messages" ref="messagesContainer">
+      <!-- 空状态 slogan -->
+      <div v-if="messages.length === 0 && !chatLoading" class="empty-state">
+        <div class="empty-title">OceanPress AI</div>
+        <div class="empty-subtitle">基于你的笔记回答问题</div>
+      </div>
       <template v-for="(msg, i) in messages" :key="i">
         <!-- 用户消息 -->
         <div v-if="msg.role === 'user'" class="msg msg-user">
@@ -82,11 +87,13 @@
         :disabled="chatLoading"
         rows="2"
       ></textarea>
-      <button class="send-btn" @click="sendChat" :disabled="chatLoading || !chatInput.trim()">
+      <button class="send-btn" @click="chatLoading ? abortChat() : sendChat()" :disabled="!chatLoading && !chatInput.trim()">
         <svg v-if="!chatLoading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
           <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
         </svg>
-        <div v-else class="send-spinner"></div>
+        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="stop-icon">
+          <rect x="6" y="6" width="12" height="12" rx="1"/>
+        </svg>
       </button>
     </div>
   </div>
@@ -96,7 +103,7 @@
 import { ref, nextTick, useTemplateRef } from "vue"
 import { consumeEach } from "micro-agent"
 import type { ChatEvent } from "micro-agent"
-import { getSiyuanAgent, destroySiyuanAgent } from "../agent"
+import { getSiyuanAgent, destroySiyuanAgent, stopCurrentChat } from "../agent"
 
 /** 对话消息 */
 export interface ChatMessage {
@@ -164,6 +171,11 @@ function clearMessages() {
   /** 清空 agent 上下文 */
   destroySiyuanAgent()
   emit('update', [])
+}
+
+/** 中止当前生成 */
+function abortChat() {
+  stopCurrentChat()
 }
 
 async function sendChat() {
@@ -235,7 +247,22 @@ async function sendChat() {
     messages.value.push(assistantMsg)
     emit('update', messages.value)
   } catch (e: any) {
-    chatError.value = e.message ?? String(e)
+    /** 被用户中断时，保留已生成的内容 */
+    const isCancelled = e?.code === 'CANCELLED' || e?.message?.includes('取消')
+    if (isCancelled && fullText) {
+      const assistantMsg: ChatMessage = {
+        role: "assistant",
+        content: fullText,
+        html: Md2BlockDOM(fullText),
+        toolCalls: roundToolCalls.length > 0
+          ? roundToolCalls.map(tc => ({ ...tc, _expanded: false }))
+          : undefined,
+      }
+      messages.value.push(assistantMsg)
+      emit('update', messages.value)
+    } else {
+      chatError.value = e.message ?? String(e)
+    }
   } finally {
     chatLoading.value = false
     currentToolCalls.value = []
@@ -265,6 +292,34 @@ defineExpose({ messages, loadMessages, clearMessages })
   flex-direction: column;
   gap: 0;
   padding: 0;
+}
+
+/* 空状态 */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 40px 16px;
+  user-select: none;
+}
+
+.empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--b3-theme-on-background, #333);
+  letter-spacing: 0.5px;
+}
+
+html[data-theme-mode="dark"] .empty-title {
+  color: var(--b3-theme-on-background, #e0e0e0);
+}
+
+.empty-subtitle {
+  font-size: 13px;
+  color: var(--b3-theme-on-background-light, #999);
 }
 
 /* 消息 — 不用气泡，用简单的区分 */
@@ -499,6 +554,14 @@ html[data-theme-mode="dark"] .chat-input {
 .send-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+.stop-icon {
+  color: var(--b3-theme-on-background-light, #999);
+}
+
+.send-btn:hover .stop-icon {
+  color: #dc2626;
 }
 
 .send-spinner {
