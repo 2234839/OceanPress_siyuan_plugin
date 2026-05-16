@@ -45,6 +45,7 @@
     "@jsquash/jpeg": "^1.6.0",
     "@jsquash/webp": "^1.5.0",
     "@llej/js_util": "^1.0.10",
+    "@llej/micro-agent": "^0.1.1",
     "@sinclair/typebox": "^0.34.49",
     "@univerjs/core": "^0.22.0",
     "@univerjs/design": "^0.22.0",
@@ -88,8 +89,7 @@
     "superjson": "^2.2.6",
     "vite-plugin-css-injected-by-js": "^5.0.1",
     "vue": "^3.5.34",
-    "vue-router": "^5.0.6",
-    "@llej/micro-agent": "^0.1.0"
+    "vue-router": "^5.0.6"
   },
   "packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48"
 }

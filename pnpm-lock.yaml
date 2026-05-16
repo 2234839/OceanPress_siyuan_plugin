@@ -21,8 +21,8 @@ importers:
         specifier: ^1.0.10
         version: 1.0.10
       '@llej/micro-agent':
-        specifier: ^0.1.0
-        version: 0.1.0(typescript@6.0.3)
+        specifier: ^0.1.1
+        version: 0.1.1(typescript@6.0.3)
       '@sinclair/typebox':
         specifier: ^0.34.49
         version: 0.34.49
@@ -580,8 +580,8 @@ packages:
   '@llej/js_util@1.0.10':
     resolution: {integrity: sha512-IWUSgTULZevfAe5Q/wgYIvQHtJVhadFhdUwC2UOMcQ20nH1Ynz4qM/9ii/WOewUiCqNoQD5HpsjSmD4C1POMkg==}
 
-  '@llej/micro-agent@0.1.0':
-    resolution: {integrity: sha512-TtVPv61XTV5ndAb9/fzwYRfpiiXjZgNjZF/GNsOVoPho7lXGd07Rc1DouCU6R+7pU0RJ1fP228UyhHJa5K2Zow==}
+  '@llej/micro-agent@0.1.1':
+    resolution: {integrity: sha512-v2WRX03ZNi+oV5p+ytYyO8ITPFvYJMpgWddw8LJ6+6s5crLsSbrkgHvbmUwGHvhmjEUc4BNuS2RjYQFQQgZ2ng==}
 
   '@modelcontextprotocol/sdk@1.29.0':
     resolution: {integrity: sha512-zo37mZA9hJWpULgkRpowewez1y6ML5GsXJPY8FI0tBBCd77HEvza4jDqRKOXgHNn867PVGCyTdzqpz0izu5ZjQ==}
@@ -3291,7 +3291,7 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
-  '@llej/micro-agent@0.1.0(typescript@6.0.3)':
+  '@llej/micro-agent@0.1.1(typescript@6.0.3)':
     dependencies:
       '@vueuse/core': 14.3.0(vue@3.6.0-beta.10(typescript@6.0.3))
       vue: 3.6.0-beta.10(typescript@6.0.3)

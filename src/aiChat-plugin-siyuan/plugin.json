@@ -2,7 +2,7 @@
   "name": "aichat-plugin-siyuan",
   "author": "崮生",
   "url": "https://github.com/2234839/aichat-plugin-siyuan",
-  "version": "0.0.77",
+  "version": "0.0.80",
   "minAppVersion": "2.10.3",
   "backends": [
     "all"
@@ -11,12 +11,12 @@
     "all"
   ],
   "displayName": {
-    "en_US": "思源ai助手",
-    "zh_CN": "aichat-plugin-siyuan"
+    "en_US": "AI Chat",
+    "zh_CN": "AI 对话助手"
   },
   "description": {
-    "en_US": "",
-    "zh_CN": "通过多轮对话且自动搜索相关笔记提交给ai的形式得到回答"
+    "en_US": "AI chat assistant that automatically searches your notes and provides answers with source references",
+    "zh_CN": "通过多轮对话自动搜索相关笔记并附带来源引用的 AI 对话助手"
   },
   "readme": {
     "en_US": "README.md",
