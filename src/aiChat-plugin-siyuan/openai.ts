@@ -12,38 +12,3 @@ export const aiChatConfig = reactive({
 })
 
 // #endregion
-
-// #region 搜索状态
-
-export interface SearchState {
-  isSearching: boolean
-  currentStep: string
-  round: number
-  keywords: string[]
-  searchResults: any[]
-  thinkingProcess: string[]
-  /** 流式输出时的当前文本快照 */
-  streamingText: string
-  /** 工具调用记录 */
-  toolCalls: ToolCallRecord[]
-}
-
-/** 单次工具调用记录 */
-export interface ToolCallRecord {
-  name: string
-  args: Record<string, unknown>
-  result?: string
-}
-
-export const searchState = reactive<SearchState>({
-  isSearching: false,
-  currentStep: '',
-  round: 0,
-  keywords: [],
-  searchResults: [],
-  thinkingProcess: [],
-  streamingText: '',
-  toolCalls: [],
-})
-
-// #endregion

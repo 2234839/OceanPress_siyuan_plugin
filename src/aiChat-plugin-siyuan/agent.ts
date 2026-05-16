@@ -164,12 +164,12 @@ ${toolsSection}
 
 // #region Agent 管理
 
-/** 思源笔记专用 SkillConfig（无 bash 命令，纯自定义工具） */
+/** 思源笔记专用 SkillConfig（无 bash 命令，纯自定义工具。systemPrompt 由 createMicroAgent 的 config 传入） */
 const siyuanSkill: SkillConfig = {
   name: 'siyuan-notes-assistant',
   description: '思源笔记搜索助手',
   commands: [],
-  systemPrompt: buildSystemPrompt(),
+  systemPrompt: '',
   initialMessage: '',
 }
 

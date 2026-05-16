@@ -80,7 +80,7 @@ export default class VitePlugin extends SiyuanPlugin {
   showDialog() {
     const dialog = new Dialog({
       title: 'AI 助手',
-      content: `<div class="b3-dialog__content"></div>`,
+      content: `<div class="b3-dialog__content" style="max-width:800px;width:90vw;"></div>`,
     });
     const div = dialog.element.querySelector('.b3-dialog__content')! as HTMLElement;
     this.addVueUi(div, AiChatDialog, {
