@@ -6,7 +6,7 @@ import '@univerjs/sheets-ui/lib/index.css';
 import '@univerjs/ui/lib/index.css';
 
 import { CommandType, LocaleType, merge, Univer, UniverInstanceType } from '@univerjs/core';
-import { defaultTheme } from '@univerjs/design';
+import { defaultTheme } from '@univerjs/themes';
 
 import { UniverFormulaEnginePlugin } from '@univerjs/engine-formula';
 import { UniverRenderEnginePlugin } from '@univerjs/engine-render';

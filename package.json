@@ -72,6 +72,7 @@
     "@univerjs/sheets-thread-comment": "^0.22.0",
     "@univerjs/sheets-thread-comment-ui": "^0.22.0",
     "@univerjs/sheets-ui": "^0.22.0",
+    "@univerjs/themes": "^0.22.0",
     "@univerjs/thread-comment": "^0.22.0",
     "@univerjs/thread-comment-ui": "^0.22.0",
     "@univerjs/ui": "^0.22.0",
