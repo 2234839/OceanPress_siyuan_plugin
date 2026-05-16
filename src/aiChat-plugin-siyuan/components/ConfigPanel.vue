@@ -85,13 +85,13 @@ interface ApiConfig {
   apiBaseUrl: string;
   apiKey: string;
   model: string;
-  apiProvider: 'siyuan' | 'openai' | '崮生';
+  apiProvider: 'siyuan' | 'openai';
   /** 深度思考强度 */
   reasoningEffort: '' | 'low' | 'medium' | 'high' | 'max';
 }
 
 interface ApiProvider {
-  value: 'siyuan' | 'openai' | '崮生';
+  value: 'siyuan' | 'openai';
   label: string;
   description: string;
   disabled?: boolean;
@@ -111,11 +111,6 @@ const apiProviders: ApiProvider[] = [
     value: 'siyuan',
     label: '思源内置 AI',
     description: '使用思源笔记设置中的 AI 配置'
-  },
-  {
-    value: '崮生',
-    label: '插件作者提供',
-    description: '使用插件作者提供的 AI 服务'
   },
   {
     value: 'openai',

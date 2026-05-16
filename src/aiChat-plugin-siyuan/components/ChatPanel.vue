@@ -94,8 +94,9 @@
 
 <script setup lang="ts">
 import { ref, nextTick, useTemplateRef } from "vue"
-import type { ToolCallRecord } from "../openai"
-import { 执行优化版ai问答 } from "../openai"
+import { consumeEach } from "micro-agent"
+import type { ChatEvent } from "micro-agent"
+import { getSiyuanAgent, destroySiyuanAgent } from "../agent"
 
 /** 对话消息 */
 export interface ChatMessage {
@@ -103,6 +104,13 @@ export interface ChatMessage {
   content: string
   html?: string
   toolCalls?: (ToolCallRecord & { _expanded?: boolean })[]
+}
+
+/** 工具调用记录 */
+export interface ToolCallRecord {
+  name: string
+  args: Record<string, unknown>
+  result?: string
 }
 
 const emit = defineEmits<{
@@ -144,13 +152,6 @@ function handleEnter(e: KeyboardEvent) {
   if (!chatLoading.value && chatInput.value.trim()) sendChat()
 }
 
-/** 构建历史对话 */
-function buildHistory() {
-  return messages.value
-    .filter(m => m.content)
-    .map(m => ({ role: m.role, content: m.content }))
-}
-
 /** 恢复历史消息（外部持久化后加载） */
 function loadMessages(saved: ChatMessage[]) {
   messages.value = saved
@@ -160,6 +161,8 @@ function loadMessages(saved: ChatMessage[]) {
 function clearMessages() {
   messages.value = []
   chatError.value = ""
+  /** 清空 agent 上下文 */
+  destroySiyuanAgent()
   emit('update', [])
 }
 
@@ -179,30 +182,52 @@ async function sendChat() {
 
   /** 记录本轮工具调用 */
   const roundToolCalls: ToolCallRecord[] = []
+  let fullText = ""
+
+  const agent = getSiyuanAgent()
 
   try {
-    const result = await 执行优化版ai问答(input, undefined, (stream) => {
-      if (stream.toolCalls.length) {
-        currentToolCalls.value = [...stream.toolCalls]
-        /** 更新 roundToolCalls */
-        for (const tc of stream.toolCalls) {
-          if (!roundToolCalls.find(r => r.name === tc.name && JSON.stringify(r.args) === JSON.stringify(tc.args))) {
-            roundToolCalls.push({ ...tc })
+    await consumeEach(agent.chat(input), (event: ChatEvent) => {
+      switch (event.type) {
+        case 'text':
+          fullText += event.content
+          streamingHtml.value = Md2BlockDOM(fullText)
+          currentToolCalls.value = []
+          scrollToBottom()
+          break
+
+        case 'tool_call': {
+          let args: Record<string, unknown> = {}
+          try { args = JSON.parse(event.args) } catch { /* ignore */ }
+          const record: ToolCallRecord = { name: event.name, args }
+          roundToolCalls.push(record)
+          currentToolCalls.value = [...roundToolCalls]
+          scrollToBottom()
+          break
+        }
+
+        case 'tool_result': {
+          /** 更新最后一个匹配工具的结果 */
+          const matching = roundToolCalls.find(tc =>
+            tc.name === event.name && !tc.result
+          )
+          if (matching) {
+            matching.result = event.result.length > 200
+              ? event.result.slice(0, 200) + '...'
+              : event.result
           }
+          currentToolCalls.value = [...roundToolCalls]
+          scrollToBottom()
+          break
         }
       }
-      if (stream.streamingText) {
-        streamingHtml.value = Md2BlockDOM(stream.streamingText)
-        currentToolCalls.value = []
-      }
-      scrollToBottom()
-    }, buildHistory())
+    })
 
     /** 添加助手消息 */
     const assistantMsg: ChatMessage = {
       role: "assistant",
-      content: result.finalAnswer,
-      html: Md2BlockDOM(result.finalAnswer),
+      content: fullText,
+      html: Md2BlockDOM(fullText),
       toolCalls: roundToolCalls.length > 0
         ? roundToolCalls.map(tc => ({ ...tc, _expanded: false }))
         : undefined,
@@ -233,59 +258,46 @@ defineExpose({ messages, loadMessages, clearMessages })
 .chat-messages {
   flex: 1;
   min-height: 160px;
-  max-height: calc(70vh - 180px);
+  max-height: calc(70vh - 140px);
   overflow-y: auto;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 4px 0;
+  gap: 0;
+  padding: 0;
 }
 
-/* 消息 */
+/* 消息 — 不用气泡，用简单的区分 */
 .msg {
-  display: flex;
-  flex-direction: column;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--b3-border-color, rgba(0,0,0,0.06));
 }
 
-.msg-user {
-  align-items: flex-end;
-}
-
-.msg-assistant {
-  align-items: flex-start;
+.msg:last-child {
+  border-bottom: none;
 }
 
 .msg-content {
-  max-width: 85%;
   font-size: 14px;
   line-height: 1.7;
   word-break: break-word;
 }
 
-.user-bubble {
-  padding: 8px 14px;
-  background: var(--b3-theme-primary, #3573f0);
-  color: #fff;
-  border-radius: 12px 12px 2px 12px;
-}
-
-.assistant-bubble {
-  padding: 8px 14px;
-  background: var(--b3-theme-background-light, #f5f5f5);
+.msg-user .msg-content {
   color: var(--b3-theme-on-background, #333);
-  border-radius: 12px 12px 12px 2px;
 }
 
-html[data-theme-mode="dark"] .assistant-bubble {
-  background: var(--b3-theme-background-light, #2a2a2a);
+.msg-assistant .msg-content {
+  color: var(--b3-theme-on-background, #333);
+}
+
+html[data-theme-mode="dark"] .msg-content {
   color: var(--b3-theme-on-background, #e0e0e0);
 }
 
 .assistant-bubble.thinking {
   color: var(--b3-theme-on-background-light, #999);
   font-size: 13px;
-  padding: 10px 16px;
 }
 
 .thinking-dots {
@@ -298,55 +310,50 @@ html[data-theme-mode="dark"] .assistant-bubble {
   80%, 100% { opacity: 0.2; }
 }
 
-/* 工具调用 */
+/* 工具调用 — 简洁内联 */
 .tool-calls {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 4px;
-  max-width: 85%;
+  gap: 2px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--b3-theme-on-background-light, #999);
 }
 
 .tool-call-item {
-  border: 1px solid var(--b3-border-color, #e8e8e8);
-  border-radius: 8px;
-  overflow: hidden;
-  font-size: 12px;
+  border-left: 2px solid var(--b3-theme-background-light, #ddd);
+  padding: 2px 0 2px 8px;
 }
 
 html[data-theme-mode="dark"] .tool-call-item {
-  border-color: var(--b3-border-color, #444);
+  border-left-color: var(--b3-theme-background-light, #444);
 }
 
 .tool-call-item.live {
-  border-style: dashed;
+  border-left-style: dashed;
 }
 
 .tool-call-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
   cursor: pointer;
-  background: var(--b3-theme-background, rgba(0,0,0,0.02));
 }
 
 .tool-call-item:not(.live) .tool-call-header:hover {
-  background: var(--b3-theme-background-light, #f0f0f0);
-}
-
-.tool-icon {
-  flex-shrink: 0;
-  color: var(--b3-theme-on-background-light, #999);
+  color: var(--b3-theme-on-background, #333);
 }
 
 .tool-name {
-  font-weight: 600;
-  color: var(--b3-theme-primary, #3573f0);
+  font-weight: 500;
+  color: var(--b3-theme-on-background-light, #666);
+}
+
+html[data-theme-mode="dark"] .tool-name {
+  color: var(--b3-theme-on-background-light, #aaa);
 }
 
 .tool-args-preview {
-  color: var(--b3-theme-on-background-light, #888);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -356,7 +363,6 @@ html[data-theme-mode="dark"] .tool-call-item {
 .expand-icon {
   flex-shrink: 0;
   transition: transform 0.2s;
-  color: var(--b3-theme-on-background-light, #999);
 }
 
 .expand-icon.expanded {
@@ -364,13 +370,16 @@ html[data-theme-mode="dark"] .tool-call-item {
 }
 
 .tool-call-detail {
-  padding: 8px 10px;
-  border-top: 1px solid var(--b3-border-color, #eee);
-  background: var(--b3-theme-background, rgba(0,0,0,0.015));
+  padding: 4px 0 0 0;
+  color: var(--b3-theme-on-background, #555);
+}
+
+html[data-theme-mode="dark"] .tool-call-detail {
+  color: var(--b3-theme-on-background, #ccc);
 }
 
 .tool-detail-row {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .tool-detail-row:last-child {
@@ -378,26 +387,22 @@ html[data-theme-mode="dark"] .tool-call-item {
 }
 
 .tool-detail-label {
-  font-weight: 600;
   font-size: 11px;
-  text-transform: uppercase;
   color: var(--b3-theme-on-background-light, #888);
-  display: block;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .tool-call-detail code {
   font-size: 11px;
   white-space: pre-wrap;
   word-break: break-all;
-  color: var(--b3-theme-on-background, #555);
 }
 
 .tool-spinner {
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid var(--b3-border-color, #ddd);
-  border-top-color: var(--b3-theme-primary, #3573f0);
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--b3-border-color, #ddd);
+  border-top-color: var(--b3-theme-on-background-light, #999);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   flex-shrink: 0;
@@ -410,49 +415,52 @@ html[data-theme-mode="dark"] .tool-call-item {
 /* 输入区 */
 .chat-input-section {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: flex-end;
   flex-shrink: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--b3-border-color, rgba(0,0,0,0.06));
 }
 
 .clear-btn {
-  width: 44px;
-  height: 44px;
+  width: 28px;
+  height: 28px;
   background: transparent;
   color: var(--b3-theme-on-background-light, #999);
-  border: 1px solid var(--b3-border-color, #ddd);
-  border-radius: 10px;
+  border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 0.2s;
+  opacity: 0.6;
+  transition: opacity 0.15s;
 }
 
 .clear-btn:hover:not(:disabled) {
+  opacity: 1;
   color: #dc2626;
-  border-color: #dc2626;
 }
 
 .clear-btn:disabled {
-  opacity: 0.3;
+  opacity: 0.2;
   cursor: not-allowed;
 }
 
 .chat-input {
   flex: 1;
-  min-height: 44px;
-  max-height: 120px;
-  padding: 10px 14px;
+  min-height: 28px;
+  max-height: 100px;
+  padding: 4px 6px;
   border: 1px solid var(--b3-border-color, #ddd);
-  border-radius: 10px;
+  border-radius: 2px;
   font-size: 14px;
   resize: none;
   font-family: inherit;
+  line-height: 1.5;
   background: var(--b3-theme-background, #fff);
   color: var(--b3-theme-on-background, #333);
-  transition: border-color 0.2s;
+  transition: border-color 0.15s;
 }
 
 html[data-theme-mode="dark"] .chat-input {
@@ -471,50 +479,44 @@ html[data-theme-mode="dark"] .chat-input {
 }
 
 .send-btn {
-  width: 44px;
-  height: 44px;
-  background: var(--b3-theme-primary, #3573f0);
-  color: white;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  color: var(--b3-theme-on-background-light, #999);
   border: none;
-  border-radius: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: opacity 0.2s;
+  transition: color 0.15s;
 }
 
 .send-btn:hover:not(:disabled) {
-  opacity: 0.85;
+  color: var(--b3-theme-primary, #3573f0);
 }
 
 .send-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
 .send-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: white;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--b3-border-color, #ddd);
+  border-top-color: var(--b3-theme-on-background-light, #999);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
 .chat-error {
-  padding: 10px 14px;
-  background: #fef2f2;
+  padding: 6px 8px;
   color: #dc2626;
-  border-radius: 8px;
   font-size: 13px;
-  border: 1px solid #fecaca;
 }
 
 html[data-theme-mode="dark"] .chat-error {
-  background: #2d1515;
   color: #f87171;
-  border-color: #5a2020;
 }
 </style>

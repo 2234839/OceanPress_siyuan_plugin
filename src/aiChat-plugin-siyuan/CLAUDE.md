@@ -1,0 +1,1 @@
+嵌入 /home/gs/opensource_code/micro-agent 来实现在思源笔记中利用 ai 辅助用户，如果有必要的话可以去修改 micro-agent 的代码
