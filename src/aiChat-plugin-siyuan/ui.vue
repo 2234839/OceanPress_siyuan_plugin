@@ -1,5 +1,6 @@
 <template>
-  <div class="ai-chat-container" :class="oceanpress_ui_flag" contenteditable="false">
+  <div class="ai-chat-container" :class="oceanpress_ui_flag"
+    @mousedown.stop @mouseup.stop @click.stop @dblclick.stop>
     <ChatPanel ref="chatPanel" @update="onMessagesUpdate" />
   </div>
 </template>

@@ -1,5 +1,5 @@
 <template>
-  <div class="dialog-container" contenteditable="false">
+  <div class="dialog-container">
     <div class="main-tabs">
       <button
         v-for="tab in tabs"

@@ -100,9 +100,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, useTemplateRef } from "vue"
-import { consumeEach } from "micro-agent"
-import type { ChatEvent } from "micro-agent"
+import { ref, nextTick, useTemplateRef, onUpdated } from "vue"
+import { consumeEach } from "@llej/micro-agent"
+import type { ChatEvent } from "@llej/micro-agent"
 import { getSiyuanAgent, destroySiyuanAgent, stopCurrentChat } from "../agent"
 
 /** 对话消息 */
@@ -141,6 +141,16 @@ const lute = Lute.New()
 function Md2BlockDOM(md: string) {
   return lute.Md2BlockDOM(md) as string
 }
+
+/** 清除 Lute 渲染 HTML 中的 contenteditable 属性，确保文本可正常选中 */
+function cleanContentEditable() {
+  if (!messagesContainer.value) return
+  for (const el of messagesContainer.value.querySelectorAll('[contenteditable]')) {
+    el.removeAttribute('contenteditable')
+  }
+}
+
+onUpdated(cleanContentEditable)
 
 function scrollToBottom() {
   nextTick(() => {
@@ -336,6 +346,7 @@ html[data-theme-mode="dark"] .empty-title {
   font-size: 14px;
   line-height: 1.7;
   word-break: break-word;
+  user-select: text;
 }
 
 .msg-user .msg-content {

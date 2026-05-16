@@ -5,8 +5,8 @@
  * 替代手工 tool calling 循环，获得流式输出、重试、上下文压缩等能力。
  */
 
-import { createMicroAgent, createOpenAILLMCaller, type MicroAgentInstance, type CustomToolDef } from 'micro-agent'
-import type { SkillConfig } from 'micro-agent'
+import { createMicroAgent, createOpenAILLMCaller, type MicroAgentInstance, type CustomToolDef } from '@llej/micro-agent'
+import type { SkillConfig } from '@llej/micro-agent'
 import { fetchSyncPost } from 'siyuan'
 import { sql } from '~/libs/api'
 import { aiChatConfig } from './openai'
