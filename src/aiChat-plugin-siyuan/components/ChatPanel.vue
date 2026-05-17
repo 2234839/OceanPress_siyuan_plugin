@@ -1,5 +1,6 @@
 <template>
-  <div class="chat-panel">
+  <div class="chat-panel" contenteditable="false"
+    @mousedown.stop @mouseup.stop @click.stop @dblclick.stop @keydown.stop>
     <div class="chat-messages" ref="messagesContainer">
       <!-- 空状态 slogan -->
       <div v-if="messages.length === 0 && !chatLoading" class="empty-state">
@@ -17,9 +18,6 @@
           <div v-if="msg.toolCalls?.length" class="tool-calls">
             <div v-for="(tc, j) in msg.toolCalls" :key="j" class="tool-call-item">
               <div class="tool-call-header" @click="tc._expanded = !tc._expanded">
-                <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-                </svg>
                 <span class="tool-name">{{ tc.name }}</span>
                 <span class="tool-args-preview">{{ formatArgs(tc.args) }}</span>
                 <svg class="expand-icon" :class="{ expanded: tc._expanded }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
@@ -61,8 +59,7 @@
         <div class="tool-calls">
           <div v-for="(tc, j) in currentToolCalls" :key="'live-'+j" class="tool-call-item live">
             <div class="tool-call-header">
-              <div class="tool-spinner"></div>
-              <span class="tool-name">{{ tc.name }}</span>
+              <span class="tool-name live-name">{{ tc.name }}</span>
               <span class="tool-args-preview">{{ formatArgs(tc.args) }}</span>
             </div>
           </div>
@@ -134,6 +131,11 @@ export interface ToolCallRecord {
 const emit = defineEmits<{
   /** 消息列表变化时触发，用于外部持久化 */
   update: [messages: ChatMessage[]]
+}>()
+
+const props = defineProps<{
+  /** 嵌入聊天块场景传入，用于定位所在文档 */
+  blockId?: string
 }>()
 
 const messagesContainer = useTemplateRef<HTMLElement>("messagesContainer")
@@ -252,7 +254,7 @@ async function sendChat() {
   const roundToolCalls: ToolCallRecord[] = []
   let fullText = ""
 
-  const agent = getSiyuanAgent()
+  const agent = getSiyuanAgent(props.blockId)
 
   try {
     await consumeEach(agent.chat(input), (event: ChatEvent) => {
@@ -320,6 +322,20 @@ defineExpose({ messages, loadMessages, clearMessages })
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  cursor: default !important;
+}
+
+/** 强制覆盖思源 protyle 的 cursor: text */
+.chat-panel :deep(*) {
+  cursor: default !important;
+}
+
+.chat-panel .chat-input {
+  cursor: text !important;
+}
+
+.chat-panel button {
+  cursor: pointer !important;
 }
 
 .chat-messages {
@@ -406,47 +422,76 @@ html[data-theme-mode="dark"] .msg-content {
   80%, 100% { opacity: 0.2; }
 }
 
-/* 工具调用 — 简洁内联 */
+/* 工具调用 */
 .tool-calls {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-bottom: 6px;
+  gap: 4px;
+  margin-bottom: 8px;
   font-size: 12px;
-  color: var(--b3-theme-on-background-light, #999);
 }
 
 .tool-call-item {
-  border-left: 2px solid var(--b3-theme-background-light, #ddd);
-  padding: 2px 0 2px 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--b3-theme-background-light, rgba(0,0,0,0.03));
+  transition: background 0.15s;
 }
 
 html[data-theme-mode="dark"] .tool-call-item {
-  border-left-color: var(--b3-theme-background-light, #444);
+  background: var(--b3-theme-background-light, rgba(255,255,255,0.04));
+}
+
+.tool-call-item:not(.live) .tool-call-header {
+  cursor: pointer;
+}
+
+.tool-call-item:not(.live):hover {
+  background: var(--b3-theme-background-light, rgba(0,0,0,0.06));
+}
+
+html[data-theme-mode="dark"] .tool-call-item:not(.live):hover {
+  background: var(--b3-theme-background-light, rgba(255,255,255,0.07));
 }
 
 .tool-call-item.live {
-  border-left-style: dashed;
+  background: transparent;
 }
 
 .tool-call-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  cursor: pointer;
-}
-
-.tool-call-item:not(.live) .tool-call-header:hover {
-  color: var(--b3-theme-on-background, #333);
 }
 
 .tool-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-weight: 500;
-  color: var(--b3-theme-on-background-light, #666);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--b3-theme-primary, #3573f0);
+  color: #fff;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1.5;
 }
 
-html[data-theme-mode="dark"] .tool-name {
-  color: var(--b3-theme-on-background-light, #aaa);
+.live-name {
+  background: var(--b3-theme-primary, #3573f0);
+  position: relative;
+}
+
+.live-name::after {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fff;
+  animation: pulse 1.2s ease-in-out infinite;
 }
 
 .tool-args-preview {
@@ -454,11 +499,13 @@ html[data-theme-mode="dark"] .tool-name {
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
+  color: var(--b3-theme-on-background-light, #999);
 }
 
 .expand-icon {
   flex-shrink: 0;
   transition: transform 0.2s;
+  color: var(--b3-theme-on-background-light, #bbb);
 }
 
 .expand-icon.expanded {
@@ -466,7 +513,7 @@ html[data-theme-mode="dark"] .tool-name {
 }
 
 .tool-call-detail {
-  padding: 4px 0 0 0;
+  padding: 6px 0 0 0;
   color: var(--b3-theme-on-background, #555);
 }
 
@@ -494,14 +541,9 @@ html[data-theme-mode="dark"] .tool-call-detail {
   word-break: break-all;
 }
 
-.tool-spinner {
-  width: 10px;
-  height: 10px;
-  border: 1px solid var(--b3-border-color, #ddd);
-  border-top-color: var(--b3-theme-on-background-light, #999);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  flex-shrink: 0;
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
 @keyframes spin {

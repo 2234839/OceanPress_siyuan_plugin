@@ -8,7 +8,7 @@
 import { createMicroAgent, createOpenAILLMCaller, type MicroAgentInstance, type CustomToolDef } from '@llej/micro-agent'
 import type { SkillConfig } from '@llej/micro-agent'
 import { fetchSyncPost } from 'siyuan'
-import { sql } from '~/libs/api'
+import { sql, exportMdContent } from '~/libs/api'
 import { aiChatConfig } from './openai'
 import { semanticSearch } from './qdrant/search'
 import { qdrantConfig } from './qdrant/types'
@@ -114,6 +114,68 @@ function buildCustomTools(): CustomToolDef[] {
 
 // #endregion
 
+// #region 文档上下文
+
+/** 当前活跃的 blockId（每次获取 agent 时更新，供 contextTransform 闭包使用） */
+let activeBlockId: string | undefined
+
+/**
+ * 获取当前文档上下文（文档内容 + 选中文本）。
+ * - 有 blockId 时通过 SQL 查 root_id（嵌入聊天块场景）
+ * - 否则通过 DOM 查询当前活动文档（弹窗场景）
+ */
+async function getDocContext(blockId?: string): Promise<string> {
+  const parts: string[] = []
+
+  /** 获取文档 ID */
+  let docId: string | undefined
+
+  if (blockId) {
+    const rows = await sql(
+      `SELECT root_id FROM blocks WHERE id = '${blockId}' LIMIT 1`,
+    ) as any[]
+    if (rows?.[0]?.root_id) {
+      docId = rows[0].root_id
+    }
+  }
+
+  if (!docId) {
+    const el = document.querySelector(
+      '.protyle:not(.fn__none) .protyle-title[data-node-id]',
+    )
+    docId = el?.getAttribute('data-node-id') ?? undefined
+  }
+
+  if (docId) {
+    try {
+      const res = await exportMdContent(docId)
+      if (res?.content) {
+        /** 截断过长内容，避免占用过多 token */
+        const maxLen = 8000
+        const content = res.content.length > maxLen
+          ? res.content.slice(0, maxLen) + '\n...(文档内容过长，已截断)'
+          : res.content
+        parts.push(`## 当前文档内容\n\n${content}`)
+      }
+    } catch {
+      /** 导出失败时静默忽略，不影响对话 */
+    }
+  }
+
+  const selection = window.getSelection()?.toString().trim()
+  if (selection) {
+    const maxLen = 4000
+    const truncated = selection.length > maxLen
+      ? selection.slice(0, maxLen) + '...(选中文本过长，已截断)'
+      : selection
+    parts.push(`## 用户选中的文本\n\n${truncated}`)
+  }
+
+  return parts.join('\n\n')
+}
+
+// #endregion
+
 // #region system prompt
 
 /** 动态构建 system prompt */
@@ -205,8 +267,12 @@ function getConfigFingerprint(): string {
  * 获取或创建 Agent 实例
  *
  * 配置变化时自动销毁旧实例、创建新实例。
+ * blockId 在嵌入聊天块场景传入，用于定位所在文档。
  */
-export function getSiyuanAgent(): MicroAgentInstance {
+export function getSiyuanAgent(blockId?: string): MicroAgentInstance {
+  /** 更新活跃 blockId，供 contextTransform 使用 */
+  activeBlockId = blockId
+
   const fingerprint = getConfigFingerprint()
   if (currentAgent && fingerprint === lastConfigFingerprint) {
     return currentAgent
@@ -230,6 +296,28 @@ export function getSiyuanAgent(): MicroAgentInstance {
     enableReasoning: !!aiChatConfig.reasoningEffort,
     reasoningEffort: (aiChatConfig.reasoningEffort === 'max' ? 'high' : aiChatConfig.reasoningEffort) || undefined,
     maxTokens: 8192,
+    /** 每次 LLM 调用前注入当前文档上下文 */
+    contextTransform: async (messages) => {
+      const docContext = await getDocContext(activeBlockId)
+      if (!docContext) return messages
+
+      const transformed = [...messages]
+      const sysIdx = transformed.findIndex(m => m.role === 'system')
+      if (sysIdx >= 0) {
+        const original = transformed[sysIdx]!
+        transformed[sysIdx] = {
+          ...original,
+          content: `${original.content ?? ''}\n\n---\n\n${docContext}`,
+        }
+      } else {
+        transformed.unshift({
+          id: 'doc-context',
+          role: 'system',
+          content: docContext,
+        })
+      }
+      return transformed
+    },
   })
 
   lastConfigFingerprint = fingerprint

@@ -1,7 +1,8 @@
 <template>
   <div class="ai-chat-container" :class="oceanpress_ui_flag"
-    @mousedown.stop @mouseup.stop @click.stop @dblclick.stop>
-    <ChatPanel ref="chatPanel" @update="onMessagesUpdate" />
+    contenteditable="false"
+    @mousedown.stop @mouseup.stop @click.stop @dblclick.stop @keydown.stop>
+    <ChatPanel ref="chatPanel" :block-id="blockId" @update="onMessagesUpdate" />
   </div>
 </template>
 
@@ -60,6 +61,11 @@ onMounted(() => {
   border-radius: 12px;
   border: 1px solid var(--b3-border-color, #e4e7ed);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  cursor: default !important;
+}
+
+.ai-chat-container :deep(*) {
+  cursor: default !important;
 }
 
 html[data-theme-mode="dark"] .ai-chat-container {
