@@ -102,16 +102,25 @@ export default class UniverPlugin extends SiyuanPlugin {
             `iframe[src*="univer-siyuan-plugin/univer.html?id=${payload.blockId}"]`,
           ),
         ] as HTMLIFrameElement[];
-        //@ts-expect-error
-        apis[payload.apiName](...payload.args).then((res) => {
-          const reply: apiRpcReply = {
+        let reply: apiRpcReply;
+        try {
+          //@ts-expect-error
+          const res = await apis[payload.apiName](...payload.args);
+          reply = {
             type: "llej-plugin-rpc-reply",
             msgID: event.msgID,
             payload: res,
           };
-          iframeList.forEach((iframe) => {
-            iframe.contentWindow?.postMessage(reply, "*");
-          });
+        } catch (error) {
+          reply = {
+            type: "llej-plugin-rpc-reply",
+            msgID: event.msgID,
+            payload: null,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+        iframeList.forEach((iframe) => {
+          iframe.contentWindow?.postMessage(reply, "*");
         });
       }
     };

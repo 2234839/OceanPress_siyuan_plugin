@@ -209,40 +209,63 @@ async function main() {
     document.querySelector('.univer-toolbar-container')?.children,
   );
 
-  const save = throttle(async () => {
-    const fWorkbook = univerAPI.getActiveWorkbook();
-    if (!fWorkbook) return;
-    const snapshot = fWorkbook.save();
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  let savePromise: Promise<void> = Promise.resolve();
+  let hasPendingChanges = false;
 
-    await api.putFile(
-      dataPath,
-      false,
-      new Blob([JSON.stringify(snapshot)], { type: 'text/plain' }),
-    );
-  }, 500);
+  const save = () => {
+    if (!hasPendingChanges) return savePromise;
+    hasPendingChanges = false;
+    savePromise = savePromise.then(async () => {
+      const fWorkbook = univerAPI.getActiveWorkbook();
+      if (!fWorkbook) {
+        hasPendingChanges = true;
+        return;
+      }
+      const snapshot = fWorkbook.save();
+      await api.putFile(
+        dataPath,
+        false,
+        new Blob([JSON.stringify(snapshot)], { type: 'text/plain' }),
+      );
+    }).catch(async (error) => {
+      hasPendingChanges = true;
+      console.error('[univer-siyuan-plugin] Failed to save workbook', error);
+      try {
+        const message = error instanceof Error ? error.message : String(error);
+        await api.pushErrMsg(`Univer 表格保存失败：${message}`);
+      } catch (notifyError) {
+        console.error('[univer-siyuan-plugin] Failed to show save error', notifyError);
+      }
+    });
+    return savePromise;
+  };
+  const scheduleSave = () => {
+    hasPendingChanges = true;
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      saveTimer = null;
+      void save();
+    }, 500);
+  };
+  const flushSave = () => {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    }
+    return save();
+  };
 
   // @ts-ignore - Deprecated API but still functional
   univerAPI.onCommandExecuted((command) => {
     if (command.type !== CommandType.MUTATION) return;
-    save();
+    scheduleSave();
+  });
+  window.addEventListener('pagehide', () => {
+    void flushSave();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') void flushSave();
   });
 }
 main();
-
-function throttle(func: () => void, wait: number) {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-
-  return function (...args: any) {
-    // 如果之前有一个未执行的定时器，则清除它
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-
-    // 设置一个新的定时器，在等待时间后执行函数
-    timeout = setTimeout(() => {
-      timeout = null;
-      // @ts-expect-error
-      func.apply(this, args);
-    }, wait);
-  };
-}
