@@ -23,6 +23,32 @@
   font-family: monospace;
 } */
 
+/* 新架构（;;;expr 自定义块）：求值结果通过属性在伪元素中呈现 */
+.expr-plugin [data-type="NodeCustomBlock"][data-info="expr"][custom-expr-value]::after {
+  content: attr(custom-expr-value);
+  display: block;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: var(--b3-list-hover, #f0f0f0);
+  font-family: monospace;
+  font-size: small;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 编辑按钮：块 hover 时显示（按钮自身的样式在组件 scoped 内） */
+.expr-plugin [data-type="NodeCustomBlock"][data-info="expr"]:hover .expr-edit-btn {
+  opacity: 1;
+}
+.expr-plugin [data-type="NodeCustomBlock"][data-info="expr"] {
+  position: relative;
+}
+html[data-theme-mode="dark"] .expr-plugin
+  [data-type="NodeCustomBlock"][data-info="expr"][custom-expr-value]::after {
+  background-color: var(--b3-theme-surface, #1e1e1e);
+}
+
 /* 以下为求值中的边框渐变效果 */
 @property --angle {
   syntax: '<angle>';

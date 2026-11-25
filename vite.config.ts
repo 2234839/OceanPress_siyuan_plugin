@@ -5,7 +5,6 @@ import { writeFile, copyFile } from 'fs/promises';
 import { readFileSync } from 'fs';
 import { execSync } from 'child_process';
 import vue from '@vitejs/plugin-vue';
-import { pilot } from 'vite-plugin-pilot';
 
 console.log('=============================');
 const viteConfig: UserConfigExport = (ctx) => {
@@ -70,7 +69,6 @@ const viteConfig: UserConfigExport = (ctx) => {
     plugins: [
       cssInjectedByJsPlugin(),
       vue(),
-      pilot({ locale: 'zh' }),
       // siyuan lib 实际上是空的，在运行时才能够通过 require 进行加载，
       // 而 vite 使用 import 会无法加载到改包，这里做一个 hack 给改成 require
       // 这样配合 vite-plugin-siyuan 就可以在开发的时候直接引用了

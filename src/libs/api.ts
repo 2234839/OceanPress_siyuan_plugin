@@ -142,7 +142,7 @@ export async function upload(
 }
 
 // **************************************** Block ****************************************
-type DataType = 'markdown' | 'dom';
+type DataType = 'markdown' | 'dom' | 'kramdown';
 export async function insertBlock(
   dataType: DataType,
   data: string,

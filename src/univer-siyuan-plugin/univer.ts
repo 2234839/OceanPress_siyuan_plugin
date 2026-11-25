@@ -62,7 +62,6 @@ import '@univerjs/sheets-hyper-link-ui/facade';
 import { UniverFindReplacePlugin } from '@univerjs/find-replace';
 import { UniverSheetsFindReplacePlugin } from '@univerjs/sheets-find-replace';
 import FindReplaceZhCN from '@univerjs/find-replace/locale/zh-CN';
-import SheetsFindReplaceZhCN from '@univerjs/sheets-find-replace/locale/zh-CN';
 import '@univerjs/find-replace/lib/index.css';
 import '@univerjs/sheets-find-replace/facade';
 
@@ -121,7 +120,6 @@ const univer = new Univer({
       // SheetsCrosshairHighlightZhCN,
 
       FindReplaceZhCN,
-      SheetsFindReplaceZhCN,
 
       SheetsNoteUIZhCN,
 

@@ -90,7 +90,7 @@ export async function indexNotes(
   await ensureCollection(config)
 
   /** 构建查询（必须显式指定 LIMIT，思源默认只返回 64 条） */
-  let query = "SELECT id, box, hpath FROM blocks WHERE type='d'"
+  let query = "SELECT id, box, hpath, updated FROM blocks WHERE type='d'"
   /** 增量：如果有上次索引时间，只查更新的文档 */
   if (config.lastIndexedTime) {
     query += ` AND updated > '${config.lastIndexedTime}'`
@@ -99,71 +99,92 @@ export async function indexNotes(
     const notebooks = config.indexNotebooks.map((n) => `'${n}'`).join(",")
     query += ` AND box IN (${notebooks})`
   }
-  query += " LIMIT 100000"
+  query += " ORDER BY updated ASC LIMIT 100000"
   const docs = (await sql(query)) as Array<{
     id: string
     box: string
     hpath: string
+    updated: string
   }>
   state.total = docs.length
 
-  /** 逐文档处理，边处理边写入（增量 upsert） */
+  /** 检查点批量推进的粒度：每成功 10 个文档推进一次，减少写入频率 */
+  const CHECKPOINT_BATCH = 10
+  /** 距上次推进检查点成功处理的文档数 */
+  let successSinceCheckpoint = 0
+  /** 本批次待推进的检查点（升序处理，取最新成功的 updated） */
+  let pendingCheckpoint = config.lastIndexedTime
+
+  /**
+   * 逐文档处理，边处理边写入（增量 upsert）。
+   * 按 updated 升序处理，检查点每 CHECKPOINT_BATCH 个文档批量推进一次：
+   * 单个文档失败只记录错误并继续，已推进的部分下次不会重跑
+   * （刷新网页 / 自动索引都能接着上次的进度）。
+   */
   for (const doc of docs) {
     state.currentDoc = doc.hpath
 
     /** 按 hpath 排除规则过滤 */
     if (isExcluded(doc.hpath, config.excludePatterns)) continue
 
-    const mdRes = await exportMdContent(doc.id)
-    const content = mdRes.content
-    if (!content || content.trim().length === 0) continue
+    try {
+      const mdRes = await exportMdContent(doc.id)
+      const content = mdRes.content
+      if (!content || content.trim().length === 0) continue
 
-    const chunks = chunkMarkdown(content, config.chunkSize)
-    if (chunks.length === 0) continue
+      const chunks = chunkMarkdown(content, config.chunkSize)
+      if (chunks.length === 0) continue
 
-    /** 批量向量化 */
-    const vectors = await getEmbeddings(config, chunks)
+      /** 批量向量化 */
+      const vectors = await getEmbeddings(config, chunks)
 
-    /** 构建点，用确定性 UUID 作为 point ID */
-    const points: QdrantPoint[] = []
-    for (const [i, chunk] of chunks.entries()) {
-      points.push({
-        id: toUUID(`${doc.id}-chunk-${i}`),
-        vector: vectors[i],
-        payload: {
-          blockId: doc.id,
-          hpath: doc.hpath,
-          notebook: doc.box,
-          content: chunk,
-          chunkIndex: i,
-        },
-      })
+      /** 构建点，用确定性 UUID 作为 point ID */
+      const points: QdrantPoint[] = []
+      for (const [i, chunk] of chunks.entries()) {
+        points.push({
+          id: toUUID(`${doc.id}-chunk-${i}`),
+          vector: vectors[i],
+          payload: {
+            blockId: doc.id,
+            hpath: doc.hpath,
+            notebook: doc.box,
+            content: chunk,
+            chunkIndex: i,
+          },
+        })
+      }
+
+      /** 增量 upsert：同一个文档的旧分块先删除，再写入新分块 */
+      await qdrant.deletePointsByFilter(
+        config.qdrantUrl,
+        config.defaultCollection,
+        { field: "blockId", value: doc.id },
+      )
+      await qdrant.upsertPoints(
+        config.qdrantUrl,
+        config.defaultCollection,
+        points,
+      )
+      state.indexed++
+    } catch (e: any) {
+      /** 单文档失败不中断：记录错误，检查点不推进到该文档之后，下次会重试 */
+      state.errors.push(`${doc.hpath}: ${e.message ?? String(e)}`)
+      continue
     }
 
-    /** 增量 upsert：同一个文档的旧分块先删除，再写入新分块 */
-    await qdrant.deletePointsByFilter(
-      config.qdrantUrl,
-      config.defaultCollection,
-      { field: "blockId", value: doc.id },
-    )
-    await qdrant.upsertPoints(
-      config.qdrantUrl,
-      config.defaultCollection,
-      points,
-    )
-    state.indexed++
+    /** 本文档已成功写入 Qdrant，攒够一批再推进检查点（外层 watchDebounced 会自动持久化） */
+    pendingCheckpoint = doc.updated
+    successSinceCheckpoint++
+    if (successSinceCheckpoint >= CHECKPOINT_BATCH) {
+      config.lastIndexedTime = pendingCheckpoint
+      successSinceCheckpoint = 0
+    }
+  }
+
+  /** 收尾：把最后不足一批的进度也推进上去 */
+  if (successSinceCheckpoint > 0) {
+    config.lastIndexedTime = pendingCheckpoint
   }
 
   state.isIndexing = false
-
-  /** 记录本次索引完成时间，供下次增量使用 */
-  const now = new Date()
-  config.lastIndexedTime = [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, "0"),
-    String(now.getDate()).padStart(2, "0"),
-    String(now.getHours()).padStart(2, "0"),
-    String(now.getMinutes()).padStart(2, "0"),
-    String(now.getSeconds()).padStart(2, "0"),
-  ].join("")
 }
