@@ -6,6 +6,12 @@ import * as apis from "~/libs/api";
 import { Menu } from "siyuan";
 import { generateTimestamp, generateUniqueId } from "~/libs/js_util";
 import type { checkId } from "./msg";
+import pkg from "./plugin.json";
+/**
+ * 思源对插件文件不返回 Cache-Control，浏览器会按启发式缓存。入口页面地址带上版本号，
+ * 每个版本地址唯一，避免插件更新后仍执行旧的入口脚本
+ */
+const ENTRY_VERSION_PARAM = `&v=${pkg.version}`;
 export default class UniverPlugin extends SiyuanPlugin {
   onload(): void {
     this.eventBus.on("click-blockicon", (e) => {
@@ -21,7 +27,7 @@ export default class UniverPlugin extends SiyuanPlugin {
             kramdownIframe({
               updated,
               id,
-              src: `/plugins/univer-siyuan-plugin/univer.html?id=${id}&type=sheet`,
+              src: `/plugins/univer-siyuan-plugin/univer.html?id=${id}&type=sheet${ENTRY_VERSION_PARAM}`,
             }),
             undefined,
             e.detail.blockElements[0]?.dataset.nodeId,
@@ -39,7 +45,7 @@ export default class UniverPlugin extends SiyuanPlugin {
         protyle.insert(
           `<div data-node-id="${id}" data-type="NodeIFrame" class="iframe" updated="${updated}">\
 <div class="iframe-content">\
-<iframe sandbox="allow-forms allow-presentation allow-same-origin allow-scripts allow-modals allow-popups" src="/plugins/univer-siyuan-plugin/univer.html?id=${id}&amp;type=sheet" data-src="" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="width: 1028px; height: 438px;"></iframe><span class="protyle-action__drag" contenteditable="false"></span></div><div class="protyle-attr" contenteditable="false">&ZeroWidthSpace;</div></div>`,
+<iframe sandbox="allow-forms allow-presentation allow-same-origin allow-scripts allow-modals allow-popups" src="/plugins/univer-siyuan-plugin/univer.html?id=${id}&amp;type=sheet&amp;v=${pkg.version}" data-src="" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="width: 1028px; height: 438px;"></iframe><span class="protyle-action__drag" contenteditable="false"></span></div><div class="protyle-attr" contenteditable="false">&ZeroWidthSpace;</div></div>`,
           true,
           true,
         );
@@ -75,6 +81,14 @@ export default class UniverPlugin extends SiyuanPlugin {
           const block = iframe.closest<HTMLDivElement>('[data-type="NodeIFrame"]');
           if (!block?.dataset.nodeId) continue;
           const blockId = block.dataset.nodeId;
+          /**
+           * 旧表格块的地址不带版本号，可能加载了浏览器缓存的旧入口页面。
+           * 补上版本号触发一次重载；重载后的地址带版本号，不会再进入这里
+           */
+          if (!iframe.src.includes(`&v=${pkg.version}`)) {
+            iframe.src = `${iframe.src}&v=${pkg.version}`;
+            continue;
+          }
           if (blockId !== event.blockId) {
             await new Promise((r) => setTimeout(r, 500));
 
