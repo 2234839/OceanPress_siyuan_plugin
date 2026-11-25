@@ -14,8 +14,9 @@ export type apiRpcReply = {
   type: "llej-plugin-rpc-reply";
   msgID: string; // 保证每一个rpc都有唯一的 msgID
   payload: any;
+  error?: string;
 };
-const msgQueue: { [msgId: string]: { resolve: (value: unknown) => void; reject: () => void } } = {};
+const msgQueue: { [msgId: string]: { resolve: (value: unknown) => void; reject: (reason?: Error) => void } } = {};
 const fn = (event: MessageEvent<apiRpcReply>) => {
   if (event.data.type !== "llej-plugin-rpc-reply") return;
   const payload = event.data.payload;
@@ -25,9 +26,12 @@ const fn = (event: MessageEvent<apiRpcReply>) => {
 
     return;
   }
-  const resolve = msg.resolve;
   delete msgQueue[event.data.msgID];
-  resolve(payload);
+  if (event.data.error) {
+    msg.reject(new Error(event.data.error));
+    return;
+  }
+  msg.resolve(payload);
 };
 window.addEventListener("message", fn);
 
