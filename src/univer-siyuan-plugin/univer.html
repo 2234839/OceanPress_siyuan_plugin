@@ -16,7 +16,7 @@
             import('/src/univer-siyuan-plugin/univer.ts')
         } else {
             // 生产环境下的动态导入，避免编译时加载
-            eval(`import('/plugins/univer-siyuan-plugin/es/univer.js')`)
+            eval(`import('/plugins/univer-siyuan-plugin/es/univer.js?v=__PLUGIN_VERSION__')`)
         }
     </script>
 </body>

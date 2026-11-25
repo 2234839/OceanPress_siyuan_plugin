@@ -2,7 +2,7 @@ import { resolve } from 'path';
 import { defineConfig, type UserConfigExport, loadEnv } from 'vite';
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 import { writeFile, copyFile } from 'fs/promises';
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync, writeFileSync } from 'fs';
 import { execSync } from 'child_process';
 import vue from '@vitejs/plugin-vue';
 
@@ -69,6 +69,31 @@ const viteConfig: UserConfigExport = (ctx) => {
     plugins: [
       cssInjectedByJsPlugin(),
       vue(),
+      /**
+       * 思源对插件文件只返回 Last-Modified、没有 Cache-Control，浏览器会按启发式缓存，
+       * 插件更新后仍可能长时间执行旧的入口脚本。构建后把 HTML 里的 __PLUGIN_VERSION__
+       * 替换为当前版本号，入口脚本地址随版本变化，新旧版本不会混用
+       */
+      {
+        name: 'html-entry-version',
+        apply: 'build',
+        closeBundle() {
+          /** 构建输出的插件目录 */
+          const outPluginDir = `${env.VITE_dist_dir ?? 'dist'}/${pluginName}`;
+          const { version } = JSON.parse(
+            readFileSync(resolve(__dirname, `src/${pluginName}/plugin.json`), 'utf-8'),
+          );
+          for (const file of readdirSync(outPluginDir)) {
+            if (!file.endsWith('.html')) continue;
+            /** 输出目录中 HTML 文件的绝对路径 */
+            const htmlPath = resolve(outPluginDir, file);
+            /** 该 HTML 文件的内容 */
+            const html = readFileSync(htmlPath, 'utf-8');
+            if (!html.includes('__PLUGIN_VERSION__')) continue;
+            writeFileSync(htmlPath, html.split('__PLUGIN_VERSION__').join(version));
+          }
+        },
+      },
       // siyuan lib 实际上是空的，在运行时才能够通过 require 进行加载，
       // 而 vite 使用 import 会无法加载到改包，这里做一个 hack 给改成 require
       // 这样配合 vite-plugin-siyuan 就可以在开发的时候直接引用了
