@@ -5,7 +5,7 @@ import '@univerjs/sheets-filter-ui/lib/index.css';
 import '@univerjs/sheets-ui/lib/index.css';
 import '@univerjs/ui/lib/index.css';
 
-import { CommandType, LocaleType, merge, Univer, UniverInstanceType } from '@univerjs/core';
+import { CommandType, ICommandService, LocaleType, merge, Univer, UniverInstanceType } from '@univerjs/core';
 import { defaultTheme } from '@univerjs/themes';
 
 import { UniverFormulaEnginePlugin } from '@univerjs/engine-formula';
@@ -165,6 +165,8 @@ univer.registerPlugin(UniverSheetsHyperLinkUIPlugin);
 // univer.registerPlugin(UniverSheetsCrosshairHighlightPlugin);
 
 const univerAPI = FUniver.newAPI(univer);
+/** Univer 1.x 起命令事件不再挂在 FUniver 上，改由 ICommandService 提供 */
+const commandService = univer.__getInjector().get(ICommandService);
 
 // univerAPI.setCrosshairHighlightEnabled(true);
 
@@ -252,8 +254,7 @@ async function main() {
     return save();
   };
 
-  // @ts-ignore - Deprecated API but still functional
-  univerAPI.onCommandExecuted((command) => {
+  commandService.onCommandExecuted((command) => {
     if (command.type !== CommandType.MUTATION) return;
     scheduleSave();
   });
