@@ -312,12 +312,14 @@ export async function getFile(path: string): Promise<any> {
     path: path,
   };
   let url = '/api/file/getFile';
-  try {
-    let file = await fetchSyncPost(url, data);
-    return file;
-  } catch (error_msg) {
-    throw error_msg;
-  }
+  const response: IWebSocketData = await fetchSyncPost(url, data);
+  /**
+   * 该接口两种应答结构不同：成功时 HTTP 200，响应体就是文件内容本身（无 code/data 包装）；
+   * 文件不存在时 HTTP 202 + body.code=404，这属于正常应答而非异常，返回 undefined 让调用方按
+   * 「文件不存在」处理。因此只在显式出现 code=404 时判定为不存在，其余原样返回
+   */
+  if (response?.code === 404) return undefined;
+  return response;
 }
 
 export async function putFile(path: string, isDir: boolean, file: any) {

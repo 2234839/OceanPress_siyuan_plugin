@@ -191,21 +191,19 @@ async function main() {
     blockId: id,
   };
 
-  sendMsg(checkPar);
+  void sendMsg(checkPar);
+  /** 新建表格时数据文件尚不存在，getFile 返回 undefined，按空工作簿处理 */
   const oldData = await api.getFile(dataPath);
 
   let data = {};
-  if (oldData.sheets === undefined) {
-    if (copy) data = await api.getFile(`/data/storage/petal/${pkg.name}/univer-${copy}.json`);
+  if (oldData?.sheets === undefined) {
+    /** 复制来源文件同样可能不存在，不存在就回落为空工作簿，避免把 undefined 传给 createUnit */
+    if (copy) data = (await api.getFile(`/data/storage/petal/${pkg.name}/univer-${copy}.json`)) ?? {};
   } else {
     data = oldData;
   }
 
   univer.createUnit(UniverInstanceType.UNIVER_SHEET, data);
-  console.log(
-    '[document.querySelector(".univer-toolbar-container")?.children]',
-    document.querySelector('.univer-toolbar-container')?.children,
-  );
 
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let savePromise: Promise<void> = Promise.resolve();

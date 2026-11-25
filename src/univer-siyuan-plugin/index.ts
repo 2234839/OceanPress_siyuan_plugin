@@ -71,8 +71,10 @@ export default class UniverPlugin extends SiyuanPlugin {
           `iframe[src*="univer-siyuan-plugin/univer.html?id=${event.blockId}"]`,
         );
         for (const iframe of iframeList) {
-          const block = iframe.closest<HTMLDivElement>('[data-type="NodeIFrame"]')!;
-          const blockId = block.dataset.nodeId!;
+          /** iframe 未必嵌在 NodeIFrame 块内（如被外部嵌入），找不到所属块就跳过，避免监听器抛错拖垮后续 RPC 应答 */
+          const block = iframe.closest<HTMLDivElement>('[data-type="NodeIFrame"]');
+          if (!block?.dataset.nodeId) continue;
+          const blockId = block.dataset.nodeId;
           if (blockId !== event.blockId) {
             await new Promise((r) => setTimeout(r, 500));
 
